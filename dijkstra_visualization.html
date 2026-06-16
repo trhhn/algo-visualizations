@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dijkstra's Algorithm — Build & Run</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+    color: #f0c040;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .tab {
+    padding: 10px 32px;
+    border: none;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    background: #2a2a4a;
+    color: #aaa;
+  }
+
+  .tab.active { background: #f0c040; color: #1a1a2e; }
+
+  .stage {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar-sep {
+    width: 1px;
+    height: 24px;
+    background: #2a3a5a;
+    margin: 0 4px;
+  }
+
+  .tool-btn {
+    padding: 8px 16px;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    background: #0f1b33;
+    color: #ccc;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+  }
+
+  .tool-btn:hover { border-color: #4a5a8a; }
+
+  .tool-btn.active {
+    border-color: #f0c040;
+    background: rgba(240,192,64,0.12);
+    color: #f0c040;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-primary   { background: #f0c040; color: #1a1a2e; }
+  .btn-secondary { background: #4a4a7a; color: #eee; }
+  .btn-danger    { background: #ff6b6b; color: #fff; }
+  .btn-play      { background: #6bcb77; color: #1a1a2e; min-width: 110px; }
+
+  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
+  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
+  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
+  .btn-play:hover:not(:disabled)      { background: #80e080; }
+
+  select {
+    background: #0f1b33;
+    color: #eee;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.88rem;
+  }
+
+  .hint {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+    min-height: 1.2em;
+  }
+
+  #graphSvg {
+    width: 100%;
+    height: auto;
+    background: #0d1b2a;
+    border-radius: 12px;
+    border: 1px solid #2a3a4a;
+    touch-action: none;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: #16213e;
+  }
+
+  .legend-line {
+    width: 22px;
+    height: 0;
+    border-top: 3px solid;
+  }
+
+  .explanation {
+    background: #0f3460;
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-height: 56px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    border-left: 4px solid #f0c040;
+    color: #dde;
+  }
+
+  .progress-wrap {
+    background: #2a2a4a;
+    border-radius: 8px;
+    height: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f0c040, #ff6b6b);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .step-info {
+    text-align: center;
+    color: #888;
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+  }
+
+  .speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+
+  input[type=range] { accent-color: #f0c040; width: 90px; }
+
+  .run-columns {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 760px) {
+    .run-columns { grid-template-columns: 1fr; }
+  }
+
+  .pseudo-title {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pseudocode {
+    background: #0d1b2a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: #b0c4de;
+    border: 1px solid #2a3a4a;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .pseudocode .line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .pseudocode .line.active-line {
+    background: rgba(240, 192, 64, 0.18);
+    color: #f0c040;
+    font-weight: 600;
+  }
+
+  .pseudocode .kw  { color: #c792ea; }
+  .pseudocode .fn  { color: #82aaff; }
+  .pseudocode .num { color: #f78c6c; }
+
+  .state-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0d1b2a;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.85rem;
+    border: 1px solid #2a3a4a;
+  }
+
+  .state-table th, .state-table td {
+    padding: 7px 10px;
+    text-align: center;
+    border-bottom: 1px solid #1f2d44;
+  }
+
+  .state-table th {
+    background: #142340;
+    color: #f0c040;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🗺️ Dijkstra's Algorithm</h1>
+<p class="subtitle">Draw a graph, then step through how the code finds shortest paths</p>
+
+<div class="tabs">
+  <button class="tab active" id="tabBuild" onclick="switchMode('build')">✏️ Build Graph</button>
+  <button class="tab" id="tabRun" onclick="switchMode('run')">▶ Run Algorithm</button>
+</div>
+
+<div class="stage">
+
+  <div class="toolbar" id="buildToolbar">
+    <button class="tool-btn active" data-tool="move" onclick="setTool('move')">🖐 Move / Edit</button>
+    <button class="tool-btn" data-tool="addNode" onclick="setTool('addNode')">⬤ Add Node</button>
+    <button class="tool-btn" data-tool="addEdge" onclick="setTool('addEdge')">→ Add Edge</button>
+    <button class="tool-btn" data-tool="delete" onclick="setTool('delete')">🗑 Delete</button>
+    <span class="toolbar-sep"></span>
+    <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+    <button class="btn btn-danger" onclick="clearGraph()">Clear</button>
+  </div>
+  <div class="hint" id="buildHint">Drag a node to move it. Click (without dragging) a node or edge to rename/reweight it.</div>
+
+  <div class="toolbar" id="runToolbar" style="display:none">
+    <label style="font-size:0.88rem;color:#ccc">Source:
+      <select id="sourceSelect"></select>
+    </label>
+    <button class="btn btn-primary" onclick="startRun()">Start</button>
+    <span class="toolbar-sep"></span>
+    <button class="btn btn-secondary" onclick="stepBack()" id="btnBack" disabled>◀ Back</button>
+    <button class="btn btn-primary" onclick="stepForward()" id="btnNext" disabled>Next Step ▶</button>
+    <button class="btn btn-play" onclick="togglePlay()" id="btnPlay" disabled>▶ Auto Play</button>
+    <div class="speed-wrap">
+      Speed
+      <input type="range" id="speedSlider" min="1" max="5" value="3">
+      <span id="speedLabel">3×</span>
+    </div>
+  </div>
+
+  <svg id="graphSvg" viewBox="0 0 800 460">
+    <defs>
+      <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L8,3 L0,6 z" fill="#5a6a8a"/>
+      </marker>
+      <marker id="arrow-current" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L8,3 L0,6 z" fill="#f0a030"/>
+      </marker>
+      <marker id="arrow-tree" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L8,3 L0,6 z" fill="#6bcb77"/>
+      </marker>
+    </defs>
+    <g id="edgesLayer"></g>
+    <g id="nodesLayer"></g>
+  </svg>
+
+  <div id="runLegend" class="legend" style="display:none"></div>
+
+  <div id="runInfo" style="display:none">
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="explanation" id="explanation"></div>
+    <div class="step-info" id="stepInfo"></div>
+
+    <div class="run-columns">
+      <div>
+        <div class="pseudo-title">Java Code — dijkstra()</div>
+        <div class="pseudocode" id="pseudocode"></div>
+      </div>
+      <div>
+        <div class="pseudo-title">dist[] / prev[] / Q</div>
+        <table class="state-table" id="stateTable"></table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const NODE_R = 26;
+
+let nodes = [];   // {id, name, x, y}
+let edges = [];   // {id, from, to, weight}
+let nextNodeNum = 0;
+let nextEdgeId = 0;
+
+let mode = 'build';   // 'build' | 'run'
+let tool = 'move';    // 'move' | 'addNode' | 'addEdge' | 'delete'
+let pendingEdgeSource = null;
+
+let steps = [];
+let stepIndex = 0;
+let playTimer = null;
+
+// ─────────────────────────────────────────────
+//  Data helpers
+// ─────────────────────────────────────────────
+function nodeById(id) { return nodes.find(n => n.id === id); }
+function nameOf(id) { const n = nodeById(id); return n ? n.name : id; }
+function edgeBetween(a, b) { return edges.find(e => e.from === a && e.to === b); }
+
+function nextNodeName() {
+  for (let i = 0; i < 26; i++) {
+    const letter = String.fromCharCode(65 + i);
+    if (!nodes.some(n => n.name === letter)) return letter;
+  }
+  return 'N' + nodes.length;
+}
+
+function fmtNum(v) {
+  if (v === undefined || v === null) return '—';
+  if (v === Infinity) return '∞';
+  return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100);
+}
+
+function svgPoint(evt) {
+  const svg = document.getElementById('graphSvg');
+  const rect = svg.getBoundingClientRect();
+  const scaleX = 800 / rect.width;
+  const scaleY = 460 / rect.height;
+  return {
+    x: (evt.clientX - rect.left) * scaleX,
+    y: (evt.clientY - rect.top) * scaleY
+  };
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+// ─────────────────────────────────────────────
+//  Render graph (build mode: neutral; run mode: highlighted from steps[stepIndex])
+// ─────────────────────────────────────────────
+function renderGraph() {
+  const edgesLayer = document.getElementById('edgesLayer');
+  const nodesLayer = document.getElementById('nodesLayer');
+  edgesLayer.innerHTML = '';
+  nodesLayer.innerHTML = '';
+
+  const step = (mode === 'run' && steps.length) ? steps[stepIndex] : null;
+
+  edges.forEach(e => {
+    const from = nodeById(e.from), to = nodeById(e.to);
+    if (!from || !to) return;
+
+    const reverse = edgeBetween(e.to, e.from);
+    const curved = !!reverse;
+
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const ux = dx / dist, uy = dy / dist;
+    const r = NODE_R + 2;
+    const x1 = from.x + ux * r, y1 = from.y + uy * r;
+    const x2 = to.x - ux * (r + 8), y2 = to.y - uy * (r + 8);
+
+    let pathD, midX, midY;
+    if (curved) {
+      // Use a perpendicular axis based on a canonical (id-sorted) direction shared by
+      // both edges of the pair, so the two curves bow to opposite sides instead of
+      // cancelling out when this edge's own direction vector is reversed.
+      const canonStart = e.from < e.to ? from : to;
+      const canonEnd = e.from < e.to ? to : from;
+      const cdx = canonEnd.x - canonStart.x, cdy = canonEnd.y - canonStart.y;
+      const cdist = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
+      const px = -(cdy / cdist), py = cdx / cdist;
+      const offset = 22;
+      const sign = e.from < e.to ? 1 : -1;
+      const cx = (x1 + x2) / 2 + px * offset * sign;
+      const cy = (y1 + y2) / 2 + py * offset * sign;
+      pathD = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+      midX = cx; midY = cy;
+    } else {
+      pathD = `M ${x1} ${y1} L ${x2} ${y2}`;
+      midX = (x1 + x2) / 2; midY = (y1 + y2) / 2;
+    }
+
+    let strokeColor = '#5a6a8a', strokeWidth = 2, marker = 'url(#arrow-default)';
+    const isCurrentEdge = step && step.currentEdge && step.currentEdge.from === e.from && step.currentEdge.to === e.to;
+    const isTreeEdge = step && step.prev && step.prev[e.to] === e.from;
+    if (isCurrentEdge) { strokeColor = '#f0a030'; strokeWidth = 4; marker = 'url(#arrow-current)'; }
+    else if (isTreeEdge) { strokeColor = '#6bcb77'; strokeWidth = 3.5; marker = 'url(#arrow-tree)'; }
+
+    const path = svgEl('path', { d: pathD, fill: 'none', stroke: strokeColor, 'stroke-width': strokeWidth, 'marker-end': marker });
+    const bg = svgEl('circle', { cx: midX, cy: midY, r: 12, fill: '#16213e', stroke: strokeColor, 'stroke-width': 1.5 });
+    const text = svgEl('text', { x: midX, y: midY + 4, 'text-anchor': 'middle', 'font-size': 12, fill: '#dde' });
+    text.textContent = e.weight;
+
+    [path, bg, text].forEach(el => {
+      el.style.cursor = mode === 'build' ? 'pointer' : 'default';
+      if (mode === 'build') el.addEventListener('click', (ev) => onEdgeClick(ev, e.id));
+    });
+
+    edgesLayer.appendChild(path);
+    edgesLayer.appendChild(bg);
+    edgesLayer.appendChild(text);
+  });
+
+  nodes.forEach(n => {
+    const g = svgEl('g', {});
+    g.dataset.nodeId = n.id;
+    g.style.cursor = mode === 'build' ? (tool === 'move' ? 'grab' : 'pointer') : 'default';
+
+    let fill = '#2a3a6a', stroke = '#5a6a8a', strokeWidth = 2, strokeDasharray = null;
+
+    if (step) {
+      const isFinalized = step.finalized.includes(n.id);
+      const isCurrent = step.currentU === n.id;
+      const isScanCandidate = step.scanCandidate === n.id;
+      const isScanBest = step.scanBest === n.id;
+
+      if (isFinalized) { fill = '#2f6b3a'; stroke = '#6bcb77'; }
+      if (isCurrent) { stroke = '#a78bfa'; strokeWidth = 4; }
+      if (isScanCandidate) { stroke = '#f0c040'; strokeWidth = 4; }
+      if (isScanBest) { strokeDasharray = '4 3'; stroke = '#4ecdc4'; strokeWidth = 3; }
+    } else if (mode === 'build' && tool === 'addEdge' && pendingEdgeSource === n.id) {
+      stroke = '#f0c040'; strokeWidth = 4;
+    }
+
+    const circleAttrs = { cx: n.x, cy: n.y, r: NODE_R, fill, stroke, 'stroke-width': strokeWidth };
+    if (strokeDasharray) circleAttrs['stroke-dasharray'] = strokeDasharray;
+    g.appendChild(svgEl('circle', circleAttrs));
+
+    const label = svgEl('text', { x: n.x, y: n.y + 5, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: '#fff' });
+    label.textContent = n.name;
+    g.appendChild(label);
+
+    if (step) {
+      const distVal = step.dist[n.id];
+      const distLabel = svgEl('text', { x: n.x, y: n.y + NODE_R + 16, 'text-anchor': 'middle', 'font-size': 12, fill: '#aab' });
+      distLabel.textContent = 'dist: ' + (distVal === Infinity ? '∞' : fmtNum(distVal));
+      g.appendChild(distLabel);
+    }
+
+    if (mode === 'build') {
+      g.addEventListener('pointerdown', (ev) => onNodePointerDown(ev, n.id));
+    }
+
+    nodesLayer.appendChild(g);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Build-mode interaction
+// ─────────────────────────────────────────────
+let drag = null; // { id, startX, startY, moved }
+
+function onNodePointerDown(ev, id) {
+  ev.stopPropagation();
+  if (tool === 'delete') {
+    deleteNode(id);
+    return;
+  }
+  if (tool === 'addEdge') {
+    if (pendingEdgeSource === null) {
+      pendingEdgeSource = id;
+      setHint(`Selected source "${nameOf(id)}". Click the target node to draw the edge.`);
+      renderGraph();
+    } else {
+      const sourceId = pendingEdgeSource;
+      pendingEdgeSource = null;
+      if (sourceId !== id) {
+        addOrUpdateEdge(sourceId, id);
+      }
+      setHint('Click a node to start a new edge.');
+      renderGraph();
+    }
+    return;
+  }
+  if (tool === 'move') {
+    const p = svgPoint(ev);
+    drag = { id, startX: p.x, startY: p.y, moved: false };
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragUp);
+  }
+}
+
+function onDragMove(ev) {
+  if (!drag) return;
+  const p = svgPoint(ev);
+  const dx = p.x - drag.startX, dy = p.y - drag.startY;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) drag.moved = true;
+  const n = nodeById(drag.id);
+  n.x = Math.max(NODE_R, Math.min(800 - NODE_R, p.x));
+  n.y = Math.max(NODE_R, Math.min(460 - NODE_R, p.y));
+  renderGraph();
+}
+
+function onDragUp(ev) {
+  window.removeEventListener('pointermove', onDragMove);
+  window.removeEventListener('pointerup', onDragUp);
+  if (drag && !drag.moved) {
+    renameNode(drag.id);
+  }
+  drag = null;
+}
+
+function onSvgClick(ev) {
+  if (mode !== 'build' || tool !== 'addNode') return;
+  if (ev.target.closest('g[data-node-id]') || ev.target.tagName === 'circle' || ev.target.tagName === 'text') return;
+  const p = svgPoint(ev);
+  addNodeAt(p.x, p.y);
+}
+
+function onEdgeClick(ev, edgeId) {
+  ev.stopPropagation();
+  if (tool === 'delete') {
+    edges = edges.filter(e => e.id !== edgeId);
+    rebuildAfterGraphChange();
+    return;
+  }
+  if (tool === 'move' || tool === 'addEdge') {
+    const e = edges.find(x => x.id === edgeId);
+    if (!e) return;
+    const input = prompt(`Weight for edge ${nameOf(e.from)} → ${nameOf(e.to)}:`, e.weight);
+    if (input === null) return;
+    const w = parseFloat(input);
+    if (!isNaN(w) && w > 0) {
+      e.weight = w;
+      rebuildAfterGraphChange();
+    }
+  }
+}
+
+function addNodeAt(x, y) {
+  const name = nextNodeName();
+  nodes.push({ id: 'n' + (nextNodeNum++), name, x, y });
+  rebuildAfterGraphChange();
+}
+
+function renameNode(id) {
+  const n = nodeById(id);
+  if (!n) return;
+  const input = prompt('Node name:', n.name);
+  if (input === null) return;
+  const trimmed = input.trim();
+  if (trimmed === '') return;
+  if (nodes.some(other => other.id !== id && other.name === trimmed)) {
+    alert('A node with that name already exists.');
+    return;
+  }
+  n.name = trimmed;
+  rebuildAfterGraphChange();
+}
+
+function deleteNode(id) {
+  nodes = nodes.filter(n => n.id !== id);
+  edges = edges.filter(e => e.from !== id && e.to !== id);
+  if (pendingEdgeSource === id) pendingEdgeSource = null;
+  rebuildAfterGraphChange();
+}
+
+function addOrUpdateEdge(fromId, toId) {
+  const existing = edges.find(e => e.from === fromId && e.to === toId);
+  const defaultWeight = existing ? existing.weight : 1;
+  const input = prompt(`Weight for edge ${nameOf(fromId)} → ${nameOf(toId)}:`, defaultWeight);
+  if (input === null) return;
+  const w = parseFloat(input);
+  if (isNaN(w) || w <= 0) {
+    alert('Please enter a positive number.');
+    return;
+  }
+  if (existing) {
+    existing.weight = w;
+  } else {
+    edges.push({ id: 'e' + (nextEdgeId++), from: fromId, to: toId, weight: w });
+  }
+  rebuildAfterGraphChange();
+}
+
+function rebuildAfterGraphChange() {
+  if (mode === 'run') {
+    refreshSourceSelect();
+  }
+  renderGraph();
+}
+
+// ─────────────────────────────────────────────
+//  Mode / tool switching, hints, example graph
+// ─────────────────────────────────────────────
+function setHint(text) {
+  document.getElementById('buildHint').textContent = text;
+}
+
+const TOOL_HINTS = {
+  move: 'Drag a node to move it. Click (without dragging) a node or edge to rename/reweight it.',
+  addNode: 'Click anywhere on the canvas to add a node.',
+  addEdge: 'Click a node to start a new edge.',
+  delete: 'Click a node or edge to delete it.'
+};
+
+function setTool(t) {
+  tool = t;
+  pendingEdgeSource = null;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  setHint(TOOL_HINTS[t]);
+  renderGraph();
+}
+
+function switchMode(m) {
+  mode = m;
+  document.getElementById('tabBuild').classList.toggle('active', m === 'build');
+  document.getElementById('tabRun').classList.toggle('active', m === 'run');
+  document.getElementById('buildToolbar').style.display = m === 'build' ? 'flex' : 'none';
+  document.getElementById('buildHint').style.display = m === 'build' ? 'block' : 'none';
+  document.getElementById('runToolbar').style.display = m === 'run' ? 'flex' : 'none';
+  document.getElementById('runLegend').style.display = m === 'run' ? 'flex' : 'none';
+  document.getElementById('runInfo').style.display = (m === 'run' && steps.length) ? 'block' : 'none';
+
+  if (m === 'run') {
+    refreshSourceSelect();
+    renderRunLegend();
+  } else {
+    stopPlay();
+  }
+
+  if (m === 'run' && steps.length) {
+    renderRunStep();
+  } else {
+    renderGraph();
+  }
+}
+
+function refreshSourceSelect() {
+  const sel = document.getElementById('sourceSelect');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  nodes.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n.id;
+    opt.textContent = n.name;
+    sel.appendChild(opt);
+  });
+  if (nodes.some(n => n.id === prev)) sel.value = prev;
+
+  const hasNodes = nodes.length > 0;
+  document.getElementById('sourceSelect').disabled = !hasNodes;
+  document.querySelector('#runToolbar .btn-primary').disabled = !hasNodes;
+}
+
+function loadExample() {
+  nodes = [];
+  edges = [];
+  nextNodeNum = 0;
+  nextEdgeId = 0;
+
+  const layout = [
+    ['A', 110, 230], ['B', 280, 100], ['C', 280, 360],
+    ['D', 470, 360], ['E', 650, 230], ['F', 470, 100]
+  ];
+  const idOf = {};
+  layout.forEach(([name, x, y]) => {
+    const id = 'n' + (nextNodeNum++);
+    idOf[name] = id;
+    nodes.push({ id, name, x, y });
+  });
+
+  const addUndirected = (a, b, w) => {
+    edges.push({ id: 'e' + (nextEdgeId++), from: idOf[a], to: idOf[b], weight: w });
+    edges.push({ id: 'e' + (nextEdgeId++), from: idOf[b], to: idOf[a], weight: w });
+  };
+  addUndirected('A', 'B', 7);
+  addUndirected('A', 'C', 9);
+  addUndirected('A', 'F', 14);
+  addUndirected('B', 'C', 10);
+  addUndirected('B', 'D', 15);
+  addUndirected('C', 'D', 11);
+  addUndirected('C', 'F', 2);
+  addUndirected('D', 'E', 6);
+  addUndirected('E', 'F', 9);
+
+  pendingEdgeSource = null;
+  steps = [];
+  stepIndex = 0;
+  document.getElementById('runInfo').style.display = 'none';
+  rebuildAfterGraphChange();
+  setHint('Loaded the example graph from Dijkstra.java. Switch to "Run Algorithm" to step through it.');
+}
+
+function clearGraph() {
+  if (nodes.length && !confirm('Clear the whole graph?')) return;
+  nodes = [];
+  edges = [];
+  nextNodeNum = 0;
+  nextEdgeId = 0;
+  pendingEdgeSource = null;
+  steps = [];
+  stepIndex = 0;
+  document.getElementById('runInfo').style.display = 'none';
+  rebuildAfterGraphChange();
+  setHint(TOOL_HINTS[tool]);
+}
+
+// ─────────────────────────────────────────────
+//  Step generator — mirrors Dijkstra.java's dijkstra() line by line
+// ─────────────────────────────────────────────
+function neighborsOf(u) {
+  return edges.filter(e => e.from === u);
+}
+
+function buildDijkstraSteps(sourceId) {
+  const steps = [];
+  const dist = {};
+  const prev = {};
+  let Q = [];
+  const finalized = [];
+
+  const snapshot = (extra) => Object.assign({
+    dist: { ...dist },
+    prev: { ...prev },
+    Q: [...Q],
+    finalized: [...finalized],
+    currentU: null,
+    scanCandidate: null,
+    scanBest: null,
+    currentEdge: null,
+    message: ''
+  }, extra);
+
+  steps.push(snapshot({
+    codeLine: 'declare',
+    message: 'Create empty maps dist, prev and the list Q.'
+  }));
+
+  nodes.forEach(n => {
+    dist[n.id] = Infinity;
+    prev[n.id] = null;
+    Q.push(n.id);
+    steps.push(snapshot({
+      codeLine: 'initBody',
+      message: `For vertex ${n.name}: dist[${n.name}] = ∞, prev[${n.name}] = undefined, add ${n.name} to Q.`
+    }));
+  });
+
+  dist[sourceId] = 0;
+  steps.push(snapshot({
+    codeLine: 'setSourceDist',
+    message: `Set dist[${nameOf(sourceId)}] = 0 — the source has distance zero to itself.`
+  }));
+
+  while (Q.length > 0) {
+    steps.push(snapshot({
+      codeLine: 'whileCheck',
+      message: `Q is not empty (${Q.length} vertex${Q.length === 1 ? '' : 'es'} remain) — continue the loop.`
+    }));
+
+    let u = Q[0];
+    steps.push(snapshot({
+      codeLine: 'pickU',
+      scanBest: u,
+      message: `Tentatively pick u = ${nameOf(u)} (the first vertex in Q).`
+    }));
+
+    for (const candidate of Q) {
+      const isBetter = dist[candidate] < dist[u];
+      steps.push(snapshot({
+        codeLine: 'scanCompare',
+        scanCandidate: candidate,
+        scanBest: u,
+        message: `Check ${nameOf(candidate)} (dist=${fmtNum(dist[candidate])}) against current best ${nameOf(u)} (dist=${fmtNum(dist[u])})` +
+          (isBetter ? ` — smaller! Update u.` : ` — not smaller, keep u.`)
+      }));
+      if (isBetter) {
+        u = candidate;
+        steps.push(snapshot({
+          codeLine: 'updateU',
+          scanCandidate: candidate,
+          scanBest: u,
+          message: `u = ${nameOf(u)}.`
+        }));
+      }
+    }
+
+    Q = Q.filter(id => id !== u);
+    finalized.push(u);
+    steps.push(snapshot({
+      codeLine: 'removeU',
+      currentU: u,
+      message: `Remove ${nameOf(u)} from Q — its shortest distance (${fmtNum(dist[u])}) is now final.`
+    }));
+
+    const ns = neighborsOf(u);
+    if (ns.length === 0) {
+      steps.push(snapshot({
+        codeLine: 'neighborLoop',
+        currentU: u,
+        message: `${nameOf(u)} has no outgoing edges — nothing to relax.`
+      }));
+    }
+    for (const e of ns) {
+      const v = e.to;
+      steps.push(snapshot({
+        codeLine: 'neighborLoop',
+        currentU: u,
+        currentEdge: { from: u, to: v },
+        message: `Look at edge ${nameOf(u)} → ${nameOf(v)} (weight ${e.weight}).`
+      }));
+
+      const alt = dist[u] + e.weight;
+      steps.push(snapshot({
+        codeLine: 'computeAlt',
+        currentU: u,
+        currentEdge: { from: u, to: v },
+        message: `alt = dist[${nameOf(u)}] + weight(${nameOf(u)}→${nameOf(v)}) = ${fmtNum(dist[u])} + ${e.weight} = ${fmtNum(alt)}.`
+      }));
+
+      const improves = alt < dist[v];
+      steps.push(snapshot({
+        codeLine: 'altCompare',
+        currentU: u,
+        currentEdge: { from: u, to: v },
+        message: improves
+          ? `${fmtNum(alt)} < dist[${nameOf(v)}] (${fmtNum(dist[v])}) — a shorter path was found!`
+          : `${fmtNum(alt)} is not smaller than dist[${nameOf(v)}] (${fmtNum(dist[v])}) — no update.`
+      }));
+
+      if (improves) {
+        dist[v] = alt;
+        prev[v] = u;
+        steps.push(snapshot({
+          codeLine: 'updateDistPrev',
+          currentU: u,
+          currentEdge: { from: u, to: v },
+          message: `Update dist[${nameOf(v)}] = ${fmtNum(alt)} and prev[${nameOf(v)}] = ${nameOf(u)}.`
+        }));
+      }
+    }
+  }
+
+  steps.push(snapshot({
+    codeLine: 'returnResult',
+    message: 'Q is empty — return dist[] and prev[]. The shortest-path tree is complete.'
+  }));
+
+  return steps;
+}
+
+// ─────────────────────────────────────────────
+//  Code panel (mirrors src/Dijkstra.java's dijkstra() method)
+// ─────────────────────────────────────────────
+const PSEUDO_DIJKSTRA = [
+  { id: 'sig',            html: '<span class="kw">static</span> Result <span class="fn">dijkstra</span>(Graph graph, String source) {' },
+  { id: 'declare',        html: '&nbsp;&nbsp;Map&lt;String, Double&gt; dist = <span class="kw">new</span> HashMap&lt;&gt;();' },
+  { id: 'declare',        html: '&nbsp;&nbsp;Map&lt;String, String&gt; prev = <span class="kw">new</span> HashMap&lt;&gt;();' },
+  { id: 'declare',        html: '&nbsp;&nbsp;List&lt;String&gt; Q = <span class="kw">new</span> ArrayList&lt;&gt;();' },
+  { id: 'initBody',       html: '&nbsp;&nbsp;<span class="kw">for</span> (String v : graph.vertices()) {' },
+  { id: 'initBody',       html: '&nbsp;&nbsp;&nbsp;&nbsp;dist.put(v, Double.POSITIVE_INFINITY);' },
+  { id: 'initBody',       html: '&nbsp;&nbsp;&nbsp;&nbsp;prev.put(v, <span class="kw">null</span>);' },
+  { id: 'initBody',       html: '&nbsp;&nbsp;&nbsp;&nbsp;Q.add(v);' },
+  { id: 'initBody',       html: '&nbsp;&nbsp;}' },
+  { id: 'setSourceDist',  html: '&nbsp;&nbsp;dist.put(source, <span class="num">0.0</span>);' },
+  { id: 'whileCheck',     html: '&nbsp;&nbsp;<span class="kw">while</span> (!Q.isEmpty()) {' },
+  { id: 'pickU',          html: '&nbsp;&nbsp;&nbsp;&nbsp;String u = Q.get(<span class="num">0</span>);' },
+  { id: 'scanCompare',    html: '&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (String candidate : Q) {' },
+  { id: 'scanCompare',    html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (dist.get(candidate) &lt; dist.get(u)) {' },
+  { id: 'updateU',        html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;u = candidate;' },
+  { id: 'scanCompare',    html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}' },
+  { id: 'scanCompare',    html: '&nbsp;&nbsp;&nbsp;&nbsp;}' },
+  { id: 'removeU',        html: '&nbsp;&nbsp;&nbsp;&nbsp;Q.remove(u);' },
+  { id: 'neighborLoop',   html: '&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (String v : graph.neighbors(u)) {' },
+  { id: 'computeAlt',     html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> alt = dist.get(u) + graph.distance(u, v);' },
+  { id: 'altCompare',     html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (alt &lt; dist.get(v)) {' },
+  { id: 'updateDistPrev', html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dist.put(v, alt);' },
+  { id: 'updateDistPrev', html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prev.put(v, u);' },
+  { id: 'altCompare',     html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}' },
+  { id: 'neighborLoop',   html: '&nbsp;&nbsp;&nbsp;&nbsp;}' },
+  { id: 'whileCheck',     html: '&nbsp;&nbsp;}' },
+  { id: 'returnResult',   html: '&nbsp;&nbsp;<span class="kw">return</span> <span class="kw">new</span> Result(dist, prev);' },
+  { id: 'end',            html: '}' }
+];
+
+function renderPseudocode(activeId) {
+  const container = document.getElementById('pseudocode');
+  container.innerHTML = '';
+  PSEUDO_DIJKSTRA.forEach(line => {
+    const div = document.createElement('div');
+    div.className = 'line' + (line.id === activeId ? ' active-line' : '');
+    div.innerHTML = line.html;
+    container.appendChild(div);
+  });
+}
+
+function renderStateTable(step) {
+  const table = document.getElementById('stateTable');
+  let html = '<tr><th>Vertex</th><th>dist</th><th>prev</th><th>status</th></tr>';
+  nodes.forEach(n => {
+    const isU = step.currentU === n.id;
+    const inQ = step.Q.includes(n.id);
+    const isFinalized = step.finalized.includes(n.id);
+    let status = inQ ? 'in Q' : (isFinalized ? 'finalized' : '');
+    if (isU) status = 'current u';
+    const rowStyle = isU ? 'background:rgba(167,139,250,0.18);' :
+      isFinalized ? 'background:rgba(107,203,119,0.10);' : '';
+    html += `<tr style="${rowStyle}">
+      <td>${n.name}</td>
+      <td>${fmtNum(step.dist[n.id])}</td>
+      <td>${step.prev[n.id] ? nameOf(step.prev[n.id]) : '—'}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  table.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+//  Step controls
+// ─────────────────────────────────────────────
+function renderRunStep() {
+  const step = steps[stepIndex];
+  if (!step) return;
+
+  document.getElementById('progressBar').style.width = `${Math.round((stepIndex / (steps.length - 1)) * 100)}%`;
+  document.getElementById('explanation').textContent = step.message;
+  document.getElementById('stepInfo').textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+  renderPseudocode(step.codeLine);
+  renderStateTable(step);
+  renderGraph();
+
+  document.getElementById('btnBack').disabled = stepIndex === 0;
+  document.getElementById('btnNext').disabled = stepIndex === steps.length - 1;
+  document.getElementById('btnPlay').disabled = stepIndex === steps.length - 1;
+}
+
+function stepForward() {
+  if (stepIndex < steps.length - 1) {
+    stepIndex++;
+    renderRunStep();
+  }
+  if (stepIndex === steps.length - 1) stopPlay();
+}
+
+function stepBack() {
+  stopPlay();
+  if (stepIndex > 0) {
+    stepIndex--;
+    renderRunStep();
+  }
+}
+
+function togglePlay() {
+  if (playTimer) {
+    stopPlay();
+  } else {
+    document.getElementById('btnPlay').textContent = '⏸ Pause';
+    scheduleNext();
+  }
+}
+
+function scheduleNext() {
+  const speed = parseInt(document.getElementById('speedSlider').value, 10);
+  const delay = 1400 - speed * 220;
+  playTimer = setTimeout(() => {
+    if (stepIndex < steps.length - 1) {
+      stepIndex++;
+      renderRunStep();
+      if (stepIndex < steps.length - 1) {
+        scheduleNext();
+      } else {
+        stopPlay();
+      }
+    } else {
+      stopPlay();
+    }
+  }, delay);
+}
+
+function stopPlay() {
+  if (playTimer) {
+    clearTimeout(playTimer);
+    playTimer = null;
+  }
+  document.getElementById('btnPlay').textContent = '▶ Auto Play';
+}
+
+function startRun() {
+  if (nodes.length === 0) {
+    alert('Add at least one node first (or click "Load Example").');
+    return;
+  }
+  stopPlay();
+  const sourceId = document.getElementById('sourceSelect').value;
+  steps = buildDijkstraSteps(sourceId);
+  stepIndex = 0;
+  document.getElementById('runInfo').style.display = 'block';
+  renderRunStep();
+}
+
+// ─────────────────────────────────────────────
+//  Legend (run mode)
+// ─────────────────────────────────────────────
+function renderRunLegend() {
+  const legend = document.getElementById('runLegend');
+  legend.innerHTML = `
+    <div class="legend-item"><span class="legend-dot" style="border-color:#a78bfa"></span> Current vertex u</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#f0c040"></span> Scanning candidate</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#4ecdc4;border-style:dashed;border-width:2px"></span> Current best (min so far)</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#6bcb77;background:#2f6b3a"></span> Finalized</div>
+    <div class="legend-item"><span class="legend-line" style="border-color:#f0a030"></span> Edge being relaxed</div>
+    <div class="legend-item"><span class="legend-line" style="border-color:#6bcb77"></span> Shortest-path tree</div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+document.getElementById('graphSvg').addEventListener('click', onSvgClick);
+document.getElementById('speedSlider').addEventListener('input', (ev) => {
+  document.getElementById('speedLabel').textContent = `${ev.target.value}×`;
+});
+
+loadExample();
+switchMode('build');
+</script>
+</body>
+</html>

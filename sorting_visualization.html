@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sorting Coins – Bubble & Selection Sort</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+    color: #f0c040;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .tab {
+    padding: 10px 32px;
+    border: none;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    background: #2a2a4a;
+    color: #aaa;
+  }
+
+  .tab.active {
+    background: #f0c040;
+    color: #1a1a2e;
+  }
+
+  /* ── Stage ── */
+  .stage {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 32px 24px 24px;
+    max-width: 860px;
+    margin: 0 auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  /* ── Coins row ── */
+  .coins-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 12px;
+    min-height: 130px;
+    margin-bottom: 20px;
+  }
+
+  .coin-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: transform 0.35s ease;
+  }
+
+  .coin {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    border: 3px solid rgba(255,255,255,0.15);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4);
+    transition: background 0.25s, box-shadow 0.25s, transform 0.25s;
+    cursor: default;
+    user-select: none;
+    position: relative;
+  }
+
+  /* coin colours by denomination (cents; 100 = 1€, 200 = 2€) */
+  .coin[data-val="5"]   { background: radial-gradient(circle at 35% 35%, #c98a4b, #8b5a2b); color: #fff3e0; }
+  .coin[data-val="10"]  { background: radial-gradient(circle at 35% 35%, #e8c468, #b8902a); color: #3a2a00; }
+  .coin[data-val="20"]  { background: radial-gradient(circle at 35% 35%, #ecd080, #c4a030); color: #3a2a00; }
+  .coin[data-val="50"]  { background: radial-gradient(circle at 35% 35%, #f0d890, #d0aa3a); color: #3a2a00; }
+  .coin[data-val="100"] { background: radial-gradient(circle, #e8d840 0%, #e8d840 52%, #cfcfcf 58%, #f0f0f0 100%); color: #2a2a2a; border-color: #cfcfcf; }
+  .coin[data-val="200"] { background: radial-gradient(circle, #d8d8d8 0%, #d8d8d8 52%, #d4af37 58%, #f0d860 100%); color: #2a2a2a; border-color: #d4af37; }
+
+  /* state highlights */
+  .coin.comparing {
+    box-shadow: 0 0 0 4px #f0c040, inset 0 -4px 8px rgba(0,0,0,0.3);
+    transform: translateY(-8px);
+  }
+
+  .coin.swapping {
+    box-shadow: 0 0 0 4px #ff6b6b, inset 0 -4px 8px rgba(0,0,0,0.3);
+    transform: translateY(-14px);
+  }
+
+  .coin.minimum {
+    box-shadow: 0 0 0 4px #4ecdc4, 0 0 16px 4px rgba(78,205,196,0.7), inset 0 -4px 8px rgba(0,0,0,0.3);
+    transform: translateY(-12px);
+  }
+
+  .coin.min-marker {
+    outline: 3px dashed #4ecdc4;
+    outline-offset: 5px;
+  }
+
+  .coin.current-pos {
+    box-shadow: 0 0 0 4px #a78bfa, inset 0 -4px 8px rgba(0,0,0,0.3);
+    transform: translateY(-8px);
+  }
+
+  .coin.sorted {
+    box-shadow: 0 0 0 3px #6bcb77, inset 0 -4px 8px rgba(0,0,0,0.3);
+    opacity: 0.85;
+  }
+
+  .coin-label {
+    font-size: 0.78rem;
+    color: #888;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid;
+  }
+
+  /* ── Explanation box ── */
+  .explanation {
+    background: #0f3460;
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-height: 56px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    border-left: 4px solid #f0c040;
+    color: #dde;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    background: #2a2a4a;
+    border-radius: 8px;
+    height: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f0c040, #ff6b6b);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-primary   { background: #f0c040; color: #1a1a2e; }
+  .btn-secondary { background: #4a4a7a; color: #eee; }
+  .btn-danger    { background: #ff6b6b; color: #fff; }
+  .btn-play      { background: #6bcb77; color: #1a1a2e; min-width: 110px; }
+
+  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
+  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
+  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
+  .btn-play:hover:not(:disabled)      { background: #80e080; }
+
+  .speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+
+  input[type=range] {
+    accent-color: #f0c040;
+    width: 90px;
+  }
+
+  /* ── Step counter ── */
+  .step-info {
+    text-align: center;
+    color: #888;
+    font-size: 0.82rem;
+    margin-top: 12px;
+  }
+
+  /* ── Pseudocode panel ── */
+  .pseudo-wrap {
+    max-width: 860px;
+    margin: 24px auto 0;
+  }
+
+  .pseudo-title {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pseudocode {
+    background: #0d1b2a;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: #b0c4de;
+    border: 1px solid #2a3a4a;
+    white-space: pre;
+  }
+
+  .pseudocode .line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .pseudocode .line.active-line {
+    background: rgba(240, 192, 64, 0.18);
+    color: #f0c040;
+    font-weight: 600;
+  }
+
+  .pseudocode .kw  { color: #c792ea; }
+  .pseudocode .fn  { color: #82aaff; }
+  .pseudocode .num { color: #f78c6c; }
+  .pseudocode .cmt { color: #546e7a; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>🪙 Sorting Coins</h1>
+<p class="subtitle">Step through Bubble Sort and Selection Sort — one comparison at a time</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('bubble')">Bubble Sort</button>
+  <button class="tab"        onclick="switchTab('selection')">Selection Sort</button>
+</div>
+
+<div class="stage">
+  <div class="legend" id="legend"></div>
+  <div class="coins-row" id="coinsRow"></div>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="explanation" id="explanation">Press <strong>Next Step</strong> to start sorting!</div>
+  <div class="controls">
+    <button class="btn btn-secondary" onclick="stepBack()"  id="btnBack">◀ Back</button>
+    <button class="btn btn-primary"   onclick="stepForward()" id="btnNext">Next Step ▶</button>
+    <button class="btn btn-play"      onclick="togglePlay()" id="btnPlay">▶ Auto Play</button>
+    <button class="btn btn-danger"    onclick="resetSort()">↺ New Coins</button>
+    <div class="speed-wrap">
+      Speed
+      <input type="range" id="speedSlider" min="1" max="5" value="3">
+      <span id="speedLabel">3×</span>
+    </div>
+  </div>
+  <div class="step-info" id="stepInfo">Step 0</div>
+</div>
+
+<div class="pseudo-wrap">
+  <div class="pseudo-title">Java Code</div>
+  <div class="pseudocode" id="pseudocode"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+let mode = 'bubble';   // 'bubble' | 'selection'
+let steps = [];        // array of snapshots
+let stepIndex = 0;
+let playTimer = null;
+
+const COIN_VALUES = [5, 10, 20, 50, 100, 200];
+const COIN_LABELS = { 5:'5', 10:'10', 20:'20', 50:'50', 100:'1€', 200:'2€' };
+const lbl = v => COIN_LABELS[v];
+const mlbl = v => v < 100 ? `${v} Cents` : COIN_LABELS[v];
+
+// ─────────────────────────────────────────────
+//  Generate steps for Bubble Sort
+// ─────────────────────────────────────────────
+function buildBubbleSteps(arr) {
+  const steps = [];
+  const a = arr.slice();
+  const n = a.length;
+  const sorted = new Set();
+
+  const snap = (comparing, swapping, message, codeLine) => {
+    steps.push({
+      arr: a.slice(),
+      comparing: comparing.slice(),
+      swapping: swapping.slice(),
+      minimum: [],
+      currentPos: [],
+      sorted: [...sorted],
+      message,
+      codeLine
+    });
+  };
+
+  snap([], [], 'We have ' + n + ' coins in a random order. Let\'s sort them from smallest to largest using <strong>Bubble Sort</strong>!', 'intro');
+
+  let changed = true;
+  let passCount = 0;
+  while (changed) {
+    changed = false;
+    passCount++;
+    snap([], [], `Pass ${passCount}: changed = false. Scan through the coins from left to right.`, 'newpass');
+    for (let i = 0; i < n - 1; i++) {
+      snap([i, i+1], [], `Comparing <strong>${mlbl(a[i])}</strong> and <strong>${mlbl(a[i+1])}</strong>. Is ${mlbl(a[i])} > ${mlbl(a[i+1])}?`, 'compare');
+      if (a[i] > a[i+1]) {
+        snap([i, i+1], [i, i+1], `Yes! ${mlbl(a[i])} > ${mlbl(a[i+1])} — call swap(arr, ${i}, ${i+1}).`, 'swap');
+        [a[i], a[i+1]] = [a[i+1], a[i]];
+        changed = true;
+        snap([i, i+1], [i, i+1], `Swapped! <strong>${mlbl(a[i])}</strong> is now left of <strong>${mlbl(a[i+1])}</strong>. changed = true.`, 'swap');
+      } else {
+        snap([i, i+1], [], `No — ${mlbl(a[i])} ≤ ${mlbl(a[i+1])}, no swap needed.`, 'compare');
+      }
+    }
+    if (changed) {
+      sorted.add(n - passCount);
+      snap([], [], `End of pass ${passCount}. while(changed) is true — go again.`, 'endpass');
+    } else {
+      for (let k = 0; k < n; k++) sorted.add(k);
+      snap([], [], 'No swaps this pass — changed = false, so while(changed) stops. The coins are sorted! 🎉', 'endpass');
+    }
+  }
+  snap([], [], 'All coins are sorted! 🎉 Bubble Sort is done.', 'done');
+  return steps;
+}
+
+// ─────────────────────────────────────────────
+//  Generate steps for Selection Sort
+// ─────────────────────────────────────────────
+function buildSelectionSteps(arr) {
+  const steps = [];
+  const a = arr.slice();
+  const n = a.length;
+  const sorted = new Set();
+
+  const snap = (currentPos, minimum, comparing, swapping, message, codeLine) => {
+    steps.push({
+      arr: a.slice(),
+      comparing,
+      swapping,
+      minimum,
+      currentPos,
+      sorted: [...sorted],
+      message,
+      codeLine
+    });
+  };
+
+  snap([], [], [], [], 'We have ' + n + ' coins in a random order. Let\'s sort them using <strong>Selection Sort</strong>!', 'intro');
+
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    snap([i], [minIdx], [], [], `Round ${i+1}: int min = ${i}. Assume position ${i} (coin <strong>${mlbl(a[i])}</strong>) holds the minimum.`, 'setmin');
+
+    for (let j = i + 1; j < n; j++) {
+      snap([i], [minIdx], [j], [], `Comparing current minimum <strong>${mlbl(a[minIdx])}</strong> with coin <strong>${mlbl(a[j])}</strong>. Is ${mlbl(a[j])} smaller?`, 'compare');
+      if (a[j] < a[minIdx]) {
+        const old = a[minIdx];
+        minIdx = j;
+        snap([i], [minIdx], [j], [], `Yes! <strong>${mlbl(a[minIdx])}</strong> < ${mlbl(old)} — min = ${j}.`, 'newmin');
+      } else {
+        snap([i], [minIdx], [j], [], `No — ${mlbl(a[j])} ≥ ${mlbl(a[minIdx])}, min stays at <strong>${mlbl(a[minIdx])}</strong>.`, 'compare');
+      }
+    }
+
+    if (minIdx !== i) {
+      snap([i], [minIdx], [], [i, minIdx], `Call swap(arr, ${i}, ${minIdx}) — move <strong>${mlbl(a[minIdx])}</strong> into position ${i}.`, 'swap');
+      [a[i], a[minIdx]] = [a[minIdx], a[i]];
+      snap([i], [i], [], [i, minIdx], `Swapped! Coin <strong>${mlbl(a[i])}</strong> is now in its correct position.`, 'swap');
+    } else {
+      snap([i], [i], [], [], `Coin <strong>${mlbl(a[i])}</strong> is already the minimum — swap(arr, ${i}, ${i}) does nothing.`, 'swap');
+    }
+
+    sorted.add(i);
+    snap([], [], [], [], `Position ${i} is sorted. ${sorted.size} coin${sorted.size > 1 ? 's' : ''} placed correctly (green).`, 'newround');
+  }
+
+  sorted.add(n - 1);
+  snap([], [], [], [], 'All coins are sorted! 🎉 Selection Sort is done.', 'done');
+  return steps;
+}
+
+// ─────────────────────────────────────────────
+//  Java code lines (line = codeLine that activates highlight, -1 = never)
+// ─────────────────────────────────────────────
+const PSEUDO = {
+  bubble: [
+    { text: '<span class="kw">public static void</span> <span class="fn">bubbleSort</span>(<span class="kw">int</span>[] arr){',                              line: 'intro' },
+    { text: '    <span class="kw">boolean</span> changed;',                                                                                 line: -1 },
+    { text: '    <span class="kw">do</span> {',                                                                                             line: -1 },
+    { text: '        changed = <span class="kw">false</span>;',                                                                            line: 'newpass' },
+    { text: '        <span class="kw">for</span>(<span class="kw">int</span> i=<span class="num">0</span>;i&lt;arr.length-<span class="num">1</span>;i++){', line: -1 },
+    { text: '            <span class="kw">if</span>(arr[i]&gt;arr[i+<span class="num">1</span>]){',                                       line: 'compare' },
+    { text: '                <span class="fn">swap</span>(arr,i,i+<span class="num">1</span>);',                                          line: 'swap' },
+    { text: '                changed = <span class="kw">true</span>;',                                                                     line: 'swap' },
+    { text: '            }',                                                                                                                line: -1 },
+    { text: '        }',                                                                                                                    line: -1 },
+    { text: '    } <span class="kw">while</span>(changed);',                                                                               line: 'endpass' },
+    { text: '} <span class="cmt">// all sorted!</span>',                                                                                    line: 'done' },
+  ],
+  selection: [
+    { text: '<span class="kw">public static void</span> <span class="fn">selectionSort</span>(<span class="kw">int</span>[] arr){',           line: 'intro' },
+    { text: '    <span class="kw">for</span>(<span class="kw">int</span> i=<span class="num">0</span>;i&lt;arr.length-<span class="num">1</span>;i++){', line: 'newround' },
+    { text: '        <span class="kw">int</span> min = i;',                                                                  line: 'setmin' },
+    { text: '        <span class="kw">for</span>(<span class="kw">int</span> j=i+<span class="num">1</span>;j&lt;arr.length;j++){',         line: -1 },
+    { text: '            <span class="kw">if</span>(arr[j]&lt;arr[min]){',                                                  line: 'compare' },
+    { text: '                min = j;',                                                                                     line: 'newmin' },
+    { text: '            }',                                                                                                 line: -1 },
+    { text: '        }',                                                                                                     line: -1 },
+    { text: '        <span class="fn">swap</span>(arr,i,min);',                                                            line: 'swap' },
+    { text: '    }',                                                                                                         line: -1 },
+    { text: '} <span class="cmt">// all sorted!</span>',                                                                   line: 'done' },
+  ]
+};
+
+// ─────────────────────────────────────────────
+//  Render
+// ─────────────────────────────────────────────
+function render() {
+  if (!steps.length) return;
+  const s = steps[stepIndex];
+  const n = s.arr.length;
+
+  // coins
+  const row = document.getElementById('coinsRow');
+  row.innerHTML = '';
+  s.arr.forEach((val, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'coin-wrap';
+
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    coin.dataset.val = val;
+    coin.textContent = COIN_LABELS[val];
+
+    const stateClasses = [];
+    if (s.swapping.includes(i))    stateClasses.push('swapping');
+    else if (s.comparing.includes(i)) stateClasses.push('comparing');
+    else if (s.minimum.includes(i))   stateClasses.push('minimum');
+    else if (s.currentPos.includes(i)) stateClasses.push('current-pos');
+    else if (s.sorted.includes(i))    stateClasses.push('sorted');
+
+    coin.classList.add(...stateClasses);
+
+    if (s.minimum.includes(i)) {
+      coin.classList.add('min-marker');
+    }
+
+    const lbl = document.createElement('div');
+    lbl.className = 'coin-label';
+    lbl.textContent = 'pos ' + i;
+
+    wrap.appendChild(coin);
+    wrap.appendChild(lbl);
+    row.appendChild(wrap);
+  });
+
+  // explanation
+  document.getElementById('explanation').innerHTML = s.message;
+
+  // progress
+  const pct = stepIndex / (steps.length - 1) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+
+  // step counter
+  document.getElementById('stepInfo').textContent = 'Step ' + stepIndex + ' of ' + (steps.length - 1);
+
+  // pseudocode
+  const lines = PSEUDO[mode];
+  const pseudo = document.getElementById('pseudocode');
+  pseudo.innerHTML = lines.map(l =>
+    `<div class="line${l.line === s.codeLine ? ' active-line' : ''}">${l.text}</div>`
+  ).join('');
+
+  // buttons
+  document.getElementById('btnBack').disabled = stepIndex === 0;
+  document.getElementById('btnNext').disabled = stepIndex === steps.length - 1;
+}
+
+// ─────────────────────────────────────────────
+//  Controls
+// ─────────────────────────────────────────────
+function stepForward() {
+  if (stepIndex < steps.length - 1) { stepIndex++; render(); }
+  else stopPlay();
+}
+
+function stepBack() {
+  if (stepIndex > 0) { stepIndex--; render(); }
+}
+
+function togglePlay() {
+  if (playTimer) { stopPlay(); return; }
+  document.getElementById('btnPlay').textContent = '⏸ Pause';
+  document.getElementById('btnPlay').style.background = '#ffaa44';
+  scheduleNext();
+}
+
+function scheduleNext() {
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  const delay = [1200, 800, 500, 280, 120][speed - 1];
+  playTimer = setTimeout(() => {
+    if (stepIndex < steps.length - 1) {
+      stepIndex++;
+      render();
+      scheduleNext();
+    } else {
+      stopPlay();
+    }
+  }, delay);
+}
+
+function stopPlay() {
+  clearTimeout(playTimer);
+  playTimer = null;
+  document.getElementById('btnPlay').textContent = '▶ Auto Play';
+  document.getElementById('btnPlay').style.background = '#6bcb77';
+}
+
+document.getElementById('speedSlider').addEventListener('input', function () {
+  document.getElementById('speedLabel').textContent = this.value + '×';
+  if (playTimer) { stopPlay(); togglePlay(); }
+});
+
+function resetSort() {
+  stopPlay();
+  const arr = shuffle(COIN_VALUES.slice());
+  steps = mode === 'bubble' ? buildBubbleSteps(arr) : buildSelectionSteps(arr);
+  stepIndex = 0;
+  render();
+}
+
+function switchTab(newMode) {
+  mode = newMode;
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', (i === 0) === (mode === 'bubble'))
+  );
+  updateLegend();
+  resetSort();
+}
+
+function updateLegend() {
+  const items = mode === 'bubble'
+    ? [
+        ['#f0c040','#a07020','Comparing'],
+        ['#ff6b6b','#c04040','Swapping'],
+        ['#6bcb77','#3a8a3a','Sorted'],
+      ]
+    : [
+        ['#a78bfa','#6040c0','Current position'],
+        ['#16213e','#4ecdc4','Current minimum', true],
+        ['#f0c040','#a07020','Scanning'],
+        ['#6bcb77','#3a8a3a','Sorted'],
+      ];
+  document.getElementById('legend').innerHTML = items.map(([bg, border, label, dashed]) =>
+    `<div class="legend-item">
+       <div class="legend-dot" style="background:${bg};border-color:${border};${dashed ? 'border-style:dashed;border-width:2px' : ''}"></div>
+       <span style="color:#ccc">${label}</span>
+     </div>`
+  ).join('');
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+updateLegend();
+resetSort();
+</script>
+</body>
+</html>
