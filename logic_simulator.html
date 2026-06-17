@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Logic Circuit Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+    color: #f0c040;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  .panel-title {
+    font-size: 0.78rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 14px 0 8px;
+  }
+  .panel-title:first-child { margin-top: 0; }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .palette-item {
+    background: #0f1b33;
+    border: 2px solid #2a3a5a;
+    border-radius: 10px;
+    padding: 10px 6px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+  }
+
+  .palette-item:hover { border-color: #4a5a8a; }
+  .palette-item.active { border-color: #f0c040; background: rgba(240,192,64,0.12); }
+
+  .palette-item svg { width: 48px; height: 32px; display: block; margin: 0 auto 4px; }
+  .palette-item .lbl { font-size: 0.68rem; color: #ccc; }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar-sep {
+    width: 1px;
+    height: 24px;
+    background: #2a3a5a;
+    margin: 0 4px;
+  }
+
+  .tool-btn {
+    padding: 8px 14px;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    background: #0f1b33;
+    color: #ccc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+  }
+
+  .tool-btn:hover { border-color: #4a5a8a; }
+  .tool-btn.active { border-color: #f0c040; background: rgba(240,192,64,0.12); color: #f0c040; }
+
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-primary   { background: #f0c040; color: #1a1a2e; }
+  .btn-secondary { background: #4a4a7a; color: #eee; }
+  .btn-danger    { background: #ff6b6b; color: #fff; }
+  .btn-play      { background: #6bcb77; color: #1a1a2e; }
+  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
+  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
+  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
+  .btn-play:hover:not(:disabled)      { background: #80e080; }
+
+  select {
+    background: #0f1b33;
+    color: #eee;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+  }
+
+  .hint {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    min-height: 1.2em;
+  }
+
+  #circuitSvg {
+    width: 100%;
+    height: 600px;
+    background: #0d1b2a;
+    border-radius: 12px;
+    border: 1px solid #2a3a4a;
+    touch-action: none;
+    display: block;
+  }
+
+  .clock-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔌 Logic Circuit Simulator</h1>
+<p class="subtitle">Place gates, switches and bulbs, wire them up, and watch the signal flow</p>
+
+<div class="app">
+
+  <div class="panel">
+    <div class="panel-title">Inputs</div>
+    <div class="palette-grid" id="paletteInputs"></div>
+
+    <div class="panel-title">Outputs</div>
+    <div class="palette-grid" id="paletteOutputs"></div>
+
+    <div class="panel-title">Gates</div>
+    <div class="palette-grid" id="paletteGates"></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <button class="tool-btn active" data-tool="select" id="toolSelect">🖐 Select / Move</button>
+      <button class="tool-btn" data-tool="wire" id="toolWire">→ Wire</button>
+      <button class="tool-btn" data-tool="delete" id="toolDelete">🗑 Delete</button>
+      <span class="toolbar-sep"></span>
+      <button class="btn btn-secondary" id="btnSave">💾 Save</button>
+      <button class="btn btn-secondary" id="btnLoad">📂 Load</button>
+      <button class="btn btn-danger" id="btnClear">Clear</button>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+
+      <div class="clock-control">
+        Clock:
+        <button class="btn btn-play" id="btnClockPlay">▶ Run</button>
+        <select id="clockSpeed">
+          <option value="2000">0.5 Hz</option>
+          <option value="1000" selected>1 Hz</option>
+          <option value="500">2 Hz</option>
+          <option value="250">4 Hz</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint" id="hint">Click a palette item, then click the canvas to place it.</div>
+
+    <svg id="circuitSvg" viewBox="0 0 1040 600">
+      <g id="wiresLayer"></g>
+      <g id="previewLayer"></g>
+      <g id="componentsLayer"></g>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  Component definitions
+// ─────────────────────────────────────────────
+const COMPONENT_DEFS = {
+  switch: { category: 'input',  label: 'Switch',   w: 56, h: 44, inputs: 0, outputs: 1 },
+  clock:  { category: 'input',  label: 'Clock',    w: 56, h: 44, inputs: 0, outputs: 1 },
+  high:   { category: 'input',  label: 'High (1)', w: 48, h: 44, inputs: 0, outputs: 1 },
+  low:    { category: 'input',  label: 'Low (0)',  w: 48, h: 44, inputs: 0, outputs: 1 },
+  bulb:   { category: 'output', label: 'Bulb',     w: 44, h: 44, inputs: 1, outputs: 0 },
+  and:    { category: 'gate', label: 'AND',  w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
+  nand:   { category: 'gate', label: 'NAND', w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
+  or:     { category: 'gate', label: 'OR',   w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
+  nor:    { category: 'gate', label: 'NOR',  w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
+  xor:    { category: 'gate', label: 'XOR',  w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
+  xnor:   { category: 'gate', label: 'XNOR', w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
+  not:    { category: 'gate', label: 'NOT',  w: 60, h: 44, inputs: 1, outputs: 1, negated: true  },
+  buffer: { category: 'gate', label: 'BUF',  w: 60, h: 44, inputs: 1, outputs: 1, negated: false }
+};
+
+const PALETTE_LAYOUT = {
+  paletteInputs:  ['switch', 'clock', 'high', 'low'],
+  paletteOutputs: ['bulb'],
+  paletteGates:   ['and', 'nand', 'or', 'nor', 'xor', 'xnor', 'not', 'buffer']
+};
+
+function inputPinPos(def, idx) {
+  if (def.inputs <= 1) return { x: 0, y: def.h / 2 };
+  const step = def.h / (def.inputs + 1);
+  return { x: 0, y: step * (idx + 1) };
+}
+
+function outputPinPos(def) {
+  const bubbleGap = def.negated ? 8 : 0;
+  return { x: def.w + bubbleGap, y: def.h / 2 };
+}
+
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+let components = [];  // {id, type, x, y, state}
+let wires = [];        // {id, fromId, toId, toPin}
+let nextId = 0;
+
+let tool = 'select';   // 'select' | 'wire' | 'delete'
+let placingType = null;
+let clockTimer = null;
+let clockRunning = false;
+
+const values = {};     // componentId -> 0|1, recomputed by simulate()
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function svgPoint(evt) {
+  const svg = document.getElementById('circuitSvg');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const scaleX = vb.width / rect.width;
+  const scaleY = vb.height / rect.height;
+  return {
+    x: (evt.clientX - rect.left) * scaleX,
+    y: (evt.clientY - rect.top) * scaleY
+  };
+}
+
+function componentById(id) { return components.find(c => c.id === id); }
+
+function setHint(text) { document.getElementById('hint').textContent = text; }
+
+// ─────────────────────────────────────────────
+//  Component body rendering (shared by palette icons + canvas)
+// ─────────────────────────────────────────────
+function buildComponentBody(type, state, canvas) {
+  const def = COMPONENT_DEFS[type];
+  const g = svgEl('g', {});
+
+  if (def.category === 'gate') {
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#2a3a6a', stroke: '#5a6a8a', 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#fff' });
+    text.textContent = def.label;
+    g.appendChild(text);
+    if (def.negated) {
+      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: '#0d1b2a', stroke: '#eee', 'stroke-width': 1.5 }));
+    }
+  } else if (type === 'bulb') {
+    const on = state === 1;
+    if (on) g.appendChild(svgEl('circle', { cx: def.w / 2, cy: def.h / 2 - 2, r: 18, fill: '#f0c040', opacity: 0.25 }));
+    g.appendChild(svgEl('circle', { cx: def.w / 2, cy: def.h / 2 - 2, r: 14, fill: on ? '#f0c040' : '#3a3a4a', stroke: on ? '#f8d060' : '#5a6a8a', 'stroke-width': 2 }));
+    g.appendChild(svgEl('rect', { x: def.w / 2 - 6, y: def.h - 10, width: 12, height: 8, rx: 2, fill: '#5a6a8a' }));
+    if (canvas) g.appendChild(labelBelow(def, 'Bulb'));
+  } else if (type === 'switch' || type === 'clock') {
+    const on = state === 1;
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#0f1b33', stroke: on ? '#f0c040' : '#5a6a8a', 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? '#f0c040' : '#aab' });
+    text.textContent = String(state);
+    g.appendChild(text);
+    if (type === 'clock') {
+      g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? '#f0c040' : '#5a6a8a', 'stroke-width': 1.5 }));
+    }
+    if (canvas) g.appendChild(labelBelow(def, def.label));
+  } else if (type === 'high' || type === 'low') {
+    const v = type === 'high' ? 1 : 0;
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#0f1b33', stroke: v ? '#f0c040' : '#5a6a8a', 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? '#f0c040' : '#aab' });
+    text.textContent = String(v);
+    g.appendChild(text);
+  }
+
+  return g;
+}
+
+function labelBelow(def, text) {
+  const t = svgEl('text', { x: def.w / 2, y: def.h + 13, 'text-anchor': 'middle', 'font-size': 9, fill: '#888' });
+  t.textContent = text;
+  return t;
+}
+
+// ─────────────────────────────────────────────
+//  Palette
+// ─────────────────────────────────────────────
+function buildPalette() {
+  for (const containerId in PALETTE_LAYOUT) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    PALETTE_LAYOUT[containerId].forEach(type => {
+      const def = COMPONENT_DEFS[type];
+      const item = document.createElement('div');
+      item.className = 'palette-item';
+      item.dataset.type = type;
+
+      const svg = svgEl('svg', { viewBox: `-6 -6 ${def.w + 16} ${def.h + 12}` });
+      svg.appendChild(buildComponentBody(type, type === 'high' ? 1 : 0, false));
+      item.appendChild(svg);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.textContent = def.label;
+      item.appendChild(lbl);
+
+      item.addEventListener('click', () => selectPaletteItem(type));
+      container.appendChild(item);
+    });
+  }
+}
+
+function selectPaletteItem(type) {
+  placingType = type;
+  setTool('place');
+  document.querySelectorAll('.palette-item').forEach(el => el.classList.toggle('active', el.dataset.type === type));
+  setHint(`Click the canvas to place a ${COMPONENT_DEFS[type].label}.`);
+}
+
+// ─────────────────────────────────────────────
+//  Simulation
+// ─────────────────────────────────────────────
+function gateOutput(type, inputVals) {
+  const a = inputVals[0] || 0, b = inputVals[1] || 0;
+  switch (type) {
+    case 'and':  return (a && b) ? 1 : 0;
+    case 'nand': return (a && b) ? 0 : 1;
+    case 'or':   return (a || b) ? 1 : 0;
+    case 'nor':  return (a || b) ? 0 : 1;
+    case 'xor':  return (a !== b) ? 1 : 0;
+    case 'xnor': return (a !== b) ? 0 : 1;
+    case 'not':  return a ? 0 : 1;
+    case 'buffer': return a ? 1 : 0;
+  }
+  return 0;
+}
+
+function simulate() {
+  for (const id in values) delete values[id];
+
+  components.forEach(c => {
+    if (c.type === 'switch' || c.type === 'clock') values[c.id] = c.state || 0;
+    else if (c.type === 'high') values[c.id] = 1;
+    else if (c.type === 'low') values[c.id] = 0;
+  });
+
+  const gatesAndBulbs = components.filter(c => COMPONENT_DEFS[c.type].category === 'gate' || c.type === 'bulb');
+  gatesAndBulbs.forEach(c => { values[c.id] = 0; });
+
+  for (let iter = 0; iter < 50; iter++) {
+    let changed = false;
+    gatesAndBulbs.forEach(c => {
+      const def = COMPONENT_DEFS[c.type];
+      const inputVals = [];
+      for (let i = 0; i < def.inputs; i++) {
+        const w = wires.find(w => w.toId === c.id && w.toPin === i);
+        inputVals.push(w ? (values[w.fromId] || 0) : 0);
+      }
+      const newVal = (c.type === 'bulb') ? (inputVals[0] || 0) : gateOutput(c.type, inputVals);
+      if (values[c.id] !== newVal) { values[c.id] = newVal; changed = true; }
+    });
+    if (!changed) break;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Wire geometry + rendering
+// ─────────────────────────────────────────────
+function bezierPath(x1, y1, x2, y2) {
+  const dx = Math.max(Math.abs(x2 - x1) / 2, 40);
+  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+}
+
+function deleteWire(id) {
+  wires = wires.filter(w => w.id !== id);
+  renderAll();
+}
+
+function renderWires() {
+  const layer = document.getElementById('wiresLayer');
+  layer.innerHTML = '';
+  wires.forEach(w => {
+    const from = componentById(w.fromId), to = componentById(w.toId);
+    if (!from || !to) return;
+    const op = outputPinPos(COMPONENT_DEFS[from.type]);
+    const ip = inputPinPos(COMPONENT_DEFS[to.type], w.toPin);
+    const x1 = from.x + op.x, y1 = from.y + op.y, x2 = to.x + ip.x, y2 = to.y + ip.y;
+    const on = (values[w.fromId] || 0) === 1;
+    const path = svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: on ? '#f0c040' : '#4a5a7a', 'stroke-width': on ? 3 : 2 });
+    path.style.cursor = tool === 'delete' ? 'pointer' : 'default';
+    path.addEventListener('pointerdown', (ev) => { if (tool === 'delete') { ev.stopPropagation(); deleteWire(w.id); } });
+    layer.appendChild(path);
+  });
+}
+
+function renderWirePreview(x1, y1, x2, y2) {
+  const layer = document.getElementById('previewLayer');
+  layer.innerHTML = '';
+  layer.appendChild(svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
+}
+
+function clearWirePreview() {
+  document.getElementById('previewLayer').innerHTML = '';
+}
+
+// ─────────────────────────────────────────────
+//  Component rendering
+// ─────────────────────────────────────────────
+function renderComponent(comp) {
+  const def = COMPONENT_DEFS[comp.type];
+  const g = svgEl('g', { transform: `translate(${comp.x},${comp.y})` });
+  g.dataset.compId = comp.id;
+  g.style.cursor = tool === 'select' ? 'grab' : (tool === 'delete' ? 'pointer' : 'default');
+
+  const bodyState = comp.type === 'bulb' ? (values[comp.id] || 0) : comp.state;
+  g.appendChild(buildComponentBody(comp.type, bodyState, true));
+
+  for (let i = 0; i < def.inputs; i++) {
+    const p = inputPinPos(def, i);
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1b2a', stroke: '#aab', 'stroke-width': 1.5 });
+    pin.style.cursor = tool === 'wire' ? 'crosshair' : 'default';
+    pin.addEventListener('pointerup', (ev) => { if (tool === 'wire') completeWire(ev, comp.id, i); });
+    g.appendChild(pin);
+  }
+  if (def.outputs > 0) {
+    const p = outputPinPos(def);
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1b2a', stroke: '#f0c040', 'stroke-width': 1.5 });
+    pin.style.cursor = tool === 'wire' ? 'crosshair' : 'default';
+    pin.addEventListener('pointerdown', (ev) => { if (tool === 'wire') { ev.stopPropagation(); startWire(ev, comp.id); } });
+    g.appendChild(pin);
+  }
+
+  g.addEventListener('pointerdown', (ev) => onComponentPointerDown(ev, comp.id));
+  document.getElementById('componentsLayer').appendChild(g);
+}
+
+function renderAll() {
+  simulate();
+  renderWires();
+  const layer = document.getElementById('componentsLayer');
+  layer.innerHTML = '';
+  components.forEach(renderComponent);
+}
+
+// ─────────────────────────────────────────────
+//  Component interaction: select/move/toggle, delete
+// ─────────────────────────────────────────────
+let dragState = null;
+
+function onComponentPointerDown(ev, id) {
+  if (tool === 'wire') return;
+  ev.stopPropagation();
+  if (tool === 'delete') { deleteComponent(id); return; }
+  if (tool !== 'select') return;
+  const comp = componentById(id);
+  const p = svgPoint(ev);
+  dragState = { id, startX: p.x, startY: p.y, origX: comp.x, origY: comp.y, moved: false };
+  window.addEventListener('pointermove', onComponentDragMove);
+  window.addEventListener('pointerup', onComponentDragUp);
+}
+
+function onComponentDragMove(ev) {
+  if (!dragState) return;
+  const p = svgPoint(ev);
+  const dx = p.x - dragState.startX, dy = p.y - dragState.startY;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
+  const comp = componentById(dragState.id);
+  comp.x = dragState.origX + dx;
+  comp.y = dragState.origY + dy;
+  renderAll();
+}
+
+function onComponentDragUp() {
+  window.removeEventListener('pointermove', onComponentDragMove);
+  window.removeEventListener('pointerup', onComponentDragUp);
+  if (dragState && !dragState.moved) {
+    const comp = componentById(dragState.id);
+    if (comp.type === 'switch' || comp.type === 'clock') {
+      comp.state = comp.state ? 0 : 1;
+      renderAll();
+    }
+  }
+  dragState = null;
+}
+
+function deleteComponent(id) {
+  components = components.filter(c => c.id !== id);
+  wires = wires.filter(w => w.fromId !== id && w.toId !== id);
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Wire drawing
+// ─────────────────────────────────────────────
+let wireDraft = null;
+
+function startWire(ev, fromCompId) {
+  const comp = componentById(fromCompId);
+  const p = outputPinPos(COMPONENT_DEFS[comp.type]);
+  wireDraft = { fromId: fromCompId, x1: comp.x + p.x, y1: comp.y + p.y };
+  window.addEventListener('pointermove', onWireDraftMove);
+  window.addEventListener('pointerup', onWireDraftCancel);
+}
+
+function onWireDraftMove(ev) {
+  if (!wireDraft) return;
+  const p = svgPoint(ev);
+  renderWirePreview(wireDraft.x1, wireDraft.y1, p.x, p.y);
+}
+
+function onWireDraftCancel() {
+  window.removeEventListener('pointermove', onWireDraftMove);
+  window.removeEventListener('pointerup', onWireDraftCancel);
+  wireDraft = null;
+  clearWirePreview();
+}
+
+function completeWire(ev, toCompId, toPin) {
+  if (!wireDraft) return;
+  ev.stopPropagation();
+  window.removeEventListener('pointermove', onWireDraftMove);
+  window.removeEventListener('pointerup', onWireDraftCancel);
+  const fromId = wireDraft.fromId;
+  wireDraft = null;
+  clearWirePreview();
+  if (fromId === toCompId) { renderAll(); return; }
+  wires = wires.filter(w => !(w.toId === toCompId && w.toPin === toPin));
+  wires.push({ id: 'w' + (nextId++), fromId, toId: toCompId, toPin });
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Placement
+// ─────────────────────────────────────────────
+function placeComponent(type, x, y) {
+  const comp = { id: 'c' + (nextId++), type, x, y };
+  if (type === 'switch' || type === 'clock') comp.state = 0;
+  components.push(comp);
+  renderAll();
+}
+
+function onSvgClick(ev) {
+  if (tool !== 'place' || !placingType) return;
+  if (ev.target.closest('g[data-comp-id]')) return;
+  const def = COMPONENT_DEFS[placingType];
+  const p = svgPoint(ev);
+  placeComponent(placingType, p.x - def.w / 2, p.y - def.h / 2);
+}
+
+// ─────────────────────────────────────────────
+//  Tool switching
+// ─────────────────────────────────────────────
+const TOOL_HINTS = {
+  select: 'Drag a component to move it. Click a switch or clock to toggle it.',
+  wire: 'Drag from an output pin (gold ring, right side) to an input pin (left side) to connect them.',
+  delete: 'Click a component or a wire to delete it.'
+};
+
+function setTool(t) {
+  tool = t;
+  if (t !== 'place') {
+    placingType = null;
+    document.querySelectorAll('.palette-item').forEach(el => el.classList.remove('active'));
+  }
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  if (TOOL_HINTS[t]) setHint(TOOL_HINTS[t]);
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Clock auto-run
+// ─────────────────────────────────────────────
+function scheduleClockTick() {
+  const period = parseInt(document.getElementById('clockSpeed').value, 10);
+  clockTimer = setTimeout(() => {
+    components.forEach(c => { if (c.type === 'clock') c.state = c.state ? 0 : 1; });
+    renderAll();
+    if (clockRunning) scheduleClockTick();
+  }, period / 2);
+}
+
+function toggleClockRun() {
+  clockRunning = !clockRunning;
+  const btn = document.getElementById('btnClockPlay');
+  if (clockRunning) {
+    btn.textContent = '⏸ Pause';
+    scheduleClockTick();
+  } else {
+    btn.textContent = '▶ Run';
+    clearTimeout(clockTimer);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Save / Load / Clear
+// ─────────────────────────────────────────────
+function saveCircuit() {
+  const data = JSON.stringify({ version: 1, components, wires }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'circuit.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadCircuitFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
+      components = data.components;
+      wires = data.wires;
+      nextId = 0;
+      [...components, ...wires].forEach(o => {
+        const n = parseInt(String(o.id).replace(/\D/g, ''), 10);
+        if (!isNaN(n) && n >= nextId) nextId = n + 1;
+      });
+      setTool('select');
+    } catch (e) {
+      alert("Could not load this file — it doesn't look like a valid circuit.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearCircuit() {
+  if (components.length && !confirm('Clear the whole circuit?')) return;
+  components = [];
+  wires = [];
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+document.getElementById('toolSelect').addEventListener('click', () => setTool('select'));
+document.getElementById('toolWire').addEventListener('click', () => setTool('wire'));
+document.getElementById('toolDelete').addEventListener('click', () => setTool('delete'));
+document.getElementById('btnClockPlay').addEventListener('click', toggleClockRun);
+document.getElementById('clockSpeed').addEventListener('change', () => {
+  if (clockRunning) { clearTimeout(clockTimer); scheduleClockTick(); }
+});
+document.getElementById('btnSave').addEventListener('click', saveCircuit);
+document.getElementById('btnLoad').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', (ev) => {
+  const file = ev.target.files[0];
+  if (file) loadCircuitFile(file);
+  ev.target.value = '';
+});
+document.getElementById('btnClear').addEventListener('click', clearCircuit);
+document.getElementById('circuitSvg').addEventListener('click', onSvgClick);
+
+buildPalette();
+setTool('select');
+</script>
+</body>
+</html>
