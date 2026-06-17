@@ -171,6 +171,33 @@
     .toolbar { gap: 6px; }
     .hint { font-size: 0.78rem; }
   }
+
+  .toolbar-label { font-size: 0.82rem; color: #aaa; }
+
+  /* ── Light theme ── */
+  body.theme-light { background: #f5f7fa; color: #1a2035; }
+  body.theme-light h1 { color: #1e3a8a; }
+  body.theme-light .subtitle { color: #5a6a8a; }
+  body.theme-light .panel { background: #fff; box-shadow: 0 2px 16px rgba(0,0,40,0.07); }
+  body.theme-light .panel-title { color: #7090b0; }
+  body.theme-light .palette-item { background: #f0f5ff; border-color: #c0d0e8; }
+  body.theme-light .palette-item:hover { border-color: #6090d0; }
+  body.theme-light .palette-item.active { border-color: #2563eb; background: rgba(37,99,235,0.08); }
+  body.theme-light .palette-item .lbl { color: #3a5080; }
+  body.theme-light .toolbar-sep { background: #d0dce8; }
+  body.theme-light .toolbar-label { color: #5a6a8a; }
+  body.theme-light .tool-btn { background: #eef4ff; border-color: #c0d0e8; color: #1a2a4a; }
+  body.theme-light .tool-btn:hover { border-color: #6090d0; }
+  body.theme-light .tool-btn.active { border-color: #2563eb; background: rgba(37,99,235,0.08); color: #2563eb; }
+  body.theme-light .btn-secondary { background: #dce8ff; color: #1a2a5a; }
+  body.theme-light .btn-secondary:hover:not(:disabled) { background: #c4d8ff; }
+  body.theme-light .btn-danger { background: #fecaca; color: #7f1d1d; }
+  body.theme-light .btn-danger:hover:not(:disabled) { background: #fca5a5; }
+  body.theme-light .btn-play { background: #bbf7d0; color: #14532d; }
+  body.theme-light .btn-play:hover:not(:disabled) { background: #86efac; }
+  body.theme-light select { background: #f0f5ff; color: #1a2a4a; border-color: #c0d0e8; }
+  body.theme-light .hint { color: #5a6a8a; }
+  body.theme-light #circuitSvg { background: #eef2f9; border-color: #c0d0e8; }
 </style>
 </head>
 <body>
@@ -205,10 +232,15 @@
       <button class="btn btn-secondary" id="btnZoomIn" title="Zoom In">+</button>
       <button class="btn btn-secondary" id="btnZoomReset" title="Reset View">⊙</button>
       <span class="toolbar-sep"></span>
-      <label style="font-size:0.82rem;color:#aaa">Style:</label>
+      <label class="toolbar-label">Style:</label>
       <select id="vizStyle">
         <option value="label">Label</option>
         <option value="ansi" selected>ANSI</option>
+      </select>
+      <label class="toolbar-label">Theme:</label>
+      <select id="pageThemeSelect">
+        <option value="dark" selected>Dark</option>
+        <option value="light">Light</option>
       </select>
 
       <div class="clock-control">
@@ -242,7 +274,7 @@ const COMPONENT_DEFS = {
   clock:  { category: 'input',  label: 'Clock',    w: 56, h: 44, inputs: 0, outputs: 1 },
   high:   { category: 'input',  label: 'High (1)', w: 48, h: 44, inputs: 0, outputs: 1 },
   low:    { category: 'input',  label: 'Low (0)',  w: 48, h: 44, inputs: 0, outputs: 1 },
-  bulb:   { category: 'output', label: 'Bulb',     w: 44, h: 44, inputs: 1, outputs: 0 },
+  bulb:   { category: 'output', label: 'Bulb',     w: 52, h: 70, inputs: 1, outputs: 0, pinBottom: true },
   and:    { category: 'gate', label: 'AND',  w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
   nand:   { category: 'gate', label: 'NAND', w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
   or:     { category: 'gate', label: 'OR',   w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
@@ -271,6 +303,7 @@ const ANSI_GATE_PATHS = {
 };
 
 function inputPinPos(def, idx) {
+  if (def.pinBottom) return { x: def.w / 2, y: def.h };
   if (def.inputs <= 1) return { x: 0, y: def.h / 2 };
   const step = def.h / (def.inputs + 1);
   return { x: 0, y: step * (idx + 1) };
@@ -304,6 +337,7 @@ let clockRunning = false;
 let vbX = 0, vbY = 0, vbW = 1040, vbH = 600;
 const svgPtrs = new Map();
 let prevPinch = null;
+let pageTheme = 'dark';
 
 const values = {};     // componentId -> 0|1, recomputed by simulate()
 
@@ -341,6 +375,8 @@ function zoomBy(factor, cx, cy) {
 
 function componentById(id) { return components.find(c => c.id === id); }
 
+function tc(dark, light) { return pageTheme === 'light' ? light : dark; }
+
 function setHint(text) { document.getElementById('hint').textContent = text; }
 
 // ─────────────────────────────────────────────
@@ -352,49 +388,50 @@ function buildComponentBody(type, state, canvas) {
 
   if (def.category === 'gate') {
     if (visualTheme === 'ansi' && ANSI_GATE_PATHS[type]) {
-      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: '#1e2d54', stroke: '#8a9aba', 'stroke-width': 2 }));
+      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#dce8ff'), stroke: tc('#8a9aba','#2563eb'), 'stroke-width': 2 }));
       if (type === 'xor' || type === 'xnor') {
-        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: '#8a9aba', 'stroke-width': 2 }));
+        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#2563eb'), 'stroke-width': 2 }));
       }
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#2a3a6a', stroke: '#5a6a8a', 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#fff' });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#e8efff'), stroke: tc('#5a6a8a','#4a7ad0'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#1a2a5a') });
       text.textContent = def.label;
       g.appendChild(text);
     }
     if (def.negated) {
-      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: '#0d1b2a', stroke: '#eee', 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#f0f4f8'), stroke: tc('#eee','#4a7ad0'), 'stroke-width': 1.5 }));
     }
   } else if (type === 'bulb') {
     const on = state === 1;
-    if (on) g.appendChild(svgEl('circle', { cx: def.w / 2, cy: def.h / 2 - 2, r: 18, fill: '#f0c040', opacity: 0.25 }));
-    g.appendChild(svgEl('circle', { cx: def.w / 2, cy: def.h / 2 - 2, r: 14, fill: on ? '#f0c040' : '#3a3a4a', stroke: on ? '#f8d060' : '#5a6a8a', 'stroke-width': 2 }));
-    g.appendChild(svgEl('rect', { x: def.w / 2 - 6, y: def.h - 10, width: 12, height: 8, rx: 2, fill: '#5a6a8a' }));
+    const cx = def.w / 2, cr = cx - 4, cy = cr + 4;
+    if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: tc('#f0c040','#f59e0b'), opacity: '0.18' }));
+    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#fde68a') : tc('#3a3a4a','#e2e8f0'), stroke: on ? tc('#f8d060','#f59e0b') : tc('#5a6a8a','#94a3b8'), 'stroke-width': 2 }));
+    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#94a3b8') }));
     if (canvas) g.appendChild(labelBelow(def, 'Bulb'));
   } else if (type === 'switch' || type === 'clock') {
     const on = state === 1;
     if (visualTheme === 'ansi' && type === 'switch') {
-      const trackCol = on ? '#1e4a2a' : '#1a2a40';
-      const knobCol = on ? '#4caf50' : '#8a9aba';
-      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? '#4caf50' : '#4a5a7a', 'stroke-width': 1.5 }));
-      g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: '#ccc', 'stroke-width': 1.2 }));
-      const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#fff' });
+      const trackCol = on ? tc('#1e4a2a','#bbf7d0') : tc('#1a2a40','#d0dbe8');
+      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#94a3b8');
+      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#a0b0c0'), 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: tc('#ccc','#fff'), 'stroke-width': 1.2 }));
+      const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: tc('#fff', on ? '#fff' : '#444') });
       knobLbl.textContent = on ? '1' : '0';
       g.appendChild(knobLbl);
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#0f1b33', stroke: on ? '#f0c040' : '#5a6a8a', 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? '#f0c040' : '#aab' });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#f0f4ff'), stroke: on ? tc('#f0c040','#2563eb') : tc('#5a6a8a','#94a3b8'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#1d4ed8') : tc('#aab','#64748b') });
       text.textContent = String(state);
       g.appendChild(text);
       if (type === 'clock') {
-        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? '#f0c040' : '#5a6a8a', 'stroke-width': 1.5 }));
+        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? tc('#f0c040','#2563eb') : tc('#5a6a8a','#94a3b8'), 'stroke-width': 1.5 }));
       }
     }
     if (canvas) g.appendChild(labelBelow(def, def.label));
   } else if (type === 'high' || type === 'low') {
     const v = type === 'high' ? 1 : 0;
-    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: '#0f1b33', stroke: v ? '#f0c040' : '#5a6a8a', 'stroke-width': 2 }));
-    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? '#f0c040' : '#aab' });
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#f0f4ff'), stroke: v ? tc('#f0c040','#f59e0b') : tc('#5a6a8a','#94a3b8'), 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#f59e0b') : tc('#aab','#64748b') });
     text.textContent = String(v);
     g.appendChild(text);
   }
@@ -497,21 +534,32 @@ function bezierPath(x1, y1, x2, y2) {
   return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 }
 
+function wireBezier(x1, y1, x2, y2, pinBottom) {
+  if (pinBottom) {
+    const dy = Math.max(Math.abs(y2 - y1) / 2, 50);
+    const dx = Math.max(Math.abs(x2 - x1) / 3, 30);
+    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+  }
+  return bezierPath(x1, y1, x2, y2);
+}
+
 function renderWires() {
   const layer = document.getElementById('wiresLayer');
   layer.innerHTML = '';
   wires.forEach(w => {
     const from = componentById(w.fromId), to = componentById(w.toId);
     if (!from || !to) return;
-    const op = outputPinPos(COMPONENT_DEFS[from.type]);
-    const ip = inputPinPos(COMPONENT_DEFS[to.type], w.toPin);
+    const fromDef = COMPONENT_DEFS[from.type], toDef = COMPONENT_DEFS[to.type];
+    const op = outputPinPos(fromDef);
+    const ip = inputPinPos(toDef, w.toPin);
     const x1 = from.x + op.x, y1 = from.y + op.y, x2 = to.x + ip.x, y2 = to.y + ip.y;
     const on = (values[w.fromId] || 0) === 1;
-    const trueCol = visualTheme === 'ansi' ? '#4caf50' : '#f0c040';
+    const trueCol = tc(visualTheme === 'ansi' ? '#4caf50' : '#f0c040', '#16a34a');
     const sel = selectedWireIds.has(w.id);
-    const stroke = sel ? '#4a9eff' : (on ? trueCol : '#4a5a7a');
-    layer.appendChild(svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke, 'stroke-width': (sel || on) ? 3 : 2 }));
-    const hit = svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: 'transparent', 'stroke-width': 12 });
+    const stroke = sel ? tc('#4a9eff','#2563eb') : (on ? trueCol : tc('#4a5a7a','#94a3b8'));
+    const d = wireBezier(x1, y1, x2, y2, toDef.pinBottom);
+    layer.appendChild(svgEl('path', { d, fill: 'none', stroke, 'stroke-width': (sel || on) ? 3 : 2 }));
+    const hit = svgEl('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 12 });
     hit.style.cursor = 'pointer';
     hit.addEventListener('pointerdown', (ev) => {
       ev.stopPropagation();
@@ -529,7 +577,7 @@ function renderWires() {
 function renderWirePreview(x1, y1, x2, y2) {
   const layer = document.getElementById('previewLayer');
   layer.innerHTML = '';
-  layer.appendChild(svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
+  layer.appendChild(svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: tc('#f0c040','#2563eb'), 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
 }
 
 function clearWirePreview() {
@@ -547,7 +595,7 @@ function renderComponent(comp) {
 
   if (selectedIds.has(comp.id)) {
     g.appendChild(svgEl('rect', { x: -5, y: -5, width: def.w + 10, height: def.h + 10, rx: 12,
-      fill: 'none', stroke: '#4a9eff', 'stroke-width': 2, 'stroke-dasharray': '5 3' }));
+      fill: 'none', stroke: tc('#4a9eff','#2563eb'), 'stroke-width': 2, 'stroke-dasharray': '5 3' }));
   }
 
   const bodyState = comp.type === 'bulb' ? (values[comp.id] || 0) : comp.state;
@@ -555,14 +603,14 @@ function renderComponent(comp) {
 
   for (let i = 0; i < def.inputs; i++) {
     const p = inputPinPos(def, i);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: '#0d1b2a', stroke: '#aab', 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#eef2f9'), stroke: tc('#aab','#6080a0'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
     g.appendChild(pin);
   }
   if (def.outputs > 0) {
     const p = outputPinPos(def);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: '#0d1b2a', stroke: '#f0c040', 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#eef2f9'), stroke: tc('#f0c040','#f59e0b'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); startWire(ev, comp.id); });
     g.appendChild(pin);
@@ -907,6 +955,7 @@ function clearCircuit() {
 //  Init
 // ─────────────────────────────────────────────
 document.getElementById('vizStyle').addEventListener('change', (ev) => { visualTheme = ev.target.value; buildPalette(); renderAll(); });
+document.getElementById('pageThemeSelect').addEventListener('change', (ev) => { pageTheme = ev.target.value; document.body.classList.toggle('theme-light', pageTheme === 'light'); buildPalette(); renderAll(); });
 document.getElementById('btnClockPlay').addEventListener('click', toggleClockRun);
 document.getElementById('clockSpeed').addEventListener('change', () => { if (clockRunning) { clearTimeout(clockTimer); scheduleClockTick(); } });
 document.getElementById('btnSave').addEventListener('click', saveCircuit);
