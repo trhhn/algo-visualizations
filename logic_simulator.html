@@ -92,7 +92,7 @@
   }
 
   .tool-btn {
-    padding: 8px 14px;
+    padding: 10px 14px;
     border: 2px solid #2a3a5a;
     border-radius: 8px;
     background: #0f1b33;
@@ -107,7 +107,7 @@
   .tool-btn.active { border-color: #f0c040; background: rgba(240,192,64,0.12); color: #f0c040; }
 
   .btn {
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: none;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -130,7 +130,7 @@
     color: #eee;
     border: 2px solid #2a3a5a;
     border-radius: 8px;
-    padding: 7px 10px;
+    padding: 9px 10px;
     font-size: 0.85rem;
   }
 
@@ -189,7 +189,7 @@
       <label style="font-size:0.82rem;color:#aaa">Style:</label>
       <select id="vizStyle">
         <option value="label">Label</option>
-        <option value="ansi">ANSI</option>
+        <option value="ansi" selected>ANSI</option>
       </select>
 
       <div class="clock-control">
@@ -270,7 +270,7 @@ let wires = [];        // {id, fromId, toId, toPin}
 let nextId = 0;
 
 let tool = 'select';   // 'select' | 'place'
-let visualTheme = 'label'; // 'label' | 'ansi'
+let visualTheme = 'ansi'; // 'label' | 'ansi'
 let selectedIds = new Set();
 let selectedWireIds = new Set();
 let clipboard = null;
@@ -278,6 +278,8 @@ let selectionDrag = null;
 let dragState = null;
 let wireDraft = null;
 let placingType = null;
+let history = [];
+let historyIndex = -1;
 let clockTimer = null;
 let clockRunning = false;
 
@@ -577,18 +579,28 @@ function onComponentDragMove(ev) {
 function onComponentDragUp() {
   window.removeEventListener('pointermove', onComponentDragMove);
   window.removeEventListener('pointerup', onComponentDragUp);
-  if (dragState && !dragState.moved && dragState.snapshot.length === 1) {
-    const comp = componentById(dragState.snapshot[0].id);
-    if (comp && (comp.type === 'switch' || comp.type === 'clock')) { comp.state = comp.state ? 0 : 1; renderAll(); }
+  if (dragState) {
+    if (dragState.moved) {
+      pushHistory();
+    } else if (dragState.snapshot.length === 1) {
+      const comp = componentById(dragState.snapshot[0].id);
+      if (comp && (comp.type === 'switch' || comp.type === 'clock')) {
+        comp.state = comp.state ? 0 : 1;
+        pushHistory();
+        renderAll();
+      }
+    }
   }
   dragState = null;
 }
 
 function deleteSelected() {
+  if (selectedIds.size === 0 && selectedWireIds.size === 0) return;
   const delIds = new Set(selectedIds);
   components = components.filter(c => !delIds.has(c.id));
   wires = wires.filter(w => !selectedWireIds.has(w.id) && !delIds.has(w.fromId) && !delIds.has(w.toId));
   selectedIds.clear(); selectedWireIds.clear();
+  pushHistory();
   renderAll();
 }
 
@@ -653,7 +665,53 @@ function paste() {
     .map(w => ({ id: 'w' + (nextId++), fromId: idMap[w.fromId], toId: idMap[w.toId], toPin: w.toPin }));
   components.push(...newComps); wires.push(...newWires);
   selectedIds = new Set(newComps.map(c => c.id)); selectedWireIds.clear();
+  pushHistory();
   renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Undo / Redo
+// ─────────────────────────────────────────────
+function pushHistory() {
+  history = history.slice(0, historyIndex + 1);
+  history.push({ components: JSON.parse(JSON.stringify(components)), wires: JSON.parse(JSON.stringify(wires)) });
+  historyIndex++;
+  if (history.length > 100) { history.shift(); historyIndex--; }
+}
+
+function undo() {
+  if (historyIndex <= 0) return;
+  historyIndex--;
+  const s = history[historyIndex];
+  components = JSON.parse(JSON.stringify(s.components));
+  wires = JSON.parse(JSON.stringify(s.wires));
+  selectedIds.clear(); selectedWireIds.clear();
+  if (wireDraft) cancelWireDraft();
+  renderAll();
+}
+
+function redo() {
+  if (historyIndex >= history.length - 1) return;
+  historyIndex++;
+  const s = history[historyIndex];
+  components = JSON.parse(JSON.stringify(s.components));
+  wires = JSON.parse(JSON.stringify(s.wires));
+  selectedIds.clear(); selectedWireIds.clear();
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  Placement preview
+// ─────────────────────────────────────────────
+function renderPlacePreview(ev) {
+  const layer = document.getElementById('previewLayer');
+  layer.innerHTML = '';
+  if (!placingType) return;
+  const def = COMPONENT_DEFS[placingType];
+  const p = svgPoint(ev);
+  const g = svgEl('g', { transform: `translate(${p.x - def.w / 2},${p.y - def.h / 2})`, opacity: '0.45', 'pointer-events': 'none' });
+  g.appendChild(buildComponentBody(placingType, 0, true));
+  layer.appendChild(g);
 }
 
 // ─────────────────────────────────────────────
@@ -691,6 +749,7 @@ function completeWire(ev, toCompId, toPin) {
   if (fromId === toCompId) return;
   wires = wires.filter(w => !(w.toId === toCompId && w.toPin === toPin));
   wires.push({ id: 'w' + (nextId++), fromId, toId: toCompId, toPin });
+  pushHistory();
   renderAll();
 }
 
@@ -701,6 +760,7 @@ function placeComponent(type, x, y) {
   const comp = { id: 'c' + (nextId++), type, x, y };
   if (type === 'switch' || type === 'clock') comp.state = 0;
   components.push(comp);
+  pushHistory();
   renderAll();
 }
 
@@ -711,6 +771,7 @@ function onSvgClick(ev) {
   const def = COMPONENT_DEFS[placingType];
   const p = svgPoint(ev);
   placeComponent(placingType, p.x - def.w / 2, p.y - def.h / 2);
+  if (!ev.shiftKey) setTool('select');
 }
 
 // ─────────────────────────────────────────────
@@ -726,6 +787,7 @@ function setTool(t) {
   if (t !== 'place') {
     placingType = null;
     document.querySelectorAll('.palette-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('previewLayer').innerHTML = '';
   }
   if (TOOL_HINTS[t]) setHint(TOOL_HINTS[t]);
   renderAll();
@@ -777,6 +839,8 @@ function loadCircuitFile(file) {
       if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
       components = data.components;
       wires = data.wires;
+      history = []; historyIndex = -1;
+      pushHistory();
       selectedIds.clear(); selectedWireIds.clear();
       nextId = 0;
       [...components, ...wires].forEach(o => {
@@ -796,6 +860,8 @@ function clearCircuit() {
   if (wireDraft) cancelWireDraft();
   components = []; wires = [];
   selectedIds.clear(); selectedWireIds.clear();
+  history = []; historyIndex = -1;
+  pushHistory();
   renderAll();
 }
 
@@ -828,10 +894,19 @@ document.addEventListener('keydown', (ev) => {
     selectedIds = new Set(components.map(c => c.id));
     selectedWireIds = new Set(wires.map(w => w.id));
     renderAll();
+  } else if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && ev.key === 'z') {
+    ev.preventDefault(); undo();
+  } else if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'y' || (ev.shiftKey && ev.key === 'z'))) {
+    ev.preventDefault(); redo();
   }
 });
 
+document.getElementById('circuitSvg').addEventListener('pointermove', (ev) => {
+  if (tool === 'place' && placingType) renderPlacePreview(ev);
+});
+
 buildPalette();
+pushHistory();
 setTool('select');
 </script>
 </body>
