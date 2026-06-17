@@ -175,29 +175,29 @@
   .toolbar-label { font-size: 0.82rem; color: #aaa; }
 
   /* ── Light theme ── */
-  body.theme-light { background: #f5f7fa; color: #1a2035; }
-  body.theme-light h1 { color: #1e3a8a; }
+  body.theme-light { background: #e8ecf3; color: #1a2035; }
+  body.theme-light h1 { color: #2a4a8a; }
   body.theme-light .subtitle { color: #5a6a8a; }
-  body.theme-light .panel { background: #fff; box-shadow: 0 2px 16px rgba(0,0,40,0.07); }
-  body.theme-light .panel-title { color: #7090b0; }
-  body.theme-light .palette-item { background: #f0f5ff; border-color: #c0d0e8; }
-  body.theme-light .palette-item:hover { border-color: #6090d0; }
-  body.theme-light .palette-item.active { border-color: #2563eb; background: rgba(37,99,235,0.08); }
-  body.theme-light .palette-item .lbl { color: #3a5080; }
-  body.theme-light .toolbar-sep { background: #d0dce8; }
+  body.theme-light .panel { background: #f2f5fa; box-shadow: 0 2px 16px rgba(0,0,40,0.08); }
+  body.theme-light .panel-title { color: #6a86a8; }
+  body.theme-light .palette-item { background: #e6ecf6; border-color: #b8cce0; }
+  body.theme-light .palette-item:hover { border-color: #5a80c0; }
+  body.theme-light .palette-item.active { border-color: #2563eb; background: rgba(37,99,235,0.1); }
+  body.theme-light .palette-item .lbl { color: #3a5070; }
+  body.theme-light .toolbar-sep { background: #c4d0e0; }
   body.theme-light .toolbar-label { color: #5a6a8a; }
-  body.theme-light .tool-btn { background: #eef4ff; border-color: #c0d0e8; color: #1a2a4a; }
-  body.theme-light .tool-btn:hover { border-color: #6090d0; }
-  body.theme-light .tool-btn.active { border-color: #2563eb; background: rgba(37,99,235,0.08); color: #2563eb; }
-  body.theme-light .btn-secondary { background: #dce8ff; color: #1a2a5a; }
-  body.theme-light .btn-secondary:hover:not(:disabled) { background: #c4d8ff; }
-  body.theme-light .btn-danger { background: #fecaca; color: #7f1d1d; }
-  body.theme-light .btn-danger:hover:not(:disabled) { background: #fca5a5; }
-  body.theme-light .btn-play { background: #bbf7d0; color: #14532d; }
-  body.theme-light .btn-play:hover:not(:disabled) { background: #86efac; }
-  body.theme-light select { background: #f0f5ff; color: #1a2a4a; border-color: #c0d0e8; }
+  body.theme-light .tool-btn { background: #e4eaf6; border-color: #b8cce0; color: #1a2a4a; }
+  body.theme-light .tool-btn:hover { border-color: #5a80c0; }
+  body.theme-light .tool-btn.active { border-color: #2563eb; background: rgba(37,99,235,0.1); color: #2563eb; }
+  body.theme-light .btn-secondary { background: #cddaf0; color: #1a2a5a; }
+  body.theme-light .btn-secondary:hover:not(:disabled) { background: #bccce8; }
+  body.theme-light .btn-danger { background: #f4c4c4; color: #7f1d1d; }
+  body.theme-light .btn-danger:hover:not(:disabled) { background: #ecb0b0; }
+  body.theme-light .btn-play { background: #aeeacb; color: #14532d; }
+  body.theme-light .btn-play:hover:not(:disabled) { background: #96ddb8; }
+  body.theme-light select { background: #e6ecf6; color: #1a2a4a; border-color: #b8cce0; }
   body.theme-light .hint { color: #5a6a8a; }
-  body.theme-light #circuitSvg { background: #eef2f9; border-color: #c0d0e8; }
+  body.theme-light #circuitSvg { background: #dce4f0; border-color: #b8cce0; }
 </style>
 </head>
 <body>
@@ -605,6 +605,7 @@ function renderComponent(comp) {
     const p = inputPinPos(def, i);
     const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#eef2f9'), stroke: tc('#aab','#6080a0'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
+    pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
     g.appendChild(pin);
   }
@@ -612,6 +613,7 @@ function renderComponent(comp) {
     const p = outputPinPos(def);
     const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#eef2f9'), stroke: tc('#f0c040','#f59e0b'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
+    pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); startWire(ev, comp.id); });
     g.appendChild(pin);
   }
