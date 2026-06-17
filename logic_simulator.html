@@ -181,10 +181,6 @@
 
   <div class="panel">
     <div class="toolbar">
-      <button class="tool-btn active" data-tool="select" id="toolSelect">🖐 Select / Move</button>
-      <button class="tool-btn" data-tool="wire" id="toolWire">→ Wire</button>
-      <button class="tool-btn" data-tool="delete" id="toolDelete">🗑 Delete</button>
-      <span class="toolbar-sep"></span>
       <button class="btn btn-secondary" id="btnSave">💾 Save</button>
       <button class="btn btn-secondary" id="btnLoad">📂 Load</button>
       <button class="btn btn-danger" id="btnClear">Clear</button>
@@ -273,8 +269,14 @@ let components = [];  // {id, type, x, y, state}
 let wires = [];        // {id, fromId, toId, toPin}
 let nextId = 0;
 
-let tool = 'select';   // 'select' | 'wire' | 'delete'
+let tool = 'select';   // 'select' | 'place'
 let visualTheme = 'label'; // 'label' | 'ansi'
+let selectedIds = new Set();
+let selectedWireIds = new Set();
+let clipboard = null;
+let selectionDrag = null;
+let dragState = null;
+let wireDraft = null;
 let placingType = null;
 let clockTimer = null;
 let clockRunning = false;
@@ -457,11 +459,6 @@ function bezierPath(x1, y1, x2, y2) {
   return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 }
 
-function deleteWire(id) {
-  wires = wires.filter(w => w.id !== id);
-  renderAll();
-}
-
 function renderWires() {
   const layer = document.getElementById('wiresLayer');
   layer.innerHTML = '';
@@ -473,10 +470,21 @@ function renderWires() {
     const x1 = from.x + op.x, y1 = from.y + op.y, x2 = to.x + ip.x, y2 = to.y + ip.y;
     const on = (values[w.fromId] || 0) === 1;
     const trueCol = visualTheme === 'ansi' ? '#4caf50' : '#f0c040';
-    const path = svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: on ? trueCol : '#4a5a7a', 'stroke-width': on ? 3 : 2 });
-    path.style.cursor = tool === 'delete' ? 'pointer' : 'default';
-    path.addEventListener('pointerdown', (ev) => { if (tool === 'delete') { ev.stopPropagation(); deleteWire(w.id); } });
-    layer.appendChild(path);
+    const sel = selectedWireIds.has(w.id);
+    const stroke = sel ? '#4a9eff' : (on ? trueCol : '#4a5a7a');
+    layer.appendChild(svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke, 'stroke-width': (sel || on) ? 3 : 2 }));
+    const hit = svgEl('path', { d: bezierPath(x1, y1, x2, y2), fill: 'none', stroke: 'transparent', 'stroke-width': 12 });
+    hit.style.cursor = 'pointer';
+    hit.addEventListener('pointerdown', (ev) => {
+      ev.stopPropagation();
+      if (ev.shiftKey) {
+        if (selectedWireIds.has(w.id)) selectedWireIds.delete(w.id); else selectedWireIds.add(w.id);
+      } else {
+        selectedIds.clear(); selectedWireIds.clear(); selectedWireIds.add(w.id);
+      }
+      renderAll();
+    });
+    layer.appendChild(hit);
   });
 }
 
@@ -497,23 +505,28 @@ function renderComponent(comp) {
   const def = COMPONENT_DEFS[comp.type];
   const g = svgEl('g', { transform: `translate(${comp.x},${comp.y})` });
   g.dataset.compId = comp.id;
-  g.style.cursor = tool === 'select' ? 'grab' : (tool === 'delete' ? 'pointer' : 'default');
+  g.style.cursor = wireDraft ? 'default' : 'grab';
+
+  if (selectedIds.has(comp.id)) {
+    g.appendChild(svgEl('rect', { x: -5, y: -5, width: def.w + 10, height: def.h + 10, rx: 12,
+      fill: 'none', stroke: '#4a9eff', 'stroke-width': 2, 'stroke-dasharray': '5 3' }));
+  }
 
   const bodyState = comp.type === 'bulb' ? (values[comp.id] || 0) : comp.state;
   g.appendChild(buildComponentBody(comp.type, bodyState, true));
 
   for (let i = 0; i < def.inputs; i++) {
     const p = inputPinPos(def, i);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1b2a', stroke: '#aab', 'stroke-width': 1.5 });
-    pin.style.cursor = tool === 'wire' ? 'crosshair' : 'default';
-    pin.addEventListener('click', (ev) => { if (tool === 'wire') completeWire(ev, comp.id, i); });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: '#0d1b2a', stroke: '#aab', 'stroke-width': 1.5 });
+    pin.style.cursor = 'crosshair';
+    pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
     g.appendChild(pin);
   }
   if (def.outputs > 0) {
     const p = outputPinPos(def);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 5, fill: '#0d1b2a', stroke: '#f0c040', 'stroke-width': 1.5 });
-    pin.style.cursor = tool === 'wire' ? 'crosshair' : 'default';
-    pin.addEventListener('click', (ev) => { if (tool === 'wire') startWire(ev, comp.id); });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: '#0d1b2a', stroke: '#f0c040', 'stroke-width': 1.5 });
+    pin.style.cursor = 'crosshair';
+    pin.addEventListener('click', (ev) => { ev.stopPropagation(); startWire(ev, comp.id); });
     g.appendChild(pin);
   }
 
@@ -532,16 +545,20 @@ function renderAll() {
 // ─────────────────────────────────────────────
 //  Component interaction: select/move/toggle, delete
 // ─────────────────────────────────────────────
-let dragState = null;
-
 function onComponentPointerDown(ev, id) {
-  if (tool === 'wire') return;
+  if (wireDraft || tool === 'place') return;
   ev.stopPropagation();
-  if (tool === 'delete') { deleteComponent(id); return; }
-  if (tool !== 'select') return;
-  const comp = componentById(id);
   const p = svgPoint(ev);
-  dragState = { id, startX: p.x, startY: p.y, origX: comp.x, origY: comp.y, moved: false };
+  if (ev.shiftKey) {
+    if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+    renderAll(); return;
+  }
+  if (!selectedIds.has(id)) {
+    selectedIds.clear(); selectedWireIds.clear();
+    selectedIds.add(id); renderAll();
+  }
+  const snapshot = [...selectedIds].map(sid => { const c = componentById(sid); return { id: sid, origX: c.x, origY: c.y }; });
+  dragState = { startX: p.x, startY: p.y, snapshot, moved: false };
   window.addEventListener('pointermove', onComponentDragMove);
   window.addEventListener('pointerup', onComponentDragUp);
 }
@@ -550,44 +567,107 @@ function onComponentDragMove(ev) {
   if (!dragState) return;
   const p = svgPoint(ev);
   const dx = p.x - dragState.startX, dy = p.y - dragState.startY;
-  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
-  const comp = componentById(dragState.id);
-  comp.x = dragState.origX + dx;
-  comp.y = dragState.origY + dy;
-  renderAll();
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragState.moved = true;
+  if (dragState.moved) {
+    dragState.snapshot.forEach(m => { const c = componentById(m.id); if (c) { c.x = m.origX + dx; c.y = m.origY + dy; } });
+    renderAll();
+  }
 }
 
 function onComponentDragUp() {
   window.removeEventListener('pointermove', onComponentDragMove);
   window.removeEventListener('pointerup', onComponentDragUp);
-  if (dragState && !dragState.moved) {
-    const comp = componentById(dragState.id);
-    if (comp.type === 'switch' || comp.type === 'clock') {
-      comp.state = comp.state ? 0 : 1;
-      renderAll();
-    }
+  if (dragState && !dragState.moved && dragState.snapshot.length === 1) {
+    const comp = componentById(dragState.snapshot[0].id);
+    if (comp && (comp.type === 'switch' || comp.type === 'clock')) { comp.state = comp.state ? 0 : 1; renderAll(); }
   }
   dragState = null;
 }
 
-function deleteComponent(id) {
-  components = components.filter(c => c.id !== id);
-  wires = wires.filter(w => w.fromId !== id && w.toId !== id);
+function deleteSelected() {
+  const delIds = new Set(selectedIds);
+  components = components.filter(c => !delIds.has(c.id));
+  wires = wires.filter(w => !selectedWireIds.has(w.id) && !delIds.has(w.fromId) && !delIds.has(w.toId));
+  selectedIds.clear(); selectedWireIds.clear();
+  renderAll();
+}
+
+function onSvgPointerDown(ev) {
+  if (wireDraft) return;
+  if (ev.target.closest('g[data-comp-id]')) return;
+  if (tool === 'place') return;
+  const p = svgPoint(ev);
+  selectionDrag = { x0: p.x, y0: p.y, x: p.x, y: p.y, w: 0, h: 0 };
+  window.addEventListener('pointermove', onSelectionDragMove);
+  window.addEventListener('pointerup', onSelectionDragUp);
+}
+
+function onSelectionDragMove(ev) {
+  if (!selectionDrag) return;
+  const p = svgPoint(ev);
+  selectionDrag.x = Math.min(p.x, selectionDrag.x0); selectionDrag.y = Math.min(p.y, selectionDrag.y0);
+  selectionDrag.w = Math.abs(p.x - selectionDrag.x0); selectionDrag.h = Math.abs(p.y - selectionDrag.y0);
+  const layer = document.getElementById('previewLayer');
+  layer.innerHTML = '';
+  if (selectionDrag.w > 4 || selectionDrag.h > 4) {
+    layer.appendChild(svgEl('rect', { x: selectionDrag.x, y: selectionDrag.y, width: selectionDrag.w, height: selectionDrag.h,
+      fill: 'rgba(74,158,255,0.08)', stroke: '#4a9eff', 'stroke-width': 1, 'stroke-dasharray': '4 2' }));
+  }
+}
+
+function onSelectionDragUp(ev) {
+  window.removeEventListener('pointermove', onSelectionDragMove);
+  window.removeEventListener('pointerup', onSelectionDragUp);
+  if (!selectionDrag) return;
+  const r = selectionDrag; selectionDrag = null;
+  document.getElementById('previewLayer').innerHTML = '';
+  if (r.w > 6 || r.h > 6) {
+    if (!ev.shiftKey) { selectedIds.clear(); selectedWireIds.clear(); }
+    components.forEach(c => {
+      const def = COMPONENT_DEFS[c.type];
+      if (c.x >= r.x && c.x + def.w <= r.x + r.w && c.y >= r.y && c.y + def.h <= r.y + r.h) selectedIds.add(c.id);
+    });
+  } else if (!ev.shiftKey) { selectedIds.clear(); selectedWireIds.clear(); }
+  renderAll();
+}
+
+function copySelected() {
+  const selComps = components.filter(c => selectedIds.has(c.id));
+  if (!selComps.length) return;
+  const selIdSet = new Set(selComps.map(c => c.id));
+  const minX = Math.min(...selComps.map(c => c.x)), minY = Math.min(...selComps.map(c => c.y));
+  clipboard = {
+    components: selComps.map(c => ({ ...c, x: c.x - minX, y: c.y - minY })),
+    wires: wires.filter(w => selIdSet.has(w.fromId) && selIdSet.has(w.toId)).map(w => ({ ...w }))
+  };
+}
+
+function paste() {
+  if (!clipboard) return;
+  const idMap = {};
+  const newComps = clipboard.components.map(c => {
+    const newId = 'c' + (nextId++); idMap[c.id] = newId;
+    return { ...c, id: newId, x: c.x + 40, y: c.y + 40 };
+  });
+  const newWires = clipboard.wires.filter(w => idMap[w.fromId] && idMap[w.toId])
+    .map(w => ({ id: 'w' + (nextId++), fromId: idMap[w.fromId], toId: idMap[w.toId], toPin: w.toPin }));
+  components.push(...newComps); wires.push(...newWires);
+  selectedIds = new Set(newComps.map(c => c.id)); selectedWireIds.clear();
   renderAll();
 }
 
 // ─────────────────────────────────────────────
 //  Wire drawing
 // ─────────────────────────────────────────────
-let wireDraft = null;
-
 function startWire(ev, fromCompId) {
   ev.stopPropagation();
+  document.getElementById('circuitSvg').removeEventListener('pointermove', onWireDraftMove);
+  clearWirePreview();
   const comp = componentById(fromCompId);
   const p = outputPinPos(COMPONENT_DEFS[comp.type]);
   wireDraft = { fromId: fromCompId, x1: comp.x + p.x, y1: comp.y + p.y };
   document.getElementById('circuitSvg').addEventListener('pointermove', onWireDraftMove);
-  setHint('Click an input pin (grey ring, left side) to connect, or click the canvas to cancel.');
+  setHint('Click an input pin to connect · click elsewhere to cancel');
 }
 
 function onWireDraftMove(ev) {
@@ -600,7 +680,7 @@ function cancelWireDraft() {
   document.getElementById('circuitSvg').removeEventListener('pointermove', onWireDraftMove);
   wireDraft = null;
   clearWirePreview();
-  if (tool === 'wire') setHint(TOOL_HINTS['wire']);
+  setHint(TOOL_HINTS.select);
 }
 
 function completeWire(ev, toCompId, toPin) {
@@ -637,9 +717,7 @@ function onSvgClick(ev) {
 //  Tool switching
 // ─────────────────────────────────────────────
 const TOOL_HINTS = {
-  select: 'Drag a component to move it. Click a switch or clock to toggle it.',
-  wire: 'Click an output pin (gold ring, right side), then click an input pin (left side) to connect. Click elsewhere to cancel.',
-  delete: 'Click a component or a wire to delete it.'
+  select: 'Click to select · Shift+click multi-select · Drag to move · Click output pin (gold) to wire · Del to delete'
 };
 
 function setTool(t) {
@@ -649,7 +727,6 @@ function setTool(t) {
     placingType = null;
     document.querySelectorAll('.palette-item').forEach(el => el.classList.remove('active'));
   }
-  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
   if (TOOL_HINTS[t]) setHint(TOOL_HINTS[t]);
   renderAll();
 }
@@ -700,6 +777,7 @@ function loadCircuitFile(file) {
       if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
       components = data.components;
       wires = data.wires;
+      selectedIds.clear(); selectedWireIds.clear();
       nextId = 0;
       [...components, ...wires].forEach(o => {
         const n = parseInt(String(o.id).replace(/\D/g, ''), 10);
@@ -715,8 +793,9 @@ function loadCircuitFile(file) {
 
 function clearCircuit() {
   if (components.length && !confirm('Clear the whole circuit?')) return;
-  components = [];
-  wires = [];
+  if (wireDraft) cancelWireDraft();
+  components = []; wires = [];
+  selectedIds.clear(); selectedWireIds.clear();
   renderAll();
 }
 
@@ -724,22 +803,33 @@ function clearCircuit() {
 //  Init
 // ─────────────────────────────────────────────
 document.getElementById('vizStyle').addEventListener('change', (ev) => { visualTheme = ev.target.value; buildPalette(); renderAll(); });
-document.getElementById('toolSelect').addEventListener('click', () => setTool('select'));
-document.getElementById('toolWire').addEventListener('click', () => setTool('wire'));
-document.getElementById('toolDelete').addEventListener('click', () => setTool('delete'));
 document.getElementById('btnClockPlay').addEventListener('click', toggleClockRun);
-document.getElementById('clockSpeed').addEventListener('change', () => {
-  if (clockRunning) { clearTimeout(clockTimer); scheduleClockTick(); }
-});
+document.getElementById('clockSpeed').addEventListener('change', () => { if (clockRunning) { clearTimeout(clockTimer); scheduleClockTick(); } });
 document.getElementById('btnSave').addEventListener('click', saveCircuit);
 document.getElementById('btnLoad').addEventListener('click', () => document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change', (ev) => {
-  const file = ev.target.files[0];
-  if (file) loadCircuitFile(file);
-  ev.target.value = '';
-});
+document.getElementById('fileInput').addEventListener('change', (ev) => { const file = ev.target.files[0]; if (file) loadCircuitFile(file); ev.target.value = ''; });
 document.getElementById('btnClear').addEventListener('click', clearCircuit);
 document.getElementById('circuitSvg').addEventListener('click', onSvgClick);
+document.getElementById('circuitSvg').addEventListener('pointerdown', onSvgPointerDown);
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT' || ev.target.tagName === 'TEXTAREA') return;
+  if (ev.key === 'Delete' || ev.key === 'Backspace') {
+    if (wireDraft) cancelWireDraft(); else deleteSelected();
+  } else if (ev.key === 'Escape') {
+    if (wireDraft) cancelWireDraft();
+    else { selectedIds.clear(); selectedWireIds.clear(); if (tool === 'place') setTool('select'); renderAll(); }
+  } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'c') {
+    copySelected();
+  } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'v') {
+    paste();
+  } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'a') {
+    ev.preventDefault();
+    selectedIds = new Set(components.map(c => c.id));
+    selectedWireIds = new Set(wires.map(w => w.id));
+    renderAll();
+  }
+});
 
 buildPalette();
 setTool('select');
