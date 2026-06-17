@@ -159,6 +159,18 @@
     font-size: 0.85rem;
     color: #aaa;
   }
+
+  @media (max-width: 700px) {
+    body { padding: 8px; }
+    h1 { font-size: 1.3rem; }
+    .subtitle { font-size: 0.8rem; margin-bottom: 12px; }
+    .app { grid-template-columns: 1fr; }
+    .palette-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .palette-item { padding: 8px 4px 6px; }
+    #circuitSvg { height: 55vh; min-height: 260px; }
+    .toolbar { gap: 6px; }
+    .hint { font-size: 0.78rem; }
+  }
 </style>
 </head>
 <body>
@@ -186,6 +198,13 @@
       <button class="btn btn-danger" id="btnClear">Clear</button>
       <input type="file" id="fileInput" accept=".json" style="display:none">
       <span class="toolbar-sep"></span>
+      <button class="btn btn-secondary" id="btnUndo" title="Undo (Cmd+Z)">↩</button>
+      <button class="btn btn-secondary" id="btnRedo" title="Redo (Cmd+Shift+Z)">↪</button>
+      <span class="toolbar-sep"></span>
+      <button class="btn btn-secondary" id="btnZoomOut" title="Zoom Out">−</button>
+      <button class="btn btn-secondary" id="btnZoomIn" title="Zoom In">+</button>
+      <button class="btn btn-secondary" id="btnZoomReset" title="Reset View">⊙</button>
+      <span class="toolbar-sep"></span>
       <label style="font-size:0.82rem;color:#aaa">Style:</label>
       <select id="vizStyle">
         <option value="label">Label</option>
@@ -205,7 +224,7 @@
     </div>
     <div class="hint" id="hint">Click a palette item, then click the canvas to place it.</div>
 
-    <svg id="circuitSvg" viewBox="0 0 1040 600">
+    <svg id="circuitSvg" viewBox="0 0 1040 600" preserveAspectRatio="none">
       <g id="wiresLayer"></g>
       <g id="previewLayer"></g>
       <g id="componentsLayer"></g>
@@ -219,7 +238,7 @@
 //  Component definitions
 // ─────────────────────────────────────────────
 const COMPONENT_DEFS = {
-  switch: { category: 'input',  label: 'Switch',   w: 56, h: 44, inputs: 0, outputs: 1 },
+  switch: { category: 'input',  label: 'Switch',   w: 72, h: 50, inputs: 0, outputs: 1 },
   clock:  { category: 'input',  label: 'Clock',    w: 56, h: 44, inputs: 0, outputs: 1 },
   high:   { category: 'input',  label: 'High (1)', w: 48, h: 44, inputs: 0, outputs: 1 },
   low:    { category: 'input',  label: 'Low (0)',  w: 48, h: 44, inputs: 0, outputs: 1 },
@@ -282,6 +301,9 @@ let history = [];
 let historyIndex = -1;
 let clockTimer = null;
 let clockRunning = false;
+let vbX = 0, vbY = 0, vbW = 1040, vbH = 600;
+const svgPtrs = new Map();
+let prevPinch = null;
 
 const values = {};     // componentId -> 0|1, recomputed by simulate()
 
@@ -298,9 +320,23 @@ function svgPoint(evt) {
   const scaleX = vb.width / rect.width;
   const scaleY = vb.height / rect.height;
   return {
-    x: (evt.clientX - rect.left) * scaleX,
-    y: (evt.clientY - rect.top) * scaleY
+    x: (evt.clientX - rect.left) * scaleX + vb.x,
+    y: (evt.clientY - rect.top) * scaleY + vb.y
   };
+}
+
+function updateViewBox() {
+  vbW = Math.max(200, Math.min(5000, vbW));
+  vbH = vbW * (600 / 1040);
+  document.getElementById('circuitSvg').setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
+}
+
+function zoomBy(factor, cx, cy) {
+  if (cx === undefined) { cx = vbX + vbW / 2; cy = vbY + vbH / 2; }
+  vbX = cx + (vbX - cx) * factor;
+  vbY = cy + (vbY - cy) * factor;
+  vbW *= factor;
+  updateViewBox();
 }
 
 function componentById(id) { return components.find(c => c.id === id); }
@@ -340,9 +376,9 @@ function buildComponentBody(type, state, canvas) {
     if (visualTheme === 'ansi' && type === 'switch') {
       const trackCol = on ? '#1e4a2a' : '#1a2a40';
       const knobCol = on ? '#4caf50' : '#8a9aba';
-      g.appendChild(svgEl('rect', { x: 6, y: 15, width: def.w - 12, height: 14, rx: 7, fill: trackCol, stroke: on ? '#4caf50' : '#4a5a7a', 'stroke-width': 1.5 }));
-      g.appendChild(svgEl('circle', { cx: on ? def.w - 13 : 13, cy: 22, r: 10, fill: knobCol, stroke: '#ccc', 'stroke-width': 1.2 }));
-      const knobLbl = svgEl('text', { x: on ? def.w - 13 : 13, y: 26, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: '#fff' });
+      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? '#4caf50' : '#4a5a7a', 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: '#ccc', 'stroke-width': 1.2 }));
+      const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#fff' });
       knobLbl.textContent = on ? '1' : '0';
       g.appendChild(knobLbl);
     } else {
@@ -549,6 +585,7 @@ function renderAll() {
 // ─────────────────────────────────────────────
 function onComponentPointerDown(ev, id) {
   if (wireDraft || tool === 'place') return;
+  if (svgPtrs.size >= 2) return;
   ev.stopPropagation();
   const p = svgPoint(ev);
   if (ev.shiftKey) {
@@ -606,6 +643,7 @@ function deleteSelected() {
 
 function onSvgPointerDown(ev) {
   if (wireDraft) return;
+  if (svgPtrs.size >= 2) return;
   if (ev.target.closest('g[data-comp-id]')) return;
   if (tool === 'place') return;
   const p = svgPoint(ev);
@@ -902,8 +940,69 @@ document.addEventListener('keydown', (ev) => {
 });
 
 document.getElementById('circuitSvg').addEventListener('pointermove', (ev) => {
-  if (tool === 'place' && placingType) renderPlacePreview(ev);
+  if (tool === 'place' && placingType && svgPtrs.size < 2) renderPlacePreview(ev);
 });
+
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnRedo').addEventListener('click', redo);
+document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(0.7));
+document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(1 / 0.7));
+document.getElementById('btnZoomReset').addEventListener('click', () => { vbX = 0; vbY = 0; vbW = 1040; updateViewBox(); });
+
+// Scroll to pan · Ctrl+scroll or trackpad pinch to zoom
+document.getElementById('circuitSvg').addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  if (ev.ctrlKey) {
+    const p = svgPoint(ev);
+    zoomBy(Math.pow(1.002, ev.deltaY), p.x, p.y);
+  } else {
+    const r = document.getElementById('circuitSvg').getBoundingClientRect();
+    const mult = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? 400 : 1;
+    vbX += ev.deltaX * mult * (vbW / r.width);
+    vbY += ev.deltaY * mult * (vbH / r.height);
+    updateViewBox();
+  }
+}, { passive: false });
+
+// Pinch zoom + 2-finger pan (touch)
+const _cs = document.getElementById('circuitSvg');
+_cs.addEventListener('pointerdown', ev => svgPtrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY }), { capture: true });
+_cs.addEventListener('pointermove', ev => {
+  if (!svgPtrs.has(ev.pointerId)) return;
+  svgPtrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (svgPtrs.size < 2) { prevPinch = null; return; }
+  if (dragState) {
+    window.removeEventListener('pointermove', onComponentDragMove);
+    window.removeEventListener('pointerup', onComponentDragUp);
+    dragState = null;
+  }
+  if (selectionDrag) {
+    window.removeEventListener('pointermove', onSelectionDragMove);
+    window.removeEventListener('pointerup', onSelectionDragUp);
+    selectionDrag = null;
+    document.getElementById('previewLayer').innerHTML = '';
+  }
+  const pts = [...svgPtrs.values()];
+  const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+  const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+  if (prevPinch && dist > 0) {
+    const r = _cs.getBoundingClientRect();
+    const scX = vbW / r.width, scY = vbH / r.height;
+    vbX -= (midX - prevPinch.midX) * scX;
+    vbY -= (midY - prevPinch.midY) * scY;
+    const zf = prevPinch.dist / dist;
+    const px = (midX - r.left) * scX + vbX;
+    const py = (midY - r.top) * scY + vbY;
+    vbX = px + (vbX - px) * zf;
+    vbY = py + (vbY - py) * zf;
+    vbW *= zf;
+    updateViewBox();
+  }
+  prevPinch = { midX, midY, dist };
+}, { capture: true });
+const _pu = ev => { svgPtrs.delete(ev.pointerId); if (svgPtrs.size < 2) prevPinch = null; };
+_cs.addEventListener('pointerup', _pu, { capture: true });
+_cs.addEventListener('pointercancel', _pu, { capture: true });
 
 buildPalette();
 pushHistory();
