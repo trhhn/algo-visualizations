@@ -222,6 +222,15 @@
     <div class="toolbar">
       <button class="btn btn-secondary" id="btnSave">💾 Save</button>
       <button class="btn btn-secondary" id="btnLoad">📂 Load</button>
+      <select id="samplesSelect" title="Load a sample circuit">
+        <option value="">Samples…</option>
+        <option value="half-adder">Half Adder</option>
+        <option value="full-adder">Full Adder</option>
+        <option value="sr-latch">SR Latch (NOR)</option>
+        <option value="sr-latch-nand">SR Latch (NAND)</option>
+        <option value="majority-voter">Majority Voter</option>
+        <option value="gated-clock">Gated Clock</option>
+      </select>
       <button class="btn btn-danger" id="btnClear">Clear</button>
       <input type="file" id="fileInput" accept=".json" style="display:none">
       <span class="toolbar-sep"></span>
@@ -904,6 +913,76 @@ function toggleClockRun() {
 }
 
 // ─────────────────────────────────────────────
+//  Sample circuits (embedded so they work without the samples/ folder)
+// ─────────────────────────────────────────────
+const SAMPLE_CIRCUITS = {
+  'half-adder': { version:1, components:[
+    {id:'c1',type:'switch',x:120,y:195,state:0},{id:'c2',type:'switch',x:120,y:335,state:0},
+    {id:'c3',type:'xor',x:340,y:190,state:0},{id:'c4',type:'and',x:340,y:315,state:0},
+    {id:'c5',type:'bulb',x:540,y:162,state:0},{id:'c6',type:'bulb',x:540,y:303,state:0}
+  ], wires:[
+    {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c2',toId:'c3',toPin:1},
+    {id:'w9',fromId:'c1',toId:'c4',toPin:0},{id:'w10',fromId:'c2',toId:'c4',toPin:1},
+    {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ]},
+  'full-adder': { version:1, components:[
+    {id:'c1',type:'switch',x:50,y:80,state:0},{id:'c2',type:'switch',x:50,y:230,state:0},
+    {id:'c3',type:'switch',x:50,y:390,state:0},{id:'c4',type:'xor',x:220,y:130,state:0},
+    {id:'c5',type:'and',x:220,y:285,state:0},{id:'c6',type:'xor',x:420,y:195,state:0},
+    {id:'c7',type:'and',x:420,y:345,state:0},{id:'c8',type:'or',x:600,y:265,state:0},
+    {id:'c9',type:'bulb',x:578,y:157,state:0},{id:'c10',type:'bulb',x:768,y:250,state:0}
+  ], wires:[
+    {id:'w11',fromId:'c1',toId:'c4',toPin:0},{id:'w12',fromId:'c2',toId:'c4',toPin:1},
+    {id:'w13',fromId:'c1',toId:'c5',toPin:0},{id:'w14',fromId:'c2',toId:'c5',toPin:1},
+    {id:'w15',fromId:'c4',toId:'c6',toPin:0},{id:'w16',fromId:'c3',toId:'c6',toPin:1},
+    {id:'w17',fromId:'c4',toId:'c7',toPin:1},{id:'w18',fromId:'c3',toId:'c7',toPin:0},
+    {id:'w19',fromId:'c5',toId:'c8',toPin:0},{id:'w20',fromId:'c7',toId:'c8',toPin:1},
+    {id:'w21',fromId:'c6',toId:'c9',toPin:0},{id:'w22',fromId:'c8',toId:'c10',toPin:0}
+  ]},
+  'sr-latch': { version:1, components:[
+    {id:'c1',type:'switch',x:100,y:170,state:0},{id:'c2',type:'switch',x:100,y:358,state:0},
+    {id:'c3',type:'nor',x:350,y:145,state:0},{id:'c4',type:'nor',x:350,y:333,state:0},
+    {id:'c5',type:'bulb',x:590,y:117,state:0},{id:'c6',type:'bulb',x:590,y:305,state:0}
+  ], wires:[
+    {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c4',toId:'c3',toPin:1},
+    {id:'w9',fromId:'c2',toId:'c4',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:1},
+    {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ]},
+  'sr-latch-nand': { version:1, components:[
+    {id:'c1',type:'switch',x:100,y:170,state:1},{id:'c2',type:'switch',x:100,y:358,state:1},
+    {id:'c3',type:'nand',x:350,y:145,state:0},{id:'c4',type:'nand',x:350,y:333,state:0},
+    {id:'c5',type:'bulb',x:590,y:117,state:0},{id:'c6',type:'bulb',x:590,y:305,state:0}
+  ], wires:[
+    {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c4',toId:'c3',toPin:1},
+    {id:'w9',fromId:'c2',toId:'c4',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:1},
+    {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ]},
+  'majority-voter': { version:1, components:[
+    {id:'c1',type:'switch',x:60,y:130,state:0},{id:'c2',type:'switch',x:60,y:275,state:0},
+    {id:'c3',type:'switch',x:60,y:420,state:0},{id:'c4',type:'and',x:270,y:115,state:0},
+    {id:'c5',type:'and',x:270,y:260,state:0},{id:'c6',type:'and',x:270,y:405,state:0},
+    {id:'c7',type:'or',x:490,y:170,state:0},{id:'c8',type:'or',x:660,y:250,state:0},
+    {id:'c9',type:'bulb',x:820,y:222,state:0}
+  ], wires:[
+    {id:'w10',fromId:'c1',toId:'c4',toPin:0},{id:'w11',fromId:'c2',toId:'c4',toPin:1},
+    {id:'w12',fromId:'c2',toId:'c5',toPin:0},{id:'w13',fromId:'c3',toId:'c5',toPin:1},
+    {id:'w14',fromId:'c1',toId:'c6',toPin:0},{id:'w15',fromId:'c3',toId:'c6',toPin:1},
+    {id:'w16',fromId:'c4',toId:'c7',toPin:0},{id:'w17',fromId:'c5',toId:'c7',toPin:1},
+    {id:'w18',fromId:'c7',toId:'c8',toPin:0},{id:'w19',fromId:'c6',toId:'c8',toPin:1},
+    {id:'w20',fromId:'c8',toId:'c9',toPin:0}
+  ]},
+  'gated-clock': { version:1, components:[
+    {id:'c1',type:'clock',x:100,y:230,state:0},{id:'c2',type:'switch',x:100,y:360,state:1},
+    {id:'c3',type:'and',x:310,y:255,state:0},{id:'c4',type:'not',x:510,y:255,state:0},
+    {id:'c5',type:'bulb',x:450,y:220,state:0},{id:'c6',type:'bulb',x:660,y:220,state:0}
+  ], wires:[
+    {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c2',toId:'c3',toPin:1},
+    {id:'w9',fromId:'c3',toId:'c5',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:0},
+    {id:'w11',fromId:'c4',toId:'c6',toPin:0}
+  ]}
+};
+
+// ─────────────────────────────────────────────
 //  Save / Load / Clear
 // ─────────────────────────────────────────────
 function saveCircuit() {
@@ -917,26 +996,27 @@ function saveCircuit() {
   URL.revokeObjectURL(url);
 }
 
+function applyCircuitData(data) {
+  if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
+  components = JSON.parse(JSON.stringify(data.components));
+  wires = JSON.parse(JSON.stringify(data.wires));
+  history = []; historyIndex = -1;
+  pushHistory();
+  selectedIds.clear(); selectedWireIds.clear();
+  nextId = 0;
+  [...components, ...wires].forEach(o => {
+    const n = parseInt(String(o.id).replace(/\D/g, ''), 10);
+    if (!isNaN(n) && n >= nextId) nextId = n + 1;
+  });
+  setTool('select');
+  renderAll();
+}
+
 function loadCircuitFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
-      components = data.components;
-      wires = data.wires;
-      history = []; historyIndex = -1;
-      pushHistory();
-      selectedIds.clear(); selectedWireIds.clear();
-      nextId = 0;
-      [...components, ...wires].forEach(o => {
-        const n = parseInt(String(o.id).replace(/\D/g, ''), 10);
-        if (!isNaN(n) && n >= nextId) nextId = n + 1;
-      });
-      setTool('select');
-    } catch (e) {
-      alert("Could not load this file — it doesn't look like a valid circuit.");
-    }
+    try { applyCircuitData(JSON.parse(reader.result)); }
+    catch (e) { alert("Could not load this file — it doesn't look like a valid circuit."); }
   };
   reader.readAsText(file);
 }
@@ -956,6 +1036,11 @@ function clearCircuit() {
 // ─────────────────────────────────────────────
 document.getElementById('vizStyle').addEventListener('change', (ev) => { visualTheme = ev.target.value; buildPalette(); renderAll(); });
 document.getElementById('pageThemeSelect').addEventListener('change', (ev) => { pageTheme = ev.target.value; document.body.classList.toggle('theme-light', pageTheme === 'light'); buildPalette(); renderAll(); });
+document.getElementById('samplesSelect').addEventListener('change', (ev) => {
+  const key = ev.target.value;
+  ev.target.value = '';
+  if (key && SAMPLE_CIRCUITS[key]) applyCircuitData(SAMPLE_CIRCUITS[key]);
+});
 document.getElementById('btnClockPlay').addEventListener('click', toggleClockRun);
 document.getElementById('clockSpeed').addEventListener('change', () => { if (clockRunning) { clearTimeout(clockTimer); scheduleClockTick(); } });
 document.getElementById('btnSave').addEventListener('click', saveCircuit);
