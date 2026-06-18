@@ -204,6 +204,7 @@
         <option value="sr-latch-nand">SR Latch (NAND)</option>
         <option value="majority-voter">Majority Voter</option>
         <option value="gated-clock">Gated Clock</option>
+        <option value="d-flip-flop">D Flip-Flop</option>
       </select>
       <button class="btn btn-danger" id="btnClear">Clear</button>
       <input type="file" id="fileInput" accept=".json" style="display:none">
@@ -1068,7 +1069,7 @@ const SAMPLE_CIRCUITS = {
     {id:'w9',fromId:'c2',toId:'c4',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:1},
     {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
   ], labels:[
-    {id:'l20',x:62,y:198,text:'~S (Set)'},{id:'l21',x:56,y:386,text:'~R (Reset)'},
+    {id:'l20',x:15,y:198,text:'~S (Set)'},{id:'l21',x:8,y:386,text:'~R (Reset)'},
     {id:'l22',x:651,y:155,text:'Q'},{id:'l23',x:651,y:343,text:'~Q'}
   ]},
   'majority-voter': { version:1, components:[
@@ -1087,6 +1088,34 @@ const SAMPLE_CIRCUITS = {
   ], labels:[
     {id:'l21',x:20,y:157,text:'A'},{id:'l22',x:20,y:302,text:'B'},
     {id:'l23',x:20,y:447,text:'C'},{id:'l24',x:880,y:260,text:'Out'}
+  ]},
+  'd-flip-flop': { version:1, components:[
+    {id:'c1',type:'switch',x:50,y:175,state:0},
+    {id:'c2',type:'clock', x:50,y:295,state:1},
+    {id:'c3',type:'not',   x:190,y:250,state:0},
+    {id:'c4',type:'nand',  x:360,y:160,state:0},
+    {id:'c5',type:'nand',  x:360,y:295,state:0},
+    {id:'c6',type:'nand',  x:550,y:160,state:0},
+    {id:'c7',type:'nand',  x:550,y:295,state:0},
+    {id:'c8',type:'bulb',  x:755,y:130,state:0},
+    {id:'c9',type:'bulb',  x:755,y:270,state:0}
+  ], wires:[
+    {id:'w10',fromId:'c1',toId:'c4',toPin:0},
+    {id:'w11',fromId:'c1',toId:'c3',toPin:0},
+    {id:'w12',fromId:'c2',toId:'c4',toPin:1},
+    {id:'w13',fromId:'c2',toId:'c5',toPin:1},
+    {id:'w14',fromId:'c3',toId:'c5',toPin:0},
+    {id:'w15',fromId:'c4',toId:'c6',toPin:0},
+    {id:'w16',fromId:'c5',toId:'c7',toPin:0},
+    {id:'w17',fromId:'c6',toId:'c8',toPin:0},
+    {id:'w18',fromId:'c7',toId:'c9',toPin:0},
+    {id:'w19',fromId:'c6',toId:'c7',toPin:1},
+    {id:'w20',fromId:'c7',toId:'c6',toPin:1}
+  ], labels:[
+    {id:'l30',x:18,y:200,text:'D'},
+    {id:'l31',x:14,y:322,text:'CLK'},
+    {id:'l32',x:820,y:190,text:'Q'},
+    {id:'l33',x:820,y:325,text:'~Q'}
   ]},
   'gated-clock': { version:1, components:[
     {id:'c1',type:'clock',x:100,y:230,state:0},{id:'c2',type:'switch',x:100,y:360,state:1},
