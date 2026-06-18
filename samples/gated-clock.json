@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "components": [
+    { "id": "c1", "type": "clock",  "x": 100, "y": 230, "state": 0 },
+    { "id": "c2", "type": "switch", "x": 100, "y": 360, "state": 1 },
+    { "id": "c3", "type": "and",    "x": 310, "y": 255, "state": 0 },
+    { "id": "c4", "type": "not",    "x": 510, "y": 255, "state": 0 },
+    { "id": "c5", "type": "bulb",   "x": 450, "y": 220, "state": 0 },
+    { "id": "c6", "type": "bulb",   "x": 660, "y": 220, "state": 0 }
+  ],
+  "wires": [
+    { "id": "w7",  "fromId": "c1", "toId": "c3", "toPin": 0 },
+    { "id": "w8",  "fromId": "c2", "toId": "c3", "toPin": 1 },
+    { "id": "w9",  "fromId": "c3", "toId": "c5", "toPin": 0 },
+    { "id": "w10", "fromId": "c3", "toId": "c4", "toPin": 0 },
+    { "id": "w11", "fromId": "c4", "toId": "c6", "toPin": 0 }
+  ]
+}

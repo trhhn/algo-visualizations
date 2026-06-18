@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "components": [
+    { "id": "c1", "type": "switch", "x": 120, "y": 195, "state": 0 },
+    { "id": "c2", "type": "switch", "x": 120, "y": 335, "state": 0 },
+    { "id": "c3", "type": "xor",    "x": 340, "y": 190, "state": 0 },
+    { "id": "c4", "type": "and",    "x": 340, "y": 315, "state": 0 },
+    { "id": "c5", "type": "bulb",   "x": 540, "y": 162, "state": 0 },
+    { "id": "c6", "type": "bulb",   "x": 540, "y": 303, "state": 0 }
+  ],
+  "wires": [
+    { "id": "w7",  "fromId": "c1", "toId": "c3", "toPin": 0 },
+    { "id": "w8",  "fromId": "c2", "toId": "c3", "toPin": 1 },
+    { "id": "w9",  "fromId": "c1", "toId": "c4", "toPin": 0 },
+    { "id": "w10", "fromId": "c2", "toId": "c4", "toPin": 1 },
+    { "id": "w11", "fromId": "c3", "toId": "c5", "toPin": 0 },
+    { "id": "w12", "fromId": "c4", "toId": "c6", "toPin": 0 }
+  ]
+}

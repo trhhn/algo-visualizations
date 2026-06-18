@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "components": [
+    { "id": "c1", "type": "switch", "x": 60,  "y": 130, "state": 0 },
+    { "id": "c2", "type": "switch", "x": 60,  "y": 275, "state": 0 },
+    { "id": "c3", "type": "switch", "x": 60,  "y": 420, "state": 0 },
+    { "id": "c4", "type": "and",    "x": 270, "y": 115, "state": 0 },
+    { "id": "c5", "type": "and",    "x": 270, "y": 260, "state": 0 },
+    { "id": "c6", "type": "and",    "x": 270, "y": 405, "state": 0 },
+    { "id": "c7", "type": "or",     "x": 490, "y": 170, "state": 0 },
+    { "id": "c8", "type": "or",     "x": 660, "y": 250, "state": 0 },
+    { "id": "c9", "type": "bulb",   "x": 820, "y": 222, "state": 0 }
+  ],
+  "wires": [
+    { "id": "w10", "fromId": "c1", "toId": "c4", "toPin": 0 },
+    { "id": "w11", "fromId": "c2", "toId": "c4", "toPin": 1 },
+    { "id": "w12", "fromId": "c2", "toId": "c5", "toPin": 0 },
+    { "id": "w13", "fromId": "c3", "toId": "c5", "toPin": 1 },
+    { "id": "w14", "fromId": "c1", "toId": "c6", "toPin": 0 },
+    { "id": "w15", "fromId": "c3", "toId": "c6", "toPin": 1 },
+    { "id": "w16", "fromId": "c4", "toId": "c7", "toPin": 0 },
+    { "id": "w17", "fromId": "c5", "toId": "c7", "toPin": 1 },
+    { "id": "w18", "fromId": "c7", "toId": "c8", "toPin": 0 },
+    { "id": "w19", "fromId": "c6", "toId": "c8", "toPin": 1 },
+    { "id": "w20", "fromId": "c8", "toId": "c9", "toPin": 0 }
+  ]
+}
