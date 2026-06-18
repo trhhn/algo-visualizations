@@ -534,8 +534,8 @@ function bezierPath(x1, y1, x2, y2) {
 
 function wireBezier(x1, y1, x2, y2, pinBottom) {
   if (pinBottom) {
-    const dy = Math.max(Math.abs(y2 - y1) / 2, 50);
-    const dx = Math.max(Math.abs(x2 - x1) / 3, 30);
+    const dy = Math.max(Math.abs(y2 - y1) * 0.6, 90);
+    const dx = Math.max(Math.abs(x2 - x1) / 2, 50);
     return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
   }
   return bezierPath(x1, y1, x2, y2);
