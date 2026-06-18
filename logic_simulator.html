@@ -241,6 +241,8 @@
       <button class="btn btn-secondary" id="btnZoomIn" title="Zoom In">+</button>
       <button class="btn btn-secondary" id="btnZoomReset" title="Reset View">⊙</button>
       <span class="toolbar-sep"></span>
+      <button class="tool-btn" id="btnLabelTool" title="Place text label (L)">Aa</button>
+      <span class="toolbar-sep"></span>
       <label class="toolbar-label">Style:</label>
       <select id="vizStyle">
         <option value="label">Label</option>
@@ -267,6 +269,7 @@
 
     <svg id="circuitSvg" viewBox="0 0 1040 600" preserveAspectRatio="none">
       <g id="wiresLayer"></g>
+      <g id="labelsLayer"></g>
       <g id="previewLayer"></g>
       <g id="componentsLayer"></g>
     </svg>
@@ -328,9 +331,10 @@ function outputPinPos(def) {
 // ─────────────────────────────────────────────
 let components = [];  // {id, type, x, y, state}
 let wires = [];        // {id, fromId, toId, toPin}
+let labels = [];       // {id, x, y, text}
 let nextId = 0;
 
-let tool = 'select';   // 'select' | 'place'
+let tool = 'select';   // 'select' | 'place' | 'label'
 let visualTheme = 'ansi'; // 'label' | 'ansi'
 let selectedIds = new Set();
 let selectedWireIds = new Set();
@@ -632,9 +636,96 @@ function renderComponent(comp) {
 function renderAll() {
   simulate();
   renderWires();
+  renderLabels();
   const layer = document.getElementById('componentsLayer');
   layer.innerHTML = '';
   components.forEach(renderComponent);
+}
+
+function renderLabels() {
+  const layer = document.getElementById('labelsLayer');
+  layer.innerHTML = '';
+  const fontSize = 13;
+  const charW = 7.5;
+  labels.forEach(lbl => {
+    const g = svgEl('g', { transform: `translate(${lbl.x},${lbl.y})`, 'data-label-id': lbl.id, style: 'cursor:move' });
+    if (selectedIds.has(lbl.id)) {
+      const tw = Math.max(lbl.text.length * charW, 20);
+      g.appendChild(svgEl('rect', { x: -4, y: -(fontSize + 4), width: tw + 8, height: fontSize + 8, rx: 3,
+        fill: 'none', stroke: tc('#4a9eff', '#2563eb'), 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }));
+    }
+    const txt = svgEl('text', {
+      x: 0, y: 0, 'font-size': fontSize, 'font-family': 'sans-serif',
+      fill: tc('#e8e8e8', '#1a2a4a'), 'dominant-baseline': 'auto'
+    });
+    txt.textContent = lbl.text;
+    g.appendChild(txt);
+    g.addEventListener('pointerdown', ev => onLabelPointerDown(ev, lbl.id));
+    g.addEventListener('dblclick', ev => { ev.stopPropagation(); editLabel(lbl.id); });
+    layer.appendChild(g);
+  });
+}
+
+function editLabel(id) {
+  const lbl = labels.find(l => l.id === id);
+  if (!lbl) return;
+  const svg = document.getElementById('circuitSvg');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const scX = rect.width / vb.width, scY = rect.height / vb.height;
+  const sx = (lbl.x - vb.x) * scX + rect.left;
+  const sy = (lbl.y - vb.y) * scY + rect.top;
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = lbl.text;
+  const fs = Math.round(13 * scY);
+  inp.style.cssText = [
+    `position:fixed`, `left:${Math.round(sx)}px`, `top:${Math.round(sy - fs - 2)}px`,
+    `font-size:${fs}px`, `font-family:sans-serif`, `padding:2px 5px`,
+    `border:1.5px solid ${pageTheme === 'light' ? '#2563eb' : '#f0c040'}`,
+    `border-radius:3px`, `background:${pageTheme === 'light' ? '#f0f5fc' : '#0d1b2a'}`,
+    `color:${pageTheme === 'light' ? '#1a2a4a' : '#eee'}`, `min-width:60px`,
+    `z-index:200`, `outline:none`
+  ].join(';');
+  document.body.appendChild(inp);
+  inp.focus(); inp.select();
+
+  let done = false;
+  const finish = () => {
+    if (done) return; done = true;
+    lbl.text = inp.value.trim();
+    if (!lbl.text) labels = labels.filter(l => l.id !== id);
+    inp.remove();
+    pushHistory();
+    renderAll();
+  };
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); finish(); }
+  });
+  inp.addEventListener('blur', finish);
+}
+
+function onLabelPointerDown(ev, id) {
+  if (wireDraft || tool === 'place') return;
+  if (svgPtrs.size >= 2) return;
+  ev.stopPropagation();
+  const p = svgPoint(ev);
+  if (ev.shiftKey) {
+    if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+    renderAll(); return;
+  }
+  if (!selectedIds.has(id)) {
+    selectedIds.clear(); selectedWireIds.clear();
+    selectedIds.add(id); renderAll();
+  }
+  const snapshot = [...selectedIds].map(sid => {
+    const c = componentById(sid) || labels.find(l => l.id === sid);
+    return c ? { id: sid, origX: c.x, origY: c.y } : null;
+  }).filter(Boolean);
+  dragState = { startX: p.x, startY: p.y, snapshot, moved: false };
+  window.addEventListener('pointermove', onComponentDragMove);
+  window.addEventListener('pointerup', onComponentDragUp);
 }
 
 // ─────────────────────────────────────────────
@@ -653,7 +744,10 @@ function onComponentPointerDown(ev, id) {
     selectedIds.clear(); selectedWireIds.clear();
     selectedIds.add(id); renderAll();
   }
-  const snapshot = [...selectedIds].map(sid => { const c = componentById(sid); return { id: sid, origX: c.x, origY: c.y }; });
+  const snapshot = [...selectedIds].map(sid => {
+    const c = componentById(sid) || labels.find(l => l.id === sid);
+    return c ? { id: sid, origX: c.x, origY: c.y } : null;
+  }).filter(Boolean);
   dragState = { startX: p.x, startY: p.y, snapshot, moved: false };
   window.addEventListener('pointermove', onComponentDragMove);
   window.addEventListener('pointerup', onComponentDragUp);
@@ -665,7 +759,12 @@ function onComponentDragMove(ev) {
   const dx = p.x - dragState.startX, dy = p.y - dragState.startY;
   if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragState.moved = true;
   if (dragState.moved) {
-    dragState.snapshot.forEach(m => { const c = componentById(m.id); if (c) { c.x = m.origX + dx; c.y = m.origY + dy; } });
+    dragState.snapshot.forEach(m => {
+      const c = componentById(m.id);
+      if (c) { c.x = m.origX + dx; c.y = m.origY + dy; return; }
+      const l = labels.find(lb => lb.id === m.id);
+      if (l) { l.x = m.origX + dx; l.y = m.origY + dy; }
+    });
     renderAll();
   }
 }
@@ -692,6 +791,7 @@ function deleteSelected() {
   if (selectedIds.size === 0 && selectedWireIds.size === 0) return;
   const delIds = new Set(selectedIds);
   components = components.filter(c => !delIds.has(c.id));
+  labels = labels.filter(l => !delIds.has(l.id));
   wires = wires.filter(w => !selectedWireIds.has(w.id) && !delIds.has(w.fromId) && !delIds.has(w.toId));
   selectedIds.clear(); selectedWireIds.clear();
   pushHistory();
@@ -702,6 +802,7 @@ function onSvgPointerDown(ev) {
   if (wireDraft) return;
   if (svgPtrs.size >= 2) return;
   if (ev.target.closest('g[data-comp-id]')) return;
+  if (ev.target.closest('g[data-label-id]')) return;
   if (tool === 'place') return;
   const p = svgPoint(ev);
   selectionDrag = { x0: p.x, y0: p.y, x: p.x, y: p.y, w: 0, h: 0 };
@@ -740,12 +841,16 @@ function onSelectionDragUp(ev) {
 
 function copySelected() {
   const selComps = components.filter(c => selectedIds.has(c.id));
-  if (!selComps.length) return;
+  const selLabels = labels.filter(l => selectedIds.has(l.id));
+  if (!selComps.length && !selLabels.length) return;
   const selIdSet = new Set(selComps.map(c => c.id));
-  const minX = Math.min(...selComps.map(c => c.x)), minY = Math.min(...selComps.map(c => c.y));
+  const allX = [...selComps.map(c => c.x), ...selLabels.map(l => l.x)];
+  const allY = [...selComps.map(c => c.y), ...selLabels.map(l => l.y)];
+  const minX = Math.min(...allX), minY = Math.min(...allY);
   clipboard = {
     components: selComps.map(c => ({ ...c, x: c.x - minX, y: c.y - minY })),
-    wires: wires.filter(w => selIdSet.has(w.fromId) && selIdSet.has(w.toId)).map(w => ({ ...w }))
+    wires: wires.filter(w => selIdSet.has(w.fromId) && selIdSet.has(w.toId)).map(w => ({ ...w })),
+    labels: selLabels.map(l => ({ ...l, x: l.x - minX, y: l.y - minY }))
   };
 }
 
@@ -758,8 +863,10 @@ function paste() {
   });
   const newWires = clipboard.wires.filter(w => idMap[w.fromId] && idMap[w.toId])
     .map(w => ({ id: 'w' + (nextId++), fromId: idMap[w.fromId], toId: idMap[w.toId], toPin: w.toPin }));
-  components.push(...newComps); wires.push(...newWires);
-  selectedIds = new Set(newComps.map(c => c.id)); selectedWireIds.clear();
+  const newLabels = (clipboard.labels || []).map(l => ({ ...l, id: 'l' + (nextId++), x: l.x + 40, y: l.y + 40 }));
+  components.push(...newComps); wires.push(...newWires); labels.push(...newLabels);
+  selectedIds = new Set([...newComps.map(c => c.id), ...newLabels.map(l => l.id)]);
+  selectedWireIds.clear();
   pushHistory();
   renderAll();
 }
@@ -769,7 +876,11 @@ function paste() {
 // ─────────────────────────────────────────────
 function pushHistory() {
   history = history.slice(0, historyIndex + 1);
-  history.push({ components: JSON.parse(JSON.stringify(components)), wires: JSON.parse(JSON.stringify(wires)) });
+  history.push({
+    components: JSON.parse(JSON.stringify(components)),
+    wires: JSON.parse(JSON.stringify(wires)),
+    labels: JSON.parse(JSON.stringify(labels))
+  });
   historyIndex++;
   if (history.length > 100) { history.shift(); historyIndex--; }
 }
@@ -780,6 +891,7 @@ function undo() {
   const s = history[historyIndex];
   components = JSON.parse(JSON.stringify(s.components));
   wires = JSON.parse(JSON.stringify(s.wires));
+  labels = JSON.parse(JSON.stringify(s.labels || []));
   selectedIds.clear(); selectedWireIds.clear();
   if (wireDraft) cancelWireDraft();
   renderAll();
@@ -791,6 +903,7 @@ function redo() {
   const s = history[historyIndex];
   components = JSON.parse(JSON.stringify(s.components));
   wires = JSON.parse(JSON.stringify(s.wires));
+  labels = JSON.parse(JSON.stringify(s.labels || []));
   selectedIds.clear(); selectedWireIds.clear();
   renderAll();
 }
@@ -861,6 +974,16 @@ function placeComponent(type, x, y) {
 
 function onSvgClick(ev) {
   if (wireDraft) { cancelWireDraft(); return; }
+  if (tool === 'label') {
+    if (ev.target.closest('g[data-comp-id]') || ev.target.closest('g[data-label-id]')) return;
+    const p = svgPoint(ev);
+    const id = 'l' + (nextId++);
+    labels.push({ id, x: Math.round(p.x), y: Math.round(p.y), text: '' });
+    renderAll();
+    setTool('select');
+    editLabel(id);
+    return;
+  }
   if (tool !== 'place' || !placingType) return;
   if (ev.target.closest('g[data-comp-id]')) return;
   const def = COMPONENT_DEFS[placingType];
@@ -873,7 +996,8 @@ function onSvgClick(ev) {
 //  Tool switching
 // ─────────────────────────────────────────────
 const TOOL_HINTS = {
-  select: 'Click to select · Shift+click multi-select · Drag to move · Click output pin (gold) to wire · Del to delete'
+  select: 'Click to select · Shift+click multi-select · Drag to move · Click output pin (gold) to wire · Del to delete',
+  label:  'Click on canvas to place a text label · type text · Enter to confirm'
 };
 
 function setTool(t) {
@@ -884,6 +1008,8 @@ function setTool(t) {
     document.querySelectorAll('.palette-item').forEach(el => el.classList.remove('active'));
     document.getElementById('previewLayer').innerHTML = '';
   }
+  const lblBtn = document.getElementById('btnLabelTool');
+  if (lblBtn) lblBtn.classList.toggle('active', t === 'label');
   if (TOOL_HINTS[t]) setHint(TOOL_HINTS[t]);
   renderAll();
 }
@@ -924,6 +1050,9 @@ const SAMPLE_CIRCUITS = {
     {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c2',toId:'c3',toPin:1},
     {id:'w9',fromId:'c1',toId:'c4',toPin:0},{id:'w10',fromId:'c2',toId:'c4',toPin:1},
     {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ], labels:[
+    {id:'l20',x:125,y:222,text:'A'},{id:'l21',x:125,y:362,text:'B'},
+    {id:'l22',x:601,y:200,text:'Sum'},{id:'l23',x:601,y:341,text:'Carry'}
   ]},
   'full-adder': { version:1, components:[
     {id:'c1',type:'switch',x:50,y:80,state:0},{id:'c2',type:'switch',x:50,y:230,state:0},
@@ -938,6 +1067,10 @@ const SAMPLE_CIRCUITS = {
     {id:'w17',fromId:'c4',toId:'c7',toPin:1},{id:'w18',fromId:'c3',toId:'c7',toPin:0},
     {id:'w19',fromId:'c5',toId:'c8',toPin:0},{id:'w20',fromId:'c7',toId:'c8',toPin:1},
     {id:'w21',fromId:'c6',toId:'c9',toPin:0},{id:'w22',fromId:'c8',toId:'c10',toPin:0}
+  ], labels:[
+    {id:'l30',x:10,y:107,text:'A'},{id:'l31',x:10,y:257,text:'B'},
+    {id:'l32',x:5,y:417,text:'Cin'},
+    {id:'l33',x:638,y:195,text:'Sum'},{id:'l34',x:828,y:288,text:'Carry'}
   ]},
   'sr-latch': { version:1, components:[
     {id:'c1',type:'switch',x:100,y:170,state:0},{id:'c2',type:'switch',x:100,y:358,state:0},
@@ -947,6 +1080,9 @@ const SAMPLE_CIRCUITS = {
     {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c4',toId:'c3',toPin:1},
     {id:'w9',fromId:'c2',toId:'c4',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:1},
     {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ], labels:[
+    {id:'l20',x:57,y:198,text:'Set'},{id:'l21',x:50,y:386,text:'Reset'},
+    {id:'l22',x:651,y:155,text:'Q'},{id:'l23',x:651,y:343,text:'~Q'}
   ]},
   'sr-latch-nand': { version:1, components:[
     {id:'c1',type:'switch',x:100,y:170,state:1},{id:'c2',type:'switch',x:100,y:358,state:1},
@@ -956,6 +1092,9 @@ const SAMPLE_CIRCUITS = {
     {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c4',toId:'c3',toPin:1},
     {id:'w9',fromId:'c2',toId:'c4',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:1},
     {id:'w11',fromId:'c3',toId:'c5',toPin:0},{id:'w12',fromId:'c4',toId:'c6',toPin:0}
+  ], labels:[
+    {id:'l20',x:62,y:198,text:'~S (Set)'},{id:'l21',x:56,y:386,text:'~R (Reset)'},
+    {id:'l22',x:651,y:155,text:'Q'},{id:'l23',x:651,y:343,text:'~Q'}
   ]},
   'majority-voter': { version:1, components:[
     {id:'c1',type:'switch',x:60,y:130,state:0},{id:'c2',type:'switch',x:60,y:275,state:0},
@@ -970,6 +1109,9 @@ const SAMPLE_CIRCUITS = {
     {id:'w16',fromId:'c4',toId:'c7',toPin:0},{id:'w17',fromId:'c5',toId:'c7',toPin:1},
     {id:'w18',fromId:'c7',toId:'c8',toPin:0},{id:'w19',fromId:'c6',toId:'c8',toPin:1},
     {id:'w20',fromId:'c8',toId:'c9',toPin:0}
+  ], labels:[
+    {id:'l21',x:20,y:157,text:'A'},{id:'l22',x:20,y:302,text:'B'},
+    {id:'l23',x:20,y:447,text:'C'},{id:'l24',x:880,y:260,text:'Out'}
   ]},
   'gated-clock': { version:1, components:[
     {id:'c1',type:'clock',x:100,y:230,state:0},{id:'c2',type:'switch',x:100,y:360,state:1},
@@ -979,6 +1121,9 @@ const SAMPLE_CIRCUITS = {
     {id:'w7',fromId:'c1',toId:'c3',toPin:0},{id:'w8',fromId:'c2',toId:'c3',toPin:1},
     {id:'w9',fromId:'c3',toId:'c5',toPin:0},{id:'w10',fromId:'c3',toId:'c4',toPin:0},
     {id:'w11',fromId:'c4',toId:'c6',toPin:0}
+  ], labels:[
+    {id:'l12',x:60,y:257,text:'Clock'},{id:'l13',x:55,y:388,text:'Enable'},
+    {id:'l14',x:510,y:255,text:'Gated'},{id:'l15',x:720,y:255,text:'~Gated'}
   ]}
 };
 
@@ -986,7 +1131,7 @@ const SAMPLE_CIRCUITS = {
 //  Save / Load / Clear
 // ─────────────────────────────────────────────
 function saveCircuit() {
-  const data = JSON.stringify({ version: 1, components, wires }, null, 2);
+  const data = JSON.stringify({ version: 1, components, wires, labels }, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1000,11 +1145,12 @@ function applyCircuitData(data) {
   if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
   components = JSON.parse(JSON.stringify(data.components));
   wires = JSON.parse(JSON.stringify(data.wires));
+  labels = JSON.parse(JSON.stringify(data.labels || []));
   history = []; historyIndex = -1;
   pushHistory();
   selectedIds.clear(); selectedWireIds.clear();
   nextId = 0;
-  [...components, ...wires].forEach(o => {
+  [...components, ...wires, ...labels].forEach(o => {
     const n = parseInt(String(o.id).replace(/\D/g, ''), 10);
     if (!isNaN(n) && n >= nextId) nextId = n + 1;
   });
@@ -1024,7 +1170,7 @@ function loadCircuitFile(file) {
 function clearCircuit() {
   if (components.length && !confirm('Clear the whole circuit?')) return;
   if (wireDraft) cancelWireDraft();
-  components = []; wires = [];
+  components = []; wires = []; labels = [];
   selectedIds.clear(); selectedWireIds.clear();
   history = []; historyIndex = -1;
   pushHistory();
@@ -1056,16 +1202,18 @@ document.addEventListener('keydown', (ev) => {
     if (wireDraft) cancelWireDraft(); else deleteSelected();
   } else if (ev.key === 'Escape') {
     if (wireDraft) cancelWireDraft();
-    else { selectedIds.clear(); selectedWireIds.clear(); if (tool === 'place') setTool('select'); renderAll(); }
+    else { selectedIds.clear(); selectedWireIds.clear(); if (tool === 'place' || tool === 'label') setTool('select'); renderAll(); }
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'c') {
     copySelected();
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'v') {
     paste();
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'a') {
     ev.preventDefault();
-    selectedIds = new Set(components.map(c => c.id));
+    selectedIds = new Set([...components.map(c => c.id), ...labels.map(l => l.id)]);
     selectedWireIds = new Set(wires.map(w => w.id));
     renderAll();
+  } else if (ev.key === 'l' || ev.key === 'L') {
+    setTool(tool === 'label' ? 'select' : 'label');
   } else if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && ev.key === 'z') {
     ev.preventDefault(); undo();
   } else if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'y' || (ev.shiftKey && ev.key === 'z'))) {
@@ -1079,6 +1227,7 @@ document.getElementById('circuitSvg').addEventListener('pointermove', (ev) => {
 
 document.getElementById('btnUndo').addEventListener('click', undo);
 document.getElementById('btnRedo').addEventListener('click', redo);
+document.getElementById('btnLabelTool').addEventListener('click', () => setTool(tool === 'label' ? 'select' : 'label'));
 document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(0.7));
 document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(1 / 0.7));
 document.getElementById('btnZoomReset').addEventListener('click', () => { vbX = 0; vbY = 0; vbW = 1040; updateViewBox(); });
