@@ -8,25 +8,21 @@
 
   body {
     font-family: 'Segoe UI', sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    background: #1e1e22;
+    color: #cccccc;
     min-height: 100vh;
-    padding: 24px;
+    padding: 16px;
   }
 
-  h1 {
-    text-align: center;
-    font-size: 1.8rem;
-    margin-bottom: 6px;
-    color: #f0c040;
-    letter-spacing: 1px;
-  }
-
-  .subtitle {
-    text-align: center;
-    color: #aaa;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
+  .app-wordmark {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #666670;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #38383e;
   }
 
   .app {
@@ -38,15 +34,15 @@
   }
 
   .panel {
-    background: #16213e;
-    border-radius: 16px;
+    background: #252528;
+    border-radius: 12px;
     padding: 16px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
   }
 
   .panel-title {
-    font-size: 0.78rem;
-    color: #888;
+    font-size: 0.72rem;
+    color: #888888;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin: 14px 0 8px;
@@ -60,9 +56,9 @@
   }
 
   .palette-item {
-    background: #0f1b33;
-    border: 2px solid #2a3a5a;
-    border-radius: 10px;
+    background: #2a2a32;
+    border: 2px solid #404048;
+    border-radius: 8px;
     padding: 10px 6px 8px;
     text-align: center;
     cursor: pointer;
@@ -70,11 +66,11 @@
     user-select: none;
   }
 
-  .palette-item:hover { border-color: #4a5a8a; }
-  .palette-item.active { border-color: #f0c040; background: rgba(240,192,64,0.12); }
+  .palette-item:hover { border-color: #22c55e; }
+  .palette-item.active { border-color: #22c55e; background: rgba(34,197,94,0.1); }
 
   .palette-item svg { width: 48px; height: 32px; display: block; margin: 0 auto 4px; }
-  .palette-item .lbl { font-size: 0.68rem; color: #ccc; }
+  .palette-item .lbl { font-size: 0.68rem; color: #aaaaaa; }
 
   .toolbar {
     display: flex;
@@ -87,24 +83,24 @@
   .toolbar-sep {
     width: 1px;
     height: 24px;
-    background: #2a3a5a;
+    background: #505055;
     margin: 0 4px;
   }
 
   .tool-btn {
     padding: 10px 14px;
-    border: 2px solid #2a3a5a;
+    border: 2px solid #505055;
     border-radius: 8px;
-    background: #0f1b33;
-    color: #ccc;
+    background: #383840;
+    color: #aaaaaa;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, color 0.2s;
   }
 
-  .tool-btn:hover { border-color: #4a5a8a; }
-  .tool-btn.active { border-color: #f0c040; background: rgba(240,192,64,0.12); color: #f0c040; }
+  .tool-btn:hover { border-color: #22c55e; }
+  .tool-btn.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
 
   .btn {
     padding: 10px 16px;
@@ -116,26 +112,26 @@
     transition: background 0.2s, opacity 0.2s;
   }
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .btn-primary   { background: #f0c040; color: #1a1a2e; }
-  .btn-secondary { background: #4a4a7a; color: #eee; }
-  .btn-danger    { background: #ff6b6b; color: #fff; }
-  .btn-play      { background: #6bcb77; color: #1a1a2e; }
-  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
-  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
-  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
-  .btn-play:hover:not(:disabled)      { background: #80e080; }
+  .btn-primary   { background: #22c55e; color: #0a1a10; }
+  .btn-secondary { background: #383840; color: #cccccc; }
+  .btn-danger    { background: #b83030; color: #ffffff; }
+  .btn-play      { background: #226633; color: #88eea8; }
+  .btn-primary:hover:not(:disabled)   { background: #1ea84f; }
+  .btn-secondary:hover:not(:disabled) { background: #48484f; }
+  .btn-danger:hover:not(:disabled)    { background: #a02020; }
+  .btn-play:hover:not(:disabled)      { background: #1a5028; }
 
   select {
-    background: #0f1b33;
-    color: #eee;
-    border: 2px solid #2a3a5a;
+    background: #383840;
+    color: #cccccc;
+    border: 2px solid #505055;
     border-radius: 8px;
     padding: 9px 10px;
     font-size: 0.85rem;
   }
 
   .hint {
-    color: #888;
+    color: #666668;
     font-size: 0.85rem;
     margin-bottom: 12px;
     min-height: 1.2em;
@@ -144,9 +140,9 @@
   #circuitSvg {
     width: 100%;
     height: 600px;
-    background: #0d1b2a;
-    border-radius: 12px;
-    border: 1px solid #2a3a4a;
+    background: #13131a;
+    border-radius: 8px;
+    border: 1px solid #2a2a38;
     touch-action: none;
     display: block;
   }
@@ -157,13 +153,11 @@
     gap: 8px;
     margin-left: auto;
     font-size: 0.85rem;
-    color: #aaa;
+    color: #888888;
   }
 
   @media (max-width: 700px) {
     body { padding: 8px; }
-    h1 { font-size: 1.3rem; }
-    .subtitle { font-size: 0.8rem; margin-bottom: 12px; }
     .app { grid-template-columns: 1fr; }
     .palette-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .palette-item { padding: 8px 4px 6px; }
@@ -172,42 +166,22 @@
     .hint { font-size: 0.78rem; }
   }
 
-  .toolbar-label { font-size: 0.82rem; color: #aaa; }
+  .toolbar-label { font-size: 0.82rem; color: #888888; }
 
-  /* ── Light theme ── */
-  body.theme-light { background: #1e1e22; color: #cccccc; }
-  body.theme-light h1 { color: #eeeeee; }
-  body.theme-light .subtitle { color: #888888; }
-  body.theme-light .panel { background: #252528; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
-  body.theme-light .panel-title { color: #888888; }
+  /* ── Light theme canvas + palette overrides ── */
+  body.theme-light #circuitSvg { background: #f6f6f4; border-color: #cccccc; }
   body.theme-light .palette-item { background: #f0f0ee; border-color: #cccccc; }
   body.theme-light .palette-item:hover { border-color: #22c55e; }
-  body.theme-light .palette-item.active { border-color: #22c55e; background: #edfff3; }
+  body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
   body.theme-light .palette-item .lbl { color: #333333; }
-  body.theme-light .toolbar-sep { background: #505055; }
-  body.theme-light .toolbar-label { color: #888888; }
-  body.theme-light .tool-btn { background: #383840; border-color: #505055; color: #aaaaaa; }
-  body.theme-light .tool-btn:hover { border-color: #22c55e; }
-  body.theme-light .tool-btn.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
-  body.theme-light .btn-secondary { background: #383840; color: #cccccc; }
-  body.theme-light .btn-secondary:hover:not(:disabled) { background: #48484f; }
-  body.theme-light .btn-danger { background: #b83030; color: #ffffff; }
-  body.theme-light .btn-danger:hover:not(:disabled) { background: #a02020; }
-  body.theme-light .btn-play { background: #226633; color: #88eea8; }
-  body.theme-light .btn-play:hover:not(:disabled) { background: #1a5028; }
-  body.theme-light select { background: #383840; color: #cccccc; border-color: #505055; }
-  body.theme-light .hint { color: #666668; }
-  body.theme-light #circuitSvg { background: #f6f6f4; border-color: #cccccc; }
 </style>
 </head>
 <body>
 
-<h1>🔌 Logic Circuit Simulator</h1>
-<p class="subtitle">Place gates, switches and bulbs, wire them up, and watch the signal flow</p>
-
 <div class="app">
 
   <div class="panel">
+    <div class="app-wordmark">Logic Circuit Simulator</div>
     <div class="panel-title">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
@@ -250,8 +224,8 @@
       </select>
       <label class="toolbar-label">Theme:</label>
       <select id="pageThemeSelect">
-        <option value="dark" selected>Dark</option>
-        <option value="light">Light</option>
+        <option value="light" selected>Light</option>
+        <option value="dark">Dark</option>
       </select>
 
       <div class="clock-control">
@@ -287,14 +261,14 @@ const COMPONENT_DEFS = {
   high:   { category: 'input',  label: 'High (1)', w: 48, h: 44, inputs: 0, outputs: 1 },
   low:    { category: 'input',  label: 'Low (0)',  w: 48, h: 44, inputs: 0, outputs: 1 },
   bulb:   { category: 'output', label: 'Bulb',     w: 52, h: 70, inputs: 1, outputs: 0, pinBottom: true },
-  and:    { category: 'gate', label: 'AND',  w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
-  nand:   { category: 'gate', label: 'NAND', w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
-  or:     { category: 'gate', label: 'OR',   w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
-  nor:    { category: 'gate', label: 'NOR',  w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
-  xor:    { category: 'gate', label: 'XOR',  w: 72, h: 44, inputs: 2, outputs: 1, negated: false },
-  xnor:   { category: 'gate', label: 'XNOR', w: 72, h: 44, inputs: 2, outputs: 1, negated: true  },
-  not:    { category: 'gate', label: 'NOT',  w: 60, h: 44, inputs: 1, outputs: 1, negated: true  },
-  buffer: { category: 'gate', label: 'BUF',  w: 60, h: 44, inputs: 1, outputs: 1, negated: false }
+  and:    { category: 'gate', label: 'AND',  w: 60, h: 44, inputs: 2, outputs: 1, negated: false },
+  nand:   { category: 'gate', label: 'NAND', w: 60, h: 44, inputs: 2, outputs: 1, negated: true  },
+  or:     { category: 'gate', label: 'OR',   w: 60, h: 44, inputs: 2, outputs: 1, negated: false },
+  nor:    { category: 'gate', label: 'NOR',  w: 60, h: 44, inputs: 2, outputs: 1, negated: true  },
+  xor:    { category: 'gate', label: 'XOR',  w: 60, h: 44, inputs: 2, outputs: 1, negated: false },
+  xnor:   { category: 'gate', label: 'XNOR', w: 60, h: 44, inputs: 2, outputs: 1, negated: true  },
+  not:    { category: 'gate', label: 'NOT',  w: 50, h: 44, inputs: 1, outputs: 1, negated: true  },
+  buffer: { category: 'gate', label: 'BUF',  w: 50, h: 44, inputs: 1, outputs: 1, negated: false }
 };
 
 const PALETTE_LAYOUT = {
@@ -304,14 +278,14 @@ const PALETTE_LAYOUT = {
 };
 
 const ANSI_GATE_PATHS = {
-  and:    'M 6 4 L 38 4 Q 106 22 38 40 L 6 40 Z',
-  nand:   'M 6 4 L 38 4 Q 106 22 38 40 L 6 40 Z',
-  or:     'M 6 4 Q 34 4 72 22 Q 34 40 6 40 Q 22 22 6 4 Z',
-  nor:    'M 6 4 Q 34 4 72 22 Q 34 40 6 40 Q 22 22 6 4 Z',
-  xor:    'M 12 4 Q 40 4 72 22 Q 40 40 12 40 Q 26 22 12 4 Z',
-  xnor:   'M 12 4 Q 40 4 72 22 Q 40 40 12 40 Q 26 22 12 4 Z',
-  not:    'M 6 6 L 60 22 L 6 38 Z',
-  buffer: 'M 6 6 L 60 22 L 6 38 Z',
+  and:    'M 6 4 L 22 4 Q 96 22 22 40 L 6 40 Z',
+  nand:   'M 6 4 L 22 4 Q 96 22 22 40 L 6 40 Z',
+  or:     'M 6 4 Q 26 4 60 22 Q 26 40 6 40 Q 18 22 6 4 Z',
+  nor:    'M 6 4 Q 26 4 60 22 Q 26 40 6 40 Q 18 22 6 4 Z',
+  xor:    'M 10 4 Q 30 4 60 22 Q 30 40 10 40 Q 22 22 10 4 Z',
+  xnor:   'M 10 4 Q 30 4 60 22 Q 30 40 10 40 Q 22 22 10 4 Z',
+  not:    'M 6 6 L 50 22 L 6 38 Z',
+  buffer: 'M 6 6 L 50 22 L 6 38 Z',
 };
 
 function inputPinPos(def, idx) {
@@ -350,7 +324,7 @@ let clockRunning = false;
 let vbX = 0, vbY = 0, vbW = 1040, vbH = 600;
 const svgPtrs = new Map();
 let prevPinch = null;
-let pageTheme = 'dark';
+let pageTheme = 'light';
 
 const values = {};     // componentId -> 0|1, recomputed by simulate()
 
@@ -401,38 +375,38 @@ function buildComponentBody(type, state, canvas) {
 
   if (def.category === 'gate') {
     if (visualTheme === 'ansi' && ANSI_GATE_PATHS[type]) {
-      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#ffffff'), stroke: tc('#8a9aba','#333333'), 'stroke-width': 2 }));
+      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#252535','#ffffff'), stroke: tc('#7a8898','#333333'), 'stroke-width': 2 }));
       if (type === 'xor' || type === 'xnor') {
-        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#333333'), 'stroke-width': 2 }));
+        g.appendChild(svgEl('path', { d: 'M 2 4 Q 14 22 2 40', fill: 'none', stroke: tc('#7a8898','#333333'), 'stroke-width': 2 }));
       }
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#ffffff'), stroke: tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#111111') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 8, ry: 8, fill: tc('#252535','#ffffff'), stroke: tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#dde8f0','#111111') });
       text.textContent = def.label;
       g.appendChild(text);
     }
     if (def.negated) {
-      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#f6f6f4'), stroke: tc('#eee','#333333'), 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#13131a','#f6f6f4'), stroke: tc('#aab8c8','#333333'), 'stroke-width': 1.5 }));
     }
   } else if (type === 'bulb') {
     const on = state === 1;
     const cx = def.w / 2, cr = cx - 4, cy = cr + 4;
-    if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: tc('#f0c040','#22c55e'), opacity: '0.22' }));
-    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#d8fce0') : tc('#3a3a4a','#ffffff'), stroke: on ? tc('#f8d060','#22c55e') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
-    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#cccccc') }));
+    if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: '#f0c040', opacity: '0.22' }));
+    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#fef9c3') : tc('#2a2a3a','#ffffff'), stroke: on ? '#f0c040' : tc('#5a6a8a','#aaaaaa'), 'stroke-width': 2 }));
+    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#3a4a5a','#cccccc') }));
   } else if (type === 'switch' || type === 'clock') {
     const on = state === 1;
     if (visualTheme === 'ansi' && type === 'switch') {
-      const trackCol = on ? tc('#1e4a2a','#1e8040') : tc('#1a2a40','#dddddd');
-      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#888888');
+      const trackCol = on ? tc('#1e4a2a','#1e8040') : tc('#252535','#dddddd');
+      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#6a7a8a','#888888');
       g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#aaaaaa'), 'stroke-width': 1.5 }));
       g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: tc('#ccc','#fff'), 'stroke-width': 1.2 }));
       const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: tc('#fff','#fff') });
       knobLbl.textContent = on ? '1' : '0';
       g.appendChild(knobLbl);
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#ffffff'), stroke: on ? tc('#f0c040','#22c55e') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#226633') : tc('#aab','#444444') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#252535','#ffffff'), stroke: on ? tc('#f0c040','#22c55e') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#226633') : tc('#8898aa','#444444') });
       text.textContent = String(state);
       g.appendChild(text);
       if (type === 'clock') {
@@ -441,8 +415,8 @@ function buildComponentBody(type, state, canvas) {
     }
   } else if (type === 'high' || type === 'low') {
     const v = type === 'high' ? 1 : 0;
-    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#ffffff'), stroke: v ? tc('#f0c040','#dd8800') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
-    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#dd8800') : tc('#aab','#444444') });
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#252535','#ffffff'), stroke: v ? tc('#f0c040','#dd8800') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#dd8800') : tc('#8898aa','#444444') });
     text.textContent = String(v);
     g.appendChild(text);
   }
@@ -615,7 +589,7 @@ function renderComponent(comp) {
 
   for (let i = 0; i < def.inputs; i++) {
     const p = inputPinPos(def, i);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#f6f6f4'), stroke: tc('#aab','#555555'), 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#13131a','#f6f6f4'), stroke: tc('#7a8898','#555555'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
@@ -623,7 +597,7 @@ function renderComponent(comp) {
   }
   if (def.outputs > 0) {
     const p = outputPinPos(def);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#eef2f9'), stroke: tc('#f0c040','#f59e0b'), 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#13131a','#eef2f9'), stroke: tc('#f0c040','#f59e0b'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); startWire(ev, comp.id); });
@@ -685,7 +659,7 @@ function editLabel(id) {
     `position:fixed`, `left:${Math.round(sx)}px`, `top:${Math.round(sy - fs - 2)}px`,
     `font-size:${fs}px`, `font-family:sans-serif`, `padding:2px 5px`,
     `border:1.5px solid ${pageTheme === 'light' ? '#22c55e' : '#f0c040'}`,
-    `border-radius:3px`, `background:${pageTheme === 'light' ? '#ffffff' : '#0d1b2a'}`,
+    `border-radius:3px`, `background:${pageTheme === 'light' ? '#ffffff' : '#1e2535'}`,
     `color:${pageTheme === 'light' ? '#111111' : '#eee'}`, `min-width:60px`,
     `z-index:200`, `outline:none`
   ].join(';');
@@ -1288,6 +1262,7 @@ const _pu = ev => { svgPtrs.delete(ev.pointerId); if (svgPtrs.size < 2) prevPinc
 _cs.addEventListener('pointerup', _pu, { capture: true });
 _cs.addEventListener('pointercancel', _pu, { capture: true });
 
+document.body.classList.add('theme-light');
 buildPalette();
 pushHistory();
 setTool('select');
