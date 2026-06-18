@@ -485,8 +485,7 @@ function gateOutput(type, inputVals) {
 }
 
 function simulate() {
-  for (const id in values) delete values[id];
-
+  // Update sources; gates keep their last value so latches hold state across calls
   components.forEach(c => {
     if (c.type === 'switch' || c.type === 'clock') values[c.id] = c.state || 0;
     else if (c.type === 'high') values[c.id] = 1;
@@ -495,6 +494,10 @@ function simulate() {
 
   const gatesAndBulbs = components.filter(c => COMPONENT_DEFS[c.type].category === 'gate' || c.type === 'bulb');
   gatesAndBulbs.forEach(c => { if (!(c.id in values)) values[c.id] = 0; });
+
+  // Remove stale entries for deleted components
+  const live = new Set(components.map(c => c.id));
+  for (const id in values) { if (!live.has(id)) delete values[id]; }
 
   for (let iter = 0; iter < 50; iter++) {
     let changed = false;
@@ -1147,6 +1150,7 @@ function saveCircuit() {
 
 function applyCircuitData(data) {
   if (!Array.isArray(data.components) || !Array.isArray(data.wires)) throw new Error('bad format');
+  for (const id in values) delete values[id];
   components = JSON.parse(JSON.stringify(data.components));
   wires = JSON.parse(JSON.stringify(data.wires));
   labels = JSON.parse(JSON.stringify(data.labels || []));
@@ -1174,6 +1178,7 @@ function loadCircuitFile(file) {
 function clearCircuit() {
   if (components.length && !confirm('Clear the whole circuit?')) return;
   if (wireDraft) cancelWireDraft();
+  for (const id in values) delete values[id];
   components = []; wires = []; labels = [];
   selectedIds.clear(); selectedWireIds.clear();
   history = []; historyIndex = -1;
