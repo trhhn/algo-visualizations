@@ -175,29 +175,29 @@
   .toolbar-label { font-size: 0.82rem; color: #aaa; }
 
   /* ── Light theme ── */
-  body.theme-light { background: #7a9ab4; color: #d4e8f8; }
-  body.theme-light h1 { color: #d8ecff; }
-  body.theme-light .subtitle { color: #96bcd6; }
-  body.theme-light .panel { background: #88a6c0; box-shadow: 0 2px 16px rgba(0,0,40,0.22); }
-  body.theme-light .panel-title { color: #b0cfe8; }
-  body.theme-light .palette-item { background: #5e7f9a; border-color: #3e607c; }
-  body.theme-light .palette-item:hover { border-color: #4a90e0; }
-  body.theme-light .palette-item.active { border-color: #4a90e0; background: rgba(74,144,224,0.18); }
-  body.theme-light .palette-item .lbl { color: #bcd8f0; }
-  body.theme-light .toolbar-sep { background: #3e607c; }
-  body.theme-light .toolbar-label { color: #a0c4dc; }
-  body.theme-light .tool-btn { background: #5e7f9a; border-color: #3e607c; color: #bcd8f0; }
-  body.theme-light .tool-btn:hover { border-color: #4a90e0; }
-  body.theme-light .tool-btn.active { border-color: #4a90e0; background: rgba(74,144,224,0.18); color: #8ec8f8; }
-  body.theme-light .btn-secondary { background: #4a6e8c; color: #d4e8f8; }
-  body.theme-light .btn-secondary:hover:not(:disabled) { background: #3a5e7c; }
-  body.theme-light .btn-danger { background: #7a3048; color: #fcd8dc; }
-  body.theme-light .btn-danger:hover:not(:disabled) { background: #6a2038; }
-  body.theme-light .btn-play { background: #2a6040; color: #a0f0c0; }
-  body.theme-light .btn-play:hover:not(:disabled) { background: #1e5030; }
-  body.theme-light select { background: #5e7f9a; color: #bcd8f0; border-color: #3e607c; }
-  body.theme-light .hint { color: #96bcd6; }
-  body.theme-light #circuitSvg { background: #6a8da8; border-color: #3e607c; }
+  body.theme-light { background: #e4dfd6; color: #1e2840; }
+  body.theme-light h1 { color: #1e2d54; }
+  body.theme-light .subtitle { color: #4a5a80; }
+  body.theme-light .panel { background: #f2ede5; box-shadow: 0 2px 16px rgba(0,0,40,0.12); }
+  body.theme-light .panel-title { color: #4a5a80; }
+  body.theme-light .palette-item { background: #e8e2d8; border-color: #beb6aa; }
+  body.theme-light .palette-item:hover { border-color: #4a7acf; }
+  body.theme-light .palette-item.active { border-color: #4a7acf; background: rgba(74,122,207,0.1); }
+  body.theme-light .palette-item .lbl { color: #3a4a6a; }
+  body.theme-light .toolbar-sep { background: #beb6aa; }
+  body.theme-light .toolbar-label { color: #4a5a80; }
+  body.theme-light .tool-btn { background: #e8e2d8; border-color: #beb6aa; color: #1e2840; }
+  body.theme-light .tool-btn:hover { border-color: #4a7acf; }
+  body.theme-light .tool-btn.active { border-color: #4a7acf; background: rgba(74,122,207,0.12); color: #4a7acf; }
+  body.theme-light .btn-secondary { background: #d8d0c4; color: #1e2840; }
+  body.theme-light .btn-secondary:hover:not(:disabled) { background: #ccc4b8; }
+  body.theme-light .btn-danger { background: #c43030; color: #fff8f8; }
+  body.theme-light .btn-danger:hover:not(:disabled) { background: #b02020; }
+  body.theme-light .btn-play { background: #267040; color: #c8f8d8; }
+  body.theme-light .btn-play:hover:not(:disabled) { background: #1c5c30; }
+  body.theme-light select { background: #e8e2d8; color: #1e2840; border-color: #beb6aa; }
+  body.theme-light .hint { color: #6a7898; }
+  body.theme-light #circuitSvg { background: #ede8de; border-color: #beb6aa; }
 </style>
 </head>
 <body>
@@ -401,48 +401,48 @@ function buildComponentBody(type, state, canvas) {
 
   if (def.category === 'gate') {
     if (visualTheme === 'ansi' && ANSI_GATE_PATHS[type]) {
-      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#1c3a5c'), stroke: tc('#8a9aba','#4a90e0'), 'stroke-width': 2 }));
+      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#1e2d54'), stroke: tc('#8a9aba','#4a7acf'), 'stroke-width': 2 }));
       if (type === 'xor' || type === 'xnor') {
-        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#4a90e0'), 'stroke-width': 2 }));
+        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#4a7acf'), 'stroke-width': 2 }));
       }
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#1c3a5c'), stroke: tc('#5a6a8a','#3878cc'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#d4e8f8') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#1e2d54'), stroke: tc('#5a6a8a','#4060b8'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#d8e8ff') });
       text.textContent = def.label;
       g.appendChild(text);
     }
     if (def.negated) {
-      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#6a8da8'), stroke: tc('#eee','#4a90e0'), 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#ede8de'), stroke: tc('#eee','#4a7acf'), 'stroke-width': 1.5 }));
     }
   } else if (type === 'bulb') {
     const on = state === 1;
     const cx = def.w / 2, cr = cx - 4, cy = cr + 4;
     if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: tc('#f0c040','#f59e0b'), opacity: '0.22' }));
-    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#fde68a') : tc('#3a3a4a','#1c3a5c'), stroke: on ? tc('#f8d060','#f59e0b') : tc('#5a6a8a','#3878cc'), 'stroke-width': 2 }));
-    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#2a4a6a') }));
+    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#fde68a') : tc('#3a3a4a','#1e2d54'), stroke: on ? tc('#f8d060','#f59e0b') : tc('#5a6a8a','#4a7acf'), 'stroke-width': 2 }));
+    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#2a3a6a') }));
   } else if (type === 'switch' || type === 'clock') {
     const on = state === 1;
     if (visualTheme === 'ansi' && type === 'switch') {
-      const trackCol = on ? tc('#1e4a2a','#1a5c30') : tc('#1a2a40','#1c3a5c');
-      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#3060a0');
-      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#3060a0'), 'stroke-width': 1.5 }));
+      const trackCol = on ? tc('#1e4a2a','#1e6e38') : tc('#1a2a40','#2a3a5c');
+      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#3858a0');
+      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#3858a0'), 'stroke-width': 1.5 }));
       g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: tc('#ccc','#fff'), 'stroke-width': 1.2 }));
       const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: tc('#fff','#fff') });
       knobLbl.textContent = on ? '1' : '0';
       g.appendChild(knobLbl);
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1c3a5c'), stroke: on ? tc('#f0c040','#4a90e0') : tc('#5a6a8a','#3060a0'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#90d0ff') : tc('#aab','#7aa8cc') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1e2d54'), stroke: on ? tc('#f0c040','#4a7acf') : tc('#5a6a8a','#3858a0'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#f0e8b0') : tc('#aab','#9ab0d0') });
       text.textContent = String(state);
       g.appendChild(text);
       if (type === 'clock') {
-        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? tc('#f0c040','#4a90e0') : tc('#5a6a8a','#3060a0'), 'stroke-width': 1.5 }));
+        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? tc('#f0c040','#4a7acf') : tc('#5a6a8a','#3858a0'), 'stroke-width': 1.5 }));
       }
     }
   } else if (type === 'high' || type === 'low') {
     const v = type === 'high' ? 1 : 0;
-    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1c3a5c'), stroke: v ? tc('#f0c040','#f0a030') : tc('#5a6a8a','#3060a0'), 'stroke-width': 2 }));
-    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#f0c060') : tc('#aab','#7aa8cc') });
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1e2d54'), stroke: v ? tc('#f0c040','#c07020') : tc('#5a6a8a','#3858a0'), 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#f0d080') : tc('#aab','#9ab0d0') });
     text.textContent = String(v);
     g.appendChild(text);
   }
@@ -566,9 +566,9 @@ function renderWires() {
     const ip = inputPinPos(toDef, w.toPin);
     const x1 = from.x + op.x, y1 = from.y + op.y, x2 = to.x + ip.x, y2 = to.y + ip.y;
     const on = (values[w.fromId] || 0) === 1;
-    const trueCol = tc(visualTheme === 'ansi' ? '#4caf50' : '#f0c040', '#16a34a');
+    const trueCol = tc(visualTheme === 'ansi' ? '#4caf50' : '#f0c040', '#22c55e');
     const sel = selectedWireIds.has(w.id);
-    const stroke = sel ? tc('#4a9eff','#2563eb') : (on ? trueCol : tc('#4a5a7a','#4a6a8a'));
+    const stroke = sel ? tc('#4a9eff','#2563eb') : (on ? trueCol : tc('#4a5a7a','#7a8898'));
     const d = wireBezier(x1, y1, x2, y2, toDef.pinBottom);
     layer.appendChild(svgEl('path', { d, fill: 'none', stroke, 'stroke-width': (sel || on) ? 3 : 2 }));
     const hit = svgEl('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 12 });
@@ -615,7 +615,7 @@ function renderComponent(comp) {
 
   for (let i = 0; i < def.inputs; i++) {
     const p = inputPinPos(def, i);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#6a8da8'), stroke: tc('#aab','#4a90e0'), 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#ede8de'), stroke: tc('#aab','#4a7acf'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
@@ -657,7 +657,7 @@ function renderLabels() {
     }
     const txt = svgEl('text', {
       x: 0, y: 0, 'font-size': fontSize, 'font-family': 'sans-serif',
-      fill: tc('#e8e8e8', '#d4e8f8'), 'dominant-baseline': 'auto'
+      fill: tc('#e8e8e8', '#1e2840'), 'dominant-baseline': 'auto'
     });
     txt.textContent = lbl.text;
     g.appendChild(txt);
@@ -684,9 +684,9 @@ function editLabel(id) {
   inp.style.cssText = [
     `position:fixed`, `left:${Math.round(sx)}px`, `top:${Math.round(sy - fs - 2)}px`,
     `font-size:${fs}px`, `font-family:sans-serif`, `padding:2px 5px`,
-    `border:1.5px solid ${pageTheme === 'light' ? '#4a90e0' : '#f0c040'}`,
-    `border-radius:3px`, `background:${pageTheme === 'light' ? '#1c3a5c' : '#0d1b2a'}`,
-    `color:${pageTheme === 'light' ? '#d4e8f8' : '#eee'}`, `min-width:60px`,
+    `border:1.5px solid ${pageTheme === 'light' ? '#4a7acf' : '#f0c040'}`,
+    `border-radius:3px`, `background:${pageTheme === 'light' ? '#f2ede5' : '#0d1b2a'}`,
+    `color:${pageTheme === 'light' ? '#1e2840' : '#eee'}`, `min-width:60px`,
     `z-index:200`, `outline:none`
   ].join(';');
   document.body.appendChild(inp);
