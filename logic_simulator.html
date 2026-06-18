@@ -175,29 +175,29 @@
   .toolbar-label { font-size: 0.82rem; color: #aaa; }
 
   /* ── Light theme ── */
-  body.theme-light { background: #e4dfd6; color: #1e2840; }
-  body.theme-light h1 { color: #1e2d54; }
-  body.theme-light .subtitle { color: #4a5a80; }
-  body.theme-light .panel { background: #f2ede5; box-shadow: 0 2px 16px rgba(0,0,40,0.12); }
-  body.theme-light .panel-title { color: #4a5a80; }
-  body.theme-light .palette-item { background: #e8e2d8; border-color: #beb6aa; }
-  body.theme-light .palette-item:hover { border-color: #4a7acf; }
-  body.theme-light .palette-item.active { border-color: #4a7acf; background: rgba(74,122,207,0.1); }
-  body.theme-light .palette-item .lbl { color: #3a4a6a; }
-  body.theme-light .toolbar-sep { background: #beb6aa; }
-  body.theme-light .toolbar-label { color: #4a5a80; }
-  body.theme-light .tool-btn { background: #e8e2d8; border-color: #beb6aa; color: #1e2840; }
-  body.theme-light .tool-btn:hover { border-color: #4a7acf; }
-  body.theme-light .tool-btn.active { border-color: #4a7acf; background: rgba(74,122,207,0.12); color: #4a7acf; }
-  body.theme-light .btn-secondary { background: #d8d0c4; color: #1e2840; }
-  body.theme-light .btn-secondary:hover:not(:disabled) { background: #ccc4b8; }
-  body.theme-light .btn-danger { background: #c43030; color: #fff8f8; }
-  body.theme-light .btn-danger:hover:not(:disabled) { background: #b02020; }
-  body.theme-light .btn-play { background: #267040; color: #c8f8d8; }
-  body.theme-light .btn-play:hover:not(:disabled) { background: #1c5c30; }
-  body.theme-light select { background: #e8e2d8; color: #1e2840; border-color: #beb6aa; }
-  body.theme-light .hint { color: #6a7898; }
-  body.theme-light #circuitSvg { background: #ede8de; border-color: #beb6aa; }
+  body.theme-light { background: #1e1e22; color: #cccccc; }
+  body.theme-light h1 { color: #eeeeee; }
+  body.theme-light .subtitle { color: #888888; }
+  body.theme-light .panel { background: #252528; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+  body.theme-light .panel-title { color: #888888; }
+  body.theme-light .palette-item { background: #f0f0ee; border-color: #cccccc; }
+  body.theme-light .palette-item:hover { border-color: #22c55e; }
+  body.theme-light .palette-item.active { border-color: #22c55e; background: #edfff3; }
+  body.theme-light .palette-item .lbl { color: #333333; }
+  body.theme-light .toolbar-sep { background: #505055; }
+  body.theme-light .toolbar-label { color: #888888; }
+  body.theme-light .tool-btn { background: #383840; border-color: #505055; color: #aaaaaa; }
+  body.theme-light .tool-btn:hover { border-color: #22c55e; }
+  body.theme-light .tool-btn.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  body.theme-light .btn-secondary { background: #383840; color: #cccccc; }
+  body.theme-light .btn-secondary:hover:not(:disabled) { background: #48484f; }
+  body.theme-light .btn-danger { background: #b83030; color: #ffffff; }
+  body.theme-light .btn-danger:hover:not(:disabled) { background: #a02020; }
+  body.theme-light .btn-play { background: #226633; color: #88eea8; }
+  body.theme-light .btn-play:hover:not(:disabled) { background: #1a5028; }
+  body.theme-light select { background: #383840; color: #cccccc; border-color: #505055; }
+  body.theme-light .hint { color: #666668; }
+  body.theme-light #circuitSvg { background: #f6f6f4; border-color: #cccccc; }
 </style>
 </head>
 <body>
@@ -401,48 +401,48 @@ function buildComponentBody(type, state, canvas) {
 
   if (def.category === 'gate') {
     if (visualTheme === 'ansi' && ANSI_GATE_PATHS[type]) {
-      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#1e2d54'), stroke: tc('#8a9aba','#4a7acf'), 'stroke-width': 2 }));
+      g.appendChild(svgEl('path', { d: ANSI_GATE_PATHS[type], fill: tc('#1e2d54','#ffffff'), stroke: tc('#8a9aba','#333333'), 'stroke-width': 2 }));
       if (type === 'xor' || type === 'xnor') {
-        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#4a7acf'), 'stroke-width': 2 }));
+        g.appendChild(svgEl('path', { d: 'M 4 4 Q 18 22 4 40', fill: 'none', stroke: tc('#8a9aba','#333333'), 'stroke-width': 2 }));
       }
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#1e2d54'), stroke: tc('#5a6a8a','#4060b8'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#d8e8ff') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#2a3a6a','#ffffff'), stroke: tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: tc('#fff','#111111') });
       text.textContent = def.label;
       g.appendChild(text);
     }
     if (def.negated) {
-      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#ede8de'), stroke: tc('#eee','#4a7acf'), 'stroke-width': 1.5 }));
+      g.appendChild(svgEl('circle', { cx: def.w + 4, cy: def.h / 2, r: 4, fill: tc('#0d1b2a','#f6f6f4'), stroke: tc('#eee','#333333'), 'stroke-width': 1.5 }));
     }
   } else if (type === 'bulb') {
     const on = state === 1;
     const cx = def.w / 2, cr = cx - 4, cy = cr + 4;
-    if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: tc('#f0c040','#f59e0b'), opacity: '0.22' }));
-    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#fde68a') : tc('#3a3a4a','#1e2d54'), stroke: on ? tc('#f8d060','#f59e0b') : tc('#5a6a8a','#4a7acf'), 'stroke-width': 2 }));
-    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#2a3a6a') }));
+    if (on) g.appendChild(svgEl('circle', { cx, cy, r: cr + 8, fill: tc('#f0c040','#22c55e'), opacity: '0.22' }));
+    g.appendChild(svgEl('circle', { cx, cy, r: cr, fill: on ? tc('#f0c040','#d8fce0') : tc('#3a3a4a','#ffffff'), stroke: on ? tc('#f8d060','#22c55e') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+    g.appendChild(svgEl('rect', { x: cx - 9, y: cy + cr - 2, width: 18, height: def.h - cy - cr + 2, rx: 4, fill: tc('#4a5a7a','#cccccc') }));
   } else if (type === 'switch' || type === 'clock') {
     const on = state === 1;
     if (visualTheme === 'ansi' && type === 'switch') {
-      const trackCol = on ? tc('#1e4a2a','#1e6e38') : tc('#1a2a40','#2a3a5c');
-      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#3858a0');
-      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#3858a0'), 'stroke-width': 1.5 }));
+      const trackCol = on ? tc('#1e4a2a','#1e8040') : tc('#1a2a40','#dddddd');
+      const knobCol = on ? tc('#4caf50','#22c55e') : tc('#8a9aba','#888888');
+      g.appendChild(svgEl('rect', { x: 6, y: 17, width: def.w - 12, height: 16, rx: 8, fill: trackCol, stroke: on ? tc('#4caf50','#22c55e') : tc('#4a5a7a','#aaaaaa'), 'stroke-width': 1.5 }));
       g.appendChild(svgEl('circle', { cx: on ? def.w - 14 : 14, cy: def.h / 2, r: 12, fill: knobCol, stroke: tc('#ccc','#fff'), 'stroke-width': 1.2 }));
       const knobLbl = svgEl('text', { x: on ? def.w - 14 : 14, y: def.h / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: tc('#fff','#fff') });
       knobLbl.textContent = on ? '1' : '0';
       g.appendChild(knobLbl);
     } else {
-      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1e2d54'), stroke: on ? tc('#f0c040','#4a7acf') : tc('#5a6a8a','#3858a0'), 'stroke-width': 2 }));
-      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#f0e8b0') : tc('#aab','#9ab0d0') });
+      g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#ffffff'), stroke: on ? tc('#f0c040','#22c55e') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+      const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: on ? tc('#f0c040','#226633') : tc('#aab','#444444') });
       text.textContent = String(state);
       g.appendChild(text);
       if (type === 'clock') {
-        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? tc('#f0c040','#4a7acf') : tc('#5a6a8a','#3858a0'), 'stroke-width': 1.5 }));
+        g.appendChild(svgEl('path', { d: `M5,${def.h - 8} l4,-10 l4,8 l4,-12 l4,10`, fill: 'none', stroke: on ? tc('#f0c040','#22c55e') : tc('#5a6a8a','#999999'), 'stroke-width': 1.5 }));
       }
     }
   } else if (type === 'high' || type === 'low') {
     const v = type === 'high' ? 1 : 0;
-    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#1e2d54'), stroke: v ? tc('#f0c040','#c07020') : tc('#5a6a8a','#3858a0'), 'stroke-width': 2 }));
-    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#f0d080') : tc('#aab','#9ab0d0') });
+    g.appendChild(svgEl('rect', { x: 0, y: 0, width: def.w, height: def.h, rx: 10, ry: 10, fill: tc('#0f1b33','#ffffff'), stroke: v ? tc('#f0c040','#dd8800') : tc('#5a6a8a','#333333'), 'stroke-width': 2 }));
+    const text = svgEl('text', { x: def.w / 2, y: def.h / 2 + 5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: v ? tc('#f0c040','#dd8800') : tc('#aab','#444444') });
     text.textContent = String(v);
     g.appendChild(text);
   }
@@ -568,7 +568,7 @@ function renderWires() {
     const on = (values[w.fromId] || 0) === 1;
     const trueCol = tc(visualTheme === 'ansi' ? '#4caf50' : '#f0c040', '#22c55e');
     const sel = selectedWireIds.has(w.id);
-    const stroke = sel ? tc('#4a9eff','#2563eb') : (on ? trueCol : tc('#4a5a7a','#7a8898'));
+    const stroke = sel ? tc('#4a9eff','#2563eb') : (on ? trueCol : tc('#4a5a7a','#999999'));
     const d = wireBezier(x1, y1, x2, y2, toDef.pinBottom);
     layer.appendChild(svgEl('path', { d, fill: 'none', stroke, 'stroke-width': (sel || on) ? 3 : 2 }));
     const hit = svgEl('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 12 });
@@ -615,7 +615,7 @@ function renderComponent(comp) {
 
   for (let i = 0; i < def.inputs; i++) {
     const p = inputPinPos(def, i);
-    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#ede8de'), stroke: tc('#aab','#4a7acf'), 'stroke-width': 1.5 });
+    const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#0d1b2a','#f6f6f4'), stroke: tc('#aab','#555555'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
     pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
     pin.addEventListener('click', (ev) => { ev.stopPropagation(); if (wireDraft) completeWire(ev, comp.id, i); });
@@ -657,7 +657,7 @@ function renderLabels() {
     }
     const txt = svgEl('text', {
       x: 0, y: 0, 'font-size': fontSize, 'font-family': 'sans-serif',
-      fill: tc('#e8e8e8', '#1e2840'), 'dominant-baseline': 'auto'
+      fill: tc('#e8e8e8', '#222222'), 'dominant-baseline': 'auto'
     });
     txt.textContent = lbl.text;
     g.appendChild(txt);
@@ -684,9 +684,9 @@ function editLabel(id) {
   inp.style.cssText = [
     `position:fixed`, `left:${Math.round(sx)}px`, `top:${Math.round(sy - fs - 2)}px`,
     `font-size:${fs}px`, `font-family:sans-serif`, `padding:2px 5px`,
-    `border:1.5px solid ${pageTheme === 'light' ? '#4a7acf' : '#f0c040'}`,
-    `border-radius:3px`, `background:${pageTheme === 'light' ? '#f2ede5' : '#0d1b2a'}`,
-    `color:${pageTheme === 'light' ? '#1e2840' : '#eee'}`, `min-width:60px`,
+    `border:1.5px solid ${pageTheme === 'light' ? '#22c55e' : '#f0c040'}`,
+    `border-radius:3px`, `background:${pageTheme === 'light' ? '#ffffff' : '#0d1b2a'}`,
+    `color:${pageTheme === 'light' ? '#111111' : '#eee'}`, `min-width:60px`,
     `z-index:200`, `outline:none`
   ].join(';');
   document.body.appendChild(inp);
