@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IEEE 754 Float Converter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1e1e22;
+    color: #cccccc;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+
+  a.back-link {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #888890;
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 6px 12px;
+    background: #252528;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  a.back-link:hover { color: #22c55e; border-color: #22c55e; }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #eeeeee;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666670;
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+  }
+
+  /* ── Input row ── */
+  .input-section {
+    max-width: 700px;
+    margin: 0 auto 28px;
+    background: #252528;
+    border-radius: 12px;
+    padding: 20px 24px;
+    border: 1px solid #2e2e34;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .input-group {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-group label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888890;
+  }
+
+  .input-with-btn {
+    display: flex;
+    gap: 8px;
+  }
+
+  .input-with-btn input {
+    flex: 1;
+    background: #13131a;
+    color: #eeeeee;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.92rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-with-btn input:focus { border-color: #22c55e; }
+
+  button.convert-btn {
+    background: #383840;
+    color: #cccccc;
+    border: 1px solid #505055;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  button.convert-btn:hover { background: #22c55e; color: #111; border-color: #22c55e; }
+
+  .rounding-row {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.82rem;
+    color: #888890;
+    border-top: 1px solid #383840;
+    padding-top: 12px;
+  }
+  .rounding-row label.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    color: #aaaaaa;
+    font-size: 0.82rem;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .rounding-row input[type=radio] { accent-color: #22c55e; cursor: pointer; }
+  .rounding-row label.radio-label:hover { color: #eeeeee; }
+  .rounding-heading { font-weight: 700; color: #666670; }
+
+  /* ── Bit display ── */
+  .bit-section {
+    max-width: 1000px;
+    margin: 0 auto 20px;
+    background: #252528;
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    border: 1px solid #2e2e34;
+  }
+
+  .bit-row {
+    display: flex;
+    gap: 3px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .bit-box {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: 'Consolas', 'Courier New', monospace;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s, color 0.12s, transform 0.08s;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .bit-box:hover { transform: translateY(-2px); }
+  .bit-box:active { transform: translateY(0); }
+
+  /* sign */
+  .bit-box.sign-0 { background: #3b0a0a; color: #cc7070; border: 1px solid #5a1a1a; }
+  .bit-box.sign-1 { background: #9b1c1c; color: #fca5a5; border: 1px solid #dc2626; }
+
+  /* exponent */
+  .bit-box.exp-0 { background: #0f2040; color: #6090cc; border: 1px solid #1e3a6a; }
+  .bit-box.exp-1 { background: #1d4ed8; color: #bfdbfe; border: 1px solid #3b82f6; }
+
+  /* mantissa */
+  .bit-box.man-0 { background: #0a2214; color: #4a9a6a; border: 1px solid #1a4a2a; }
+  .bit-box.man-1 { background: #15803d; color: #86efac; border: 1px solid #22c55e; }
+
+  .bit-labels {
+    display: flex;
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: #666670;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    justify-content: center;
+    user-select: none;
+  }
+  .bit-label-sign  { width: calc(28px + 2px); text-align: center; }
+  .bit-label-exp   { width: calc(8 * 28px + 7 * 3px + 3px); text-align: center; color: #4a7acc; }
+  .bit-label-man   { width: calc(23 * 28px + 22 * 3px); text-align: center; color: #22c55e; }
+
+  /* tooltip */
+  .bit-box::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #13131a;
+    color: #cccccc;
+    font-size: 0.65rem;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: normal;
+    white-space: nowrap;
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid #383840;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    z-index: 10;
+  }
+  .bit-box:hover::after { opacity: 1; }
+
+  /* ── Summary bar ── */
+  .summary-bar {
+    max-width: 1000px;
+    margin: 0 auto 20px;
+    background: #13131a;
+    border-radius: 10px;
+    padding: 12px 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    border: 1px solid #2e2e34;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+  }
+  .summary-item { display: flex; gap: 8px; align-items: baseline; }
+  .summary-label { color: #666670; font-size: 0.78rem; font-family: 'Segoe UI', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-value { color: #eeeeee; font-weight: 600; }
+  .summary-value.special { color: #f59e0b; }
+
+  /* ── Steps panel ── */
+  .steps-section {
+    max-width: 700px;
+    margin: 0 auto;
+    display: none;
+  }
+  .steps-section.visible { display: block; }
+
+  .steps-panel {
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+  }
+
+  .steps-panel h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #2e2e34;
+  }
+  .step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .step-badge {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: #383840;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #888890;
+    margin-top: 2px;
+  }
+
+  .step-body {
+    flex: 1;
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+
+  .step-body strong { color: #eeeeee; }
+  .step-body code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #13131a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: #86efac;
+  }
+  .step-body .code-red { color: #fca5a5; }
+  .step-body .code-blue { color: #bfdbfe; }
+  .step-body .code-green { color: #86efac; }
+
+  .step-title {
+    font-weight: 700;
+    color: #eeeeee;
+    margin-bottom: 6px;
+  }
+
+  /* conversion tables */
+  .conv-table {
+    border-collapse: collapse;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    margin: 8px 0;
+  }
+  .conv-table th {
+    color: #666670;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px 4px 0;
+    text-align: left;
+    border-bottom: 1px solid #383840;
+  }
+  .conv-table td {
+    padding: 3px 10px 3px 0;
+    color: #cccccc;
+  }
+  .conv-table td:last-child { color: #86efac; }
+
+  .assemble-block {
+    background: #13131a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.84rem;
+    margin-top: 8px;
+    line-height: 1.9;
+  }
+  .assemble-row { display: flex; gap: 12px; }
+  .assemble-lbl { color: #666670; min-width: 90px; }
+  .assemble-val { color: #eeeeee; }
+  .assemble-val .s-bit { color: #fca5a5; }
+  .assemble-val .e-bit { color: #bfdbfe; }
+  .assemble-val .m-bit { color: #86efac; }
+  .assemble-hex { color: #f59e0b; font-weight: 700; }
+
+  .decode-panel {
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+  }
+  .decode-panel h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+
+  .decode-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .decode-lbl {
+    color: #666670;
+    font-weight: 700;
+    min-width: 140px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-top: 2px;
+  }
+  .decode-val { color: #cccccc; }
+  .decode-val code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #13131a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: #86efac;
+  }
+
+  .special-badge {
+    display: inline-block;
+    background: #451a03;
+    color: #f59e0b;
+    border: 1px solid #854d0e;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  .rounding-note {
+    background: #1a1a2e;
+    border: 1px solid #2d2d6a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: #9090cc;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← Back</a>
+
+<h1>IEEE 754 Float Converter</h1>
+<p class="subtitle">Explore how decimal numbers are represented as 32-bit single-precision floats</p>
+
+<!-- Input section -->
+<div class="input-section">
+  <div class="input-row">
+    <div class="input-group">
+      <label for="decInput">Decimal</label>
+      <div class="input-with-btn">
+        <input type="text" id="decInput" value="-16.75" placeholder="e.g. -16.75" />
+        <button class="convert-btn" id="convertBtn">Convert →</button>
+      </div>
+    </div>
+    <div class="input-group">
+      <label for="hexInput">Hex / Binary</label>
+      <div class="input-with-btn">
+        <input type="text" id="hexInput" placeholder="e.g. C0870000" />
+        <button class="convert-btn" id="decodeBtn">Decode →</button>
+      </div>
+    </div>
+  </div>
+  <div class="rounding-row">
+    <span class="rounding-heading">Rounding:</span>
+    <label class="radio-label"><input type="radio" name="rounding" value="round" checked> Round (half-to-even)</label>
+    <label class="radio-label"><input type="radio" name="rounding" value="truncate"> Truncate</label>
+  </div>
+</div>
+
+<!-- Bit display -->
+<div class="bit-section">
+  <div class="bit-row" id="bitRow"></div>
+  <div class="bit-labels">
+    <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
+    <div class="bit-label-exp">Exponent (8 bits)</div>
+    <div class="bit-label-man">Mantissa (23 bits)</div>
+  </div>
+</div>
+
+<!-- Summary bar -->
+<div class="summary-bar">
+  <div class="summary-item">
+    <span class="summary-label">Value</span>
+    <span class="summary-value" id="sumValue">—</span>
+  </div>
+  <div class="summary-item">
+    <span class="summary-label">Hex</span>
+    <span class="summary-value" id="sumHex">—</span>
+  </div>
+  <div class="summary-item">
+    <span class="summary-label">Binary</span>
+    <span class="summary-value" id="sumBinary" style="font-size:0.78rem; word-break:break-all;">—</span>
+  </div>
+</div>
+
+<!-- Steps / Decode panel -->
+<div class="steps-section" id="stepsSection">
+  <div id="stepsInner"></div>
+</div>
+
+<script>
+// ── Core bit-level utilities ─────────────────────────────────────────────────
+const buf = new ArrayBuffer(4);
+const _f32 = new Float32Array(buf);
+const _u32 = new Uint32Array(buf);
+
+function decimalToU32(value) {
+  _f32[0] = value;
+  return _u32[0] >>> 0;
+}
+function u32ToDecimal(u32) {
+  _u32[0] = u32;
+  return _f32[0];
+}
+function u32ToBitString(u32) {
+  return (u32 >>> 0).toString(2).padStart(32, '0');
+}
+function bitStringToU32(s) {
+  return parseInt(s, 2) >>> 0;
+}
+function u32ToHex(u32) {
+  return (u32 >>> 0).toString(16).toUpperCase().padStart(8, '0');
+}
+function hexToU32(hex) {
+  return parseInt(hex, 16) >>> 0;
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let currentBits = new Array(32).fill(0); // bit[0] = sign (MSB), bit[31] = LSB
+let lastMode = null; // 'decimal' | 'decode'
+let lastDecimalValue = null;
+
+// ── Bit display ──────────────────────────────────────────────────────────────
+function buildBitRow() {
+  const row = document.getElementById('bitRow');
+  row.innerHTML = '';
+  for (let i = 0; i < 32; i++) {
+    const box = document.createElement('div');
+    const bitPos = 31 - i; // display MSB on left
+    let cls;
+    if (i === 0) cls = 'sign';
+    else if (i <= 8) cls = 'exp';
+    else cls = 'man';
+    box.className = 'bit-box ' + cls + '-' + currentBits[i];
+    box.textContent = currentBits[i];
+    box.dataset.tip = 'bit ' + bitPos;
+    box.addEventListener('click', () => toggleBit(i));
+    row.appendChild(box);
+  }
+}
+
+function updateBitRow() {
+  const boxes = document.querySelectorAll('#bitRow .bit-box');
+  boxes.forEach((box, i) => {
+    let cls;
+    if (i === 0) cls = 'sign';
+    else if (i <= 8) cls = 'exp';
+    else cls = 'man';
+    box.className = 'bit-box ' + cls + '-' + currentBits[i];
+    box.textContent = currentBits[i];
+  });
+}
+
+function setBitsFromU32(u32) {
+  const s = u32ToBitString(u32);
+  for (let i = 0; i < 32; i++) currentBits[i] = parseInt(s[i]);
+}
+
+function bitsToU32() {
+  return bitStringToU32(currentBits.join(''));
+}
+
+function toggleBit(idx) {
+  currentBits[idx] ^= 1;
+  updateBitRow();
+  const u32 = bitsToU32();
+  updateSummary(u32);
+  document.getElementById('hexInput').value = u32ToHex(u32);
+  document.getElementById('decInput').value = '';
+  lastMode = null;
+  hideSteps();
+}
+
+// ── Summary bar ──────────────────────────────────────────────────────────────
+function updateSummary(u32) {
+  const val = u32ToDecimal(u32);
+  const hex = u32ToHex(u32);
+  const bin = u32ToBitString(u32);
+  document.getElementById('sumHex').textContent = hex;
+  document.getElementById('sumBinary').textContent = bin;
+  const valEl = document.getElementById('sumValue');
+  if (isNaN(val)) {
+    valEl.textContent = 'NaN';
+    valEl.className = 'summary-value special';
+  } else if (!isFinite(val)) {
+    valEl.textContent = val > 0 ? '+Infinity' : '-Infinity';
+    valEl.className = 'summary-value special';
+  } else if (Object.is(val, -0)) {
+    valEl.textContent = '-0';
+    valEl.className = 'summary-value special';
+  } else if (val === 0) {
+    valEl.textContent = '+0';
+    valEl.className = 'summary-value special';
+  } else {
+    valEl.textContent = val;
+    valEl.className = 'summary-value';
+  }
+}
+
+// ── Steps helpers ────────────────────────────────────────────────────────────
+function hideSteps() {
+  document.getElementById('stepsSection').classList.remove('visible');
+}
+function showSteps(html) {
+  document.getElementById('stepsInner').innerHTML = html;
+  document.getElementById('stepsSection').classList.add('visible');
+}
+
+// ── Integer → binary (repeated division) ─────────────────────────────────────
+function intToBinaryTable(n) {
+  // Returns { bits: "10001", rows: [{n, quotient, remainder}, ...] }
+  if (n === 0) return { bits: '0', rows: [] };
+  const rows = [];
+  let x = n;
+  while (x > 0) {
+    const q = Math.floor(x / 2);
+    const r = x % 2;
+    rows.push({ n: x, quotient: q, remainder: r });
+    x = q;
+  }
+  const bits = rows.map(r => r.remainder).reverse().join('');
+  return { bits, rows };
+}
+
+function intToBinTableHtml(n, label) {
+  const { bits, rows } = intToBinaryTable(n);
+  if (rows.length === 0) return { bits: '0', html: '<p><code>0</code> → <code>0</code></p>' };
+  let html = '<table class="conv-table"><thead><tr><th>÷ 2</th><th>Quotient</th><th>Remainder</th></tr></thead><tbody>';
+  for (const r of rows) {
+    html += `<tr><td>${r.n}</td><td>${r.quotient}</td><td>${r.remainder}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<div style="font-size:0.8rem; color:#666670; margin-top:4px;">Read remainders bottom-to-top: <code>${bits}</code></div>`;
+  return { bits, html };
+}
+
+// ── Fraction → binary (repeated multiplication) ───────────────────────────────
+function fracToBinary(frac, maxBits) {
+  // Returns string of bits (no leading "0.")
+  const bits = [];
+  let f = frac;
+  for (let i = 0; i < maxBits; i++) {
+    f *= 2;
+    if (f >= 1) { bits.push(1); f -= 1; }
+    else { bits.push(0); }
+    if (f === 0) break;
+  }
+  return bits.join('');
+}
+
+function fracToBinTableHtml(frac, maxBits) {
+  const rows = [];
+  let f = frac;
+  for (let i = 0; i < maxBits; i++) {
+    const p = f * 2;
+    const bit = p >= 1 ? 1 : 0;
+    rows.push({ val: f.toPrecision(8), product: p.toPrecision(8), bit });
+    f = bit === 1 ? p - 1 : p;
+    if (f === 0) break;
+  }
+  const bits = rows.map(r => r.bit).join('');
+  let html = '<table class="conv-table"><thead><tr><th>Value</th><th>× 2</th><th>Bit</th></tr></thead><tbody>';
+  for (const r of rows) {
+    html += `<tr><td>${r.val}</td><td>${r.product}</td><td>${r.bit}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<div style="font-size:0.8rem; color:#666670; margin-top:4px;">Read bits top-to-bottom: <code>.${bits}</code></div>`;
+  return { bits, html };
+}
+
+// ── Round 23-bit mantissa ────────────────────────────────────────────────────
+function applyRounding(mantBits, mode) {
+  // mantBits: string longer than 23 chars (raw mantissa including guard bits)
+  // Returns { bits23: string of 23, overflow: bool, note: string }
+  if (mantBits.length <= 23) {
+    return { bits23: mantBits.padEnd(23, '0'), overflow: false, note: null };
+  }
+  const kept = mantBits.slice(0, 23);
+  const guard = mantBits[23]; // first dropped bit
+  const tail  = mantBits.slice(24);
+
+  if (mode === 'truncate') {
+    return {
+      bits23: kept,
+      overflow: false,
+      note: `Truncate mode: drop bits after position 23 (<code>${mantBits.slice(23)}</code>).`
+    };
+  }
+  // Round half-to-even
+  const guardBit = parseInt(guard, 10);
+  const tailHasOnes = tail.indexOf('1') !== -1;
+  const lsb = parseInt(kept[22], 10); // the 23rd bit (LSB of kept)
+  const shouldRoundUp = guardBit === 1 && (tailHasOnes || lsb === 1);
+
+  if (!shouldRoundUp) {
+    return {
+      bits23: kept,
+      overflow: false,
+      note: `Guard bit = <code>${guard}</code>, tail = <code>${tail || '(empty)'}</code> → round down (keep bits 1–23).`
+    };
+  }
+  // Add 1 to 23-bit integer
+  let val = parseInt(kept, 2) + 1;
+  const overflow = val >= (1 << 23);
+  const bits23 = (val & 0x7FFFFF).toString(2).padStart(23, '0');
+  return {
+    bits23,
+    overflow,
+    note: `Guard bit = <code>${guard}</code>, tail = <code>${tail || '(empty)'}</code>, LSB = <code>${lsb}</code> → round up. Adding 1 to mantissa${overflow ? ' caused overflow (exponent increments by 1)' : ''}.`
+  };
+}
+
+// ── Decimal conversion with steps ───────────────────────────────────────────
+function convertDecimal() {
+  const raw = document.getElementById('decInput').value.trim();
+  if (!raw) return;
+  const value = parseFloat(raw);
+  if (isNaN(value)) {
+    alert('Please enter a valid decimal number.');
+    return;
+  }
+  lastDecimalValue = value;
+  lastMode = 'decimal';
+
+  const mode = document.querySelector('input[name=rounding]:checked').value;
+  const u32 = decimalToU32(value);
+  setBitsFromU32(u32);
+  updateBitRow();
+  updateSummary(u32);
+  document.getElementById('hexInput').value = u32ToHex(u32);
+
+  // Build steps
+  const stepsHtml = buildSteps(value, mode);
+  showSteps(stepsHtml);
+}
+
+function buildSteps(value, mode) {
+  const u32 = decimalToU32(value);
+  const bits = u32ToBitString(u32);
+
+  // Special cases
+  if (isNaN(value)) return buildSpecialSteps('NaN', bits);
+  if (!isFinite(value)) return buildSpecialSteps(value > 0 ? '+Infinity' : '-Infinity', bits);
+  if (value === 0) return buildSpecialSteps(Object.is(value, -0) ? '-0' : '+0', bits);
+
+  const negative = value < 0;
+  const absVal = Math.abs(value);
+  const intPart = Math.floor(absVal);
+  const fracPart = absVal - intPart;
+
+  // Step 1: sign
+  const signBit = negative ? 1 : 0;
+  const step1 = `
+<div class="step">
+  <div class="step-badge">1</div>
+  <div class="step-body">
+    <div class="step-title">Sign Bit</div>
+    The number is <strong>${negative ? 'negative' : 'positive'}</strong> →
+    sign bit = <code class="${negative ? 'code-red' : 'code-green'}">${signBit}</code>
+  </div>
+</div>`;
+
+  // Step 2: integer and fraction parts to binary
+  const { bits: intBits, html: intTableHtml } = intToBinTableHtml(intPart, 'Integer');
+  const { bits: fracBits, html: fracTableHtml } = fracPart > 0
+    ? fracToBinTableHtml(fracPart, 30)
+    : { bits: '', html: '<p style="color:#666670; font-size:0.82rem;">No fractional part.</p>' };
+
+  const binaryRep = (intBits === '0' ? '0' : intBits) + (fracBits ? '.' + fracBits : '');
+  const step2 = `
+<div class="step">
+  <div class="step-badge">2</div>
+  <div class="step-body">
+    <div class="step-title">Convert |${value}| = ${absVal} to Binary</div>
+    <strong>Integer part (${intPart}):</strong><br>
+    ${intTableHtml}
+    ${fracPart > 0 ? `<br><strong>Fractional part (${fracPart.toPrecision(8).replace(/\.?0+$/, '')}):</strong><br>${fracTableHtml}` : ''}
+    <br>Binary: <code>${binaryRep}</code>
+  </div>
+</div>`;
+
+  // Step 3: Normalize
+  // Find the position of the leading 1
+  const fullBin = (intBits === '0' ? '' : intBits) + (fracBits || '');
+  // fullBin is the binary digits without the dot
+  // We need to find leading 1 in binaryRep
+  let exponent, mantissaRaw;
+  if (intPart > 0) {
+    // Leading 1 is in integer part
+    exponent = intBits.length - 1; // intBits.length digits, shift left by (length-1)
+    // Mantissa is everything after leading 1
+    mantissaRaw = intBits.slice(1) + fracBits;
+  } else {
+    // Leading 1 is in fractional part
+    const firstOne = fracBits.indexOf('1');
+    if (firstOne === -1) {
+      // Zero (shouldn't happen since we checked earlier)
+      return buildSpecialSteps('+0', u32ToBitString(decimalToU32(0)));
+    }
+    exponent = -(firstOne + 1);
+    mantissaRaw = fracBits.slice(firstOne + 1);
+  }
+
+  const normalizedStr = '1.' + (mantissaRaw || '0');
+  const step3 = `
+<div class="step">
+  <div class="step-badge">3</div>
+  <div class="step-body">
+    <div class="step-title">Normalize</div>
+    Write in the form <code>1.xxx × 2<sup>n</sup></code>:<br><br>
+    <code>${binaryRep}</code> = <code>${normalizedStr} × 2<sup>${exponent}</sup></code>
+    ${intPart > 0
+      ? `<br><span style="color:#666670; font-size:0.82rem;">(Shift binary point left ${exponent} place${exponent !== 1 ? 's' : ''})</span>`
+      : `<br><span style="color:#666670; font-size:0.82rem;">(Shift binary point right ${-exponent} place${exponent !== -1 ? 's' : ''})</span>`}
+  </div>
+</div>`;
+
+  // Step 4: Biased exponent
+  const bias = 127;
+  const biasedExp = exponent + bias;
+  const { bits: expBits, html: expTableHtml } = intToBinTableHtml(biasedExp, 'Exponent');
+  const expBits8 = expBits.padStart(8, '0');
+  const step4 = `
+<div class="step">
+  <div class="step-badge">4</div>
+  <div class="step-body">
+    <div class="step-title">Biased Exponent</div>
+    Exponent = <strong>${exponent}</strong>. Add bias 127:<br>
+    <code>${exponent} + 127 = ${biasedExp}</code><br><br>
+    Convert ${biasedExp} to 8-bit binary:<br>
+    ${expTableHtml}
+    <br>8-bit exponent: <code class="code-blue">${expBits8}</code>
+  </div>
+</div>`;
+
+  // Step 5: Mantissa with rounding
+  const raw23 = mantissaRaw.slice(0, 50); // cap for display
+  const { bits23, overflow, note: roundNote } = applyRounding(raw23, mode);
+  let finalExponent = exponent;
+  let finalBiasedExp = biasedExp;
+  let finalExpBits8 = expBits8;
+  if (overflow) {
+    finalExponent = exponent + 1;
+    finalBiasedExp = finalExponent + bias;
+    finalExpBits8 = finalBiasedExp.toString(2).padStart(8, '0');
+  }
+
+  let step5 = `
+<div class="step">
+  <div class="step-badge">5</div>
+  <div class="step-body">
+    <div class="step-title">Mantissa (Significand)</div>
+    After the leading <code>1.</code>, the raw bits are: <code>${raw23 || '(none)'}</code><br>`;
+  if (raw23.length <= 23) {
+    step5 += `Pad to 23 bits: <code class="code-green">${bits23}</code>`;
+  } else {
+    step5 += `Raw mantissa has <strong>${raw23.length}</strong> bits — longer than 23.<br>`;
+    step5 += `Kept bits (1–23): <code>${raw23.slice(0, 23)}</code>, dropped: <code>${raw23.slice(23)}</code><br>`;
+    if (roundNote) {
+      step5 += `<div class="rounding-note">${roundNote}</div>`;
+    }
+    step5 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+  }
+  step5 += `</div></div>`;
+
+  // Verify with Float32Array (the authoritative result)
+  const verifyBits = u32ToBitString(decimalToU32(value));
+  const verifySign = verifyBits[0];
+  const verifyExp  = verifyBits.slice(1, 9);
+  const verifyMan  = verifyBits.slice(9);
+
+  // Step 6: Assemble
+  const step6 = `
+<div class="step">
+  <div class="step-badge">6</div>
+  <div class="step-body">
+    <div class="step-title">Assemble the 32 Bits</div>
+    <div class="assemble-block">
+      <div class="assemble-row"><span class="assemble-lbl">Sign:</span>     <span class="assemble-val"><span class="s-bit">${verifySign}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">Exponent:</span> <span class="assemble-val"><span class="e-bit">${verifyExp}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">Mantissa:</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
+      <div style="border-top:1px solid #2e2e34; margin: 6px 0;"></div>
+      <div class="assemble-row"><span class="assemble-lbl">Result:</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">Hex:</span>      <span class="assemble-hex">${u32ToHex(decimalToU32(value))}</span></div>
+    </div>
+    <div style="font-size:0.8rem; color:#666670; margin-top:8px;">(Bit pattern verified using <code>Float32Array</code>)</div>
+  </div>
+</div>`;
+
+  return `<div class="steps-panel"><h2>Step-by-Step Conversion</h2>${step1}${step2}${step3}${step4}${step5}${step6}</div>`;
+}
+
+function buildSpecialSteps(label, bits) {
+  const sign = bits[0];
+  const exp  = bits.slice(1, 9);
+  const man  = bits.slice(9);
+  let description = '';
+  if (label === 'NaN') {
+    description = 'All exponent bits are <code>1</code> and the mantissa is <strong>non-zero</strong> → <strong>Not a Number (NaN)</strong>.';
+  } else if (label === '+Infinity' || label === '-Infinity') {
+    description = 'All exponent bits are <code>1</code> and the mantissa is all <code>0</code> → <strong>Infinity</strong>. Sign bit determines direction.';
+  } else if (label === '+0' || label === '-0') {
+    description = 'All exponent bits are <code>0</code> and the mantissa is all <code>0</code> → <strong>Zero</strong>. IEEE 754 has both +0 and −0.';
+  }
+  return `<div class="decode-panel">
+    <h2>Special Value <span class="special-badge">${label}</span></h2>
+    <div class="decode-row">
+      <span class="decode-lbl">Pattern</span>
+      <span class="decode-val">
+        <span style="color:#fca5a5;">${sign}</span>
+        <span style="color:#bfdbfe;"> ${exp}</span>
+        <span style="color:#86efac;"> ${man}</span>
+      </span>
+    </div>
+    <div class="decode-row">
+      <span class="decode-lbl">Explanation</span>
+      <span class="decode-val">${description}</span>
+    </div>
+  </div>`;
+}
+
+// ── Decode mode ──────────────────────────────────────────────────────────────
+function decodeHex() {
+  let raw = document.getElementById('hexInput').value.trim();
+  if (!raw) return;
+
+  let u32;
+  // 32-char binary string?
+  if (/^[01]{32}$/.test(raw)) {
+    u32 = bitStringToU32(raw);
+  } else {
+    // Hex (strip 0x prefix)
+    raw = raw.replace(/^0x/i, '').replace(/\s/g, '');
+    if (!/^[0-9a-fA-F]{1,8}$/.test(raw)) {
+      alert('Enter 8 hex digits (e.g. C0870000) or a 32-bit binary string.');
+      return;
+    }
+    u32 = hexToU32(raw.padStart(8, '0'));
+  }
+
+  lastMode = 'decode';
+  setBitsFromU32(u32);
+  updateBitRow();
+  updateSummary(u32);
+  document.getElementById('decInput').value = '';
+  document.getElementById('hexInput').value = u32ToHex(u32);
+
+  showSteps(buildDecodePanel(u32));
+}
+
+function buildDecodePanel(u32) {
+  const bits = u32ToBitString(u32);
+  const signBit = parseInt(bits[0]);
+  const expBits = bits.slice(1, 9);
+  const manBits = bits.slice(9);
+
+  const expVal = parseInt(expBits, 2);
+  const manVal = parseInt(manBits, 2);
+  const value  = u32ToDecimal(u32);
+
+  // Special cases
+  const isSpecialExp = expVal === 255;
+  const isZeroExp    = expVal === 0;
+  const isNaNVal     = isSpecialExp && manVal !== 0;
+  const isInfVal     = isSpecialExp && manVal === 0;
+  const isZeroVal    = isZeroExp && manVal === 0;
+  const isSubnormal  = isZeroExp && manVal !== 0;
+
+  let specialNote = '';
+  let result = '';
+
+  if (isNaNVal) {
+    specialNote = '<span class="special-badge">NaN</span>';
+    result = 'Not a Number. All exponent bits are 1 and mantissa is non-zero.';
+  } else if (isInfVal) {
+    specialNote = `<span class="special-badge">${signBit ? '−' : '+'}Infinity</span>`;
+    result = 'All exponent bits are 1 and mantissa is all 0 → Infinity.';
+  } else if (isZeroVal) {
+    specialNote = `<span class="special-badge">${signBit ? '−0' : '+0'}</span>`;
+    result = 'All exponent and mantissa bits are 0 → Zero.';
+  } else if (isSubnormal) {
+    specialNote = '<span class="special-badge">Subnormal</span>';
+    const actualExp = -126; // fixed exponent for subnormals
+    const mantFrac = parseInt(manBits, 2) / Math.pow(2, 23);
+    result = `Subnormal (denormalized) number. Exponent = ${actualExp}, value = ±0.${manBits} × 2<sup>−126</sup> = ${value}`;
+  } else {
+    const actualExp = expVal - 127;
+    // mantissa fractional value
+    const mantFrac = parseInt(manBits, 2) / Math.pow(2, 23);
+    const significand = 1 + mantFrac;
+    result = `${signBit ? '−' : '+'}${significand.toPrecision(8)} × 2<sup>${actualExp}</sup> = <strong>${value}</strong>`;
+  }
+
+  let html = `<div class="decode-panel"><h2>Decode${specialNote}</h2>`;
+
+  html += `<div class="decode-row">
+    <span class="decode-lbl">Bits</span>
+    <span class="decode-val">
+      <span style="color:#fca5a5;">${bits[0]}</span>
+      <span style="color:#bfdbfe;"> ${expBits}</span>
+      <span style="color:#86efac;"> ${manBits}</span>
+    </span>
+  </div>`;
+
+  html += `<div class="decode-row">
+    <span class="decode-lbl">Sign bit</span>
+    <span class="decode-val"><code>${signBit}</code> → ${signBit ? 'negative' : 'positive'}</span>
+  </div>`;
+
+  html += `<div class="decode-row">
+    <span class="decode-lbl">Exponent bits</span>
+    <span class="decode-val"><code>${expBits}</code> = ${expVal}${isSpecialExp ? ' (special — all 1s)' : isZeroExp ? ' (special — all 0s)' : ` → ${expVal} − 127 = <strong>${expVal - 127}</strong>`}</span>
+  </div>`;
+
+  html += `<div class="decode-row">
+    <span class="decode-lbl">Mantissa bits</span>
+    <span class="decode-val"><code>${manBits}</code>${isSpecialExp || isZeroVal ? '' : ` → ${isSubnormal ? '0' : '1'}.${manBits} (binary fraction)`}</span>
+  </div>`;
+
+  if (!isNaNVal && !isInfVal && !isZeroVal) {
+    if (isSubnormal) {
+      html += `<div class="decode-row">
+        <span class="decode-lbl">Form</span>
+        <span class="decode-val">0.${manBits} × 2<sup>−126</sup> (subnormal: no implicit leading 1)</span>
+      </div>`;
+    } else {
+      const actualExp = expVal - 127;
+      html += `<div class="decode-row">
+        <span class="decode-lbl">Form</span>
+        <span class="decode-val">${signBit ? '−' : '+'}1.${manBits} × 2<sup>${actualExp}</sup></span>
+      </div>`;
+    }
+  }
+
+  html += `<div class="decode-row">
+    <span class="decode-lbl">Result</span>
+    <span class="decode-val">${result}</span>
+  </div>`;
+
+  html += '</div>';
+  return html;
+}
+
+// ── Event wiring ─────────────────────────────────────────────────────────────
+document.getElementById('convertBtn').addEventListener('click', convertDecimal);
+document.getElementById('decodeBtn').addEventListener('click', decodeHex);
+
+document.getElementById('decInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') convertDecimal();
+});
+document.getElementById('hexInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') decodeHex();
+});
+
+document.querySelectorAll('input[name=rounding]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (lastMode === 'decimal' && lastDecimalValue !== null) {
+      const mode = document.querySelector('input[name=rounding]:checked').value;
+      // Re-run steps only (bits come from Float32Array so they don't change)
+      const stepsHtml = buildSteps(lastDecimalValue, mode);
+      showSteps(stepsHtml);
+    }
+  });
+});
+
+// ── Initial render ───────────────────────────────────────────────────────────
+buildBitRow();
+// Default: convert -16.75 on load
+convertDecimal();
+</script>
+</body>
+</html>

@@ -178,27 +178,43 @@
     <div class="card-link" id="link3">Open</div>
   </a>
 
+  <a class="card" href="ieee_float_converter.html">
+    <svg class="card-icon" viewBox="0 0 40 40" fill="none">
+      <rect x="2" y="14" width="8" height="12" rx="2" fill="#9b1c1c" stroke="#dc2626" stroke-width="1"/>
+      <rect x="12" y="14" width="14" height="12" rx="2" fill="#1d4ed8" stroke="#3b82f6" stroke-width="1"/>
+      <rect x="28" y="14" width="10" height="12" rx="2" fill="#15803d" stroke="#22c55e" stroke-width="1"/>
+      <text x="6" y="24" font-size="7" fill="#fca5a5" text-anchor="middle" font-family="monospace">1</text>
+      <text x="19" y="24" font-size="7" fill="#bfdbfe" text-anchor="middle" font-family="monospace">10</text>
+      <text x="33" y="24" font-size="6" fill="#86efac" text-anchor="middle" font-family="monospace">011</text>
+    </svg>
+    <div class="card-title" id="title4">IEEE 754 Float Converter</div>
+    <div class="card-desc" id="desc4">Enter a decimal number and see it broken into sign, exponent, and mantissa bits with a full step-by-step walkthrough.</div>
+    <div class="card-link" id="link4">Open</div>
+  </a>
+
 </div>
 
 <script>
 const STRINGS = {
   en: {
     subtitle: 'Interactive tools for explaining algorithms and digital logic',
-    titles: ['Sorting Coins', "Dijkstra's Algorithm", 'Logic Circuit Simulator'],
+    titles: ['Sorting Coins', "Dijkstra's Algorithm", 'Logic Circuit Simulator', 'IEEE 754 Float Converter'],
     descs: [
       'Step through Bubble Sort and Selection Sort one comparison at a time, with coin icons and a live code panel.',
       "Draw a weighted graph, then step through how Dijkstra's algorithm finds the shortest path from a source node.",
       'Place gates, switches, and bulbs, wire them up, and watch the signal propagate. Includes SR latches, adders, and more.',
+      'Enter a decimal number and see it broken into sign, exponent, and mantissa bits with a full step-by-step walkthrough.',
     ],
     open: 'Open',
   },
   de: {
     subtitle: 'Interaktive Werkzeuge für Algorithmen und digitale Logik',
-    titles: ['Münzen sortieren', 'Dijkstras Algorithmus', 'Logikschaltkreis-Simulator'],
+    titles: ['Münzen sortieren', 'Dijkstras Algorithmus', 'Logikschaltkreis-Simulator', 'IEEE 754 Float-Konverter'],
     descs: [
       'Schritt für Schritt durch Bubble Sort und Selection Sort — ein Vergleich nach dem anderen, mit Münzsymbolen und Live-Code-Panel.',
       'Zeichne einen gewichteten Graphen und gehe schrittweise durch Dijkstras Algorithmus zur Kürzeste-Wege-Suche.',
       'Platziere Gatter, Schalter und Lampen, verdrahte sie und beobachte den Signalfluss. Mit SR-Flipflops, Addierern und mehr.',
+      'Gib eine Dezimalzahl ein und sieh, wie sie in Vorzeichen-, Exponenten- und Mantissenbits aufgeteilt wird – mit Schritt-für-Schritt-Erklärung.',
     ],
     open: 'Öffnen',
   }
@@ -216,7 +232,7 @@ function setLang(l) {
 function applyLang() {
   const s = STRINGS[lang];
   document.getElementById('pageSubtitle').textContent = s.subtitle;
-  [1, 2, 3].forEach((n, i) => {
+  [1, 2, 3, 4].forEach((n, i) => {
     document.getElementById('title' + n).textContent = s.titles[i];
     document.getElementById('desc'  + n).textContent = s.descs[i];
     document.getElementById('link'  + n).textContent = s.open;
