@@ -8,55 +8,56 @@
 
   body {
     font-family: 'Segoe UI', sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    background: #1e1e22;
+    color: #cccccc;
     min-height: 100vh;
-    padding: 24px;
+    padding: 16px;
   }
 
   h1 {
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.3rem;
+    font-weight: 700;
     margin-bottom: 6px;
-    color: #f0c040;
-    letter-spacing: 1px;
+    color: #eeeeee;
   }
 
   .subtitle {
     text-align: center;
-    color: #aaa;
-    margin-bottom: 24px;
-    font-size: 0.95rem;
+    color: #666670;
+    margin-bottom: 20px;
+    font-size: 0.88rem;
   }
 
   .tabs {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
 
   .tab {
-    padding: 10px 32px;
-    border: none;
-    border-radius: 24px;
-    font-size: 1rem;
+    padding: 10px 24px;
+    border: 2px solid #505055;
+    border-radius: 8px;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-    background: #2a2a4a;
-    color: #aaa;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    background: #383840;
+    color: #aaaaaa;
   }
 
-  .tab.active { background: #f0c040; color: #1a1a2e; }
+  .tab:hover { border-color: #22c55e; }
+  .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
 
   .stage {
-    background: #16213e;
-    border-radius: 16px;
+    background: #252528;
+    border-radius: 12px;
     padding: 24px;
     max-width: 980px;
     margin: 0 auto;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
   }
 
   .toolbar {
@@ -70,28 +71,28 @@
   .toolbar-sep {
     width: 1px;
     height: 24px;
-    background: #2a3a5a;
+    background: #505055;
     margin: 0 4px;
   }
 
   .tool-btn {
     padding: 8px 16px;
-    border: 2px solid #2a3a5a;
+    border: 2px solid #505055;
     border-radius: 8px;
-    background: #0f1b33;
-    color: #ccc;
+    background: #383840;
+    color: #aaaaaa;
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, color 0.2s;
   }
 
-  .tool-btn:hover { border-color: #4a5a8a; }
+  .tool-btn:hover { border-color: #22c55e; }
 
   .tool-btn.active {
-    border-color: #f0c040;
-    background: rgba(240,192,64,0.12);
-    color: #f0c040;
+    border-color: #22c55e;
+    background: rgba(34,197,94,0.1);
+    color: #22c55e;
   }
 
   .btn {
@@ -106,27 +107,27 @@
 
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  .btn-primary   { background: #f0c040; color: #1a1a2e; }
-  .btn-secondary { background: #4a4a7a; color: #eee; }
-  .btn-danger    { background: #ff6b6b; color: #fff; }
-  .btn-play      { background: #6bcb77; color: #1a1a2e; min-width: 110px; }
+  .btn-primary   { background: #22c55e; color: #0a1a10; }
+  .btn-secondary { background: #383840; color: #cccccc; }
+  .btn-danger    { background: #b83030; color: #fff; }
+  .btn-play      { background: #226633; color: #88eea8; min-width: 110px; }
 
-  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
-  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
-  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
-  .btn-play:hover:not(:disabled)      { background: #80e080; }
+  .btn-primary:hover:not(:disabled)   { background: #1ea84f; }
+  .btn-secondary:hover:not(:disabled) { background: #48484f; }
+  .btn-danger:hover:not(:disabled)    { background: #a02020; }
+  .btn-play:hover:not(:disabled)      { background: #1a5028; }
 
   select {
-    background: #0f1b33;
-    color: #eee;
-    border: 2px solid #2a3a5a;
+    background: #383840;
+    color: #cccccc;
+    border: 2px solid #505055;
     border-radius: 8px;
     padding: 7px 10px;
     font-size: 0.88rem;
   }
 
   .hint {
-    color: #888;
+    color: #666670;
     font-size: 0.85rem;
     margin-bottom: 14px;
     min-height: 1.2em;
@@ -135,9 +136,9 @@
   #graphSvg {
     width: 100%;
     height: auto;
-    background: #0d1b2a;
-    border-radius: 12px;
-    border: 1px solid #2a3a4a;
+    background: #13131a;
+    border-radius: 10px;
+    border: 1px solid #2a2a38;
     touch-action: none;
     display: block;
     margin-bottom: 16px;
@@ -159,7 +160,7 @@
     height: 14px;
     border-radius: 50%;
     border: 2px solid;
-    background: #16213e;
+    background: #252528;
   }
 
   .legend-line {
@@ -169,28 +170,28 @@
   }
 
   .explanation {
-    background: #0f3460;
-    border-radius: 10px;
+    background: #2a2a32;
+    border-radius: 8px;
     padding: 14px 18px;
     min-height: 56px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.5;
     margin-bottom: 16px;
-    border-left: 4px solid #f0c040;
-    color: #dde;
+    border-left: 3px solid #22c55e;
+    color: #cccccc;
   }
 
   .progress-wrap {
-    background: #2a2a4a;
+    background: #2a2a32;
     border-radius: 8px;
-    height: 8px;
+    height: 6px;
     margin-bottom: 16px;
     overflow: hidden;
   }
 
   .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #f0c040, #ff6b6b);
+    background: #22c55e;
     border-radius: 8px;
     transition: width 0.3s ease;
     width: 0%;
@@ -198,7 +199,7 @@
 
   .step-info {
     text-align: center;
-    color: #888;
+    color: #666670;
     font-size: 0.82rem;
     margin-bottom: 16px;
   }
@@ -208,10 +209,10 @@
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
-    color: #aaa;
+    color: #888890;
   }
 
-  input[type=range] { accent-color: #f0c040; width: 90px; }
+  input[type=range] { accent-color: #22c55e; width: 90px; }
 
   .run-columns {
     display: grid;
@@ -224,23 +225,23 @@
   }
 
   .pseudo-title {
-    font-size: 0.8rem;
-    color: #888;
+    font-size: 0.72rem;
+    color: #666670;
     margin-bottom: 8px;
     text-align: center;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-transform: uppercase;
   }
 
   .pseudocode {
-    background: #0d1b2a;
-    border-radius: 10px;
+    background: #13131a;
+    border-radius: 8px;
     padding: 14px 16px;
     font-family: 'Courier New', monospace;
     font-size: 0.78rem;
     line-height: 1.7;
     color: #b0c4de;
-    border: 1px solid #2a3a4a;
+    border: 1px solid #2a2a38;
     white-space: pre;
     overflow-x: auto;
   }
@@ -252,8 +253,8 @@
   }
 
   .pseudocode .line.active-line {
-    background: rgba(240, 192, 64, 0.18);
-    color: #f0c040;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
     font-weight: 600;
   }
 
@@ -264,22 +265,22 @@
   .state-table {
     width: 100%;
     border-collapse: collapse;
-    background: #0d1b2a;
-    border-radius: 10px;
+    background: #13131a;
+    border-radius: 8px;
     overflow: hidden;
     font-size: 0.85rem;
-    border: 1px solid #2a3a4a;
+    border: 1px solid #2a2a38;
   }
 
   .state-table th, .state-table td {
     padding: 7px 10px;
     text-align: center;
-    border-bottom: 1px solid #1f2d44;
+    border-bottom: 1px solid #2a2a38;
   }
 
   .state-table th {
-    background: #142340;
-    color: #f0c040;
+    background: #1e1e2e;
+    color: #22c55e;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -288,12 +289,12 @@
 </head>
 <body>
 
-<h1>🗺️ Dijkstra's Algorithm</h1>
+<h1>Dijkstra's Algorithm</h1>
 <p class="subtitle">Draw a graph, then step through how the code finds shortest paths</p>
 
 <div class="tabs">
-  <button class="tab active" id="tabBuild" onclick="switchMode('build')">✏️ Build Graph</button>
-  <button class="tab" id="tabRun" onclick="switchMode('run')">▶ Run Algorithm</button>
+  <button class="tab active" id="tabBuild" onclick="switchMode('build')">Build Graph</button>
+  <button class="tab" id="tabRun" onclick="switchMode('run')">Run Algorithm</button>
 </div>
 
 <div class="stage">

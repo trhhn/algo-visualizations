@@ -8,60 +8,58 @@
 
   body {
     font-family: 'Segoe UI', sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    background: #1e1e22;
+    color: #cccccc;
     min-height: 100vh;
-    padding: 24px;
+    padding: 16px;
   }
 
   h1 {
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.3rem;
+    font-weight: 700;
     margin-bottom: 6px;
-    color: #f0c040;
-    letter-spacing: 1px;
+    color: #eeeeee;
   }
 
   .subtitle {
     text-align: center;
-    color: #aaa;
+    color: #666670;
     margin-bottom: 24px;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
   }
 
   /* ── Tabs ── */
   .tabs {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 28px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
 
   .tab {
-    padding: 10px 32px;
-    border: none;
-    border-radius: 24px;
-    font-size: 1rem;
+    padding: 10px 24px;
+    border: 2px solid #505055;
+    border-radius: 8px;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-    background: #2a2a4a;
-    color: #aaa;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    background: #383840;
+    color: #aaaaaa;
   }
 
-  .tab.active {
-    background: #f0c040;
-    color: #1a1a2e;
-  }
+  .tab:hover { border-color: #22c55e; }
+  .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
 
   /* ── Stage ── */
   .stage {
-    background: #16213e;
-    border-radius: 16px;
-    padding: 32px 24px 24px;
+    background: #252528;
+    border-radius: 12px;
+    padding: 28px 24px 24px;
     max-width: 860px;
     margin: 0 auto;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
   }
 
   /* ── Coins row ── */
@@ -169,29 +167,29 @@
 
   /* ── Explanation box ── */
   .explanation {
-    background: #0f3460;
-    border-radius: 10px;
+    background: #2a2a32;
+    border-radius: 8px;
     padding: 14px 18px;
     min-height: 56px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.5;
     margin-bottom: 20px;
-    border-left: 4px solid #f0c040;
-    color: #dde;
+    border-left: 3px solid #22c55e;
+    color: #cccccc;
   }
 
   /* ── Progress bar ── */
   .progress-wrap {
-    background: #2a2a4a;
+    background: #2a2a32;
     border-radius: 8px;
-    height: 8px;
+    height: 6px;
     margin-bottom: 20px;
     overflow: hidden;
   }
 
   .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #f0c040, #ff6b6b);
+    background: #22c55e;
     border-radius: 8px;
     transition: width 0.3s ease;
     width: 0%;
@@ -207,10 +205,10 @@
   }
 
   .btn {
-    padding: 10px 22px;
+    padding: 9px 20px;
     border: none;
     border-radius: 8px;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, opacity 0.2s;
@@ -218,33 +216,33 @@
 
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  .btn-primary   { background: #f0c040; color: #1a1a2e; }
-  .btn-secondary { background: #4a4a7a; color: #eee; }
-  .btn-danger    { background: #ff6b6b; color: #fff; }
-  .btn-play      { background: #6bcb77; color: #1a1a2e; min-width: 110px; }
+  .btn-primary   { background: #22c55e; color: #0a1a10; }
+  .btn-secondary { background: #383840; color: #cccccc; }
+  .btn-danger    { background: #b83030; color: #fff; }
+  .btn-play      { background: #226633; color: #88eea8; min-width: 110px; }
 
-  .btn-primary:hover:not(:disabled)   { background: #f8d060; }
-  .btn-secondary:hover:not(:disabled) { background: #5a5a8a; }
-  .btn-danger:hover:not(:disabled)    { background: #ff8888; }
-  .btn-play:hover:not(:disabled)      { background: #80e080; }
+  .btn-primary:hover:not(:disabled)   { background: #1ea84f; }
+  .btn-secondary:hover:not(:disabled) { background: #48484f; }
+  .btn-danger:hover:not(:disabled)    { background: #a02020; }
+  .btn-play:hover:not(:disabled)      { background: #1a5028; }
 
   .speed-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
-    color: #aaa;
+    color: #888890;
   }
 
   input[type=range] {
-    accent-color: #f0c040;
+    accent-color: #22c55e;
     width: 90px;
   }
 
   /* ── Step counter ── */
   .step-info {
     text-align: center;
-    color: #888;
+    color: #666670;
     font-size: 0.82rem;
     margin-top: 12px;
   }
@@ -252,27 +250,27 @@
   /* ── Pseudocode panel ── */
   .pseudo-wrap {
     max-width: 860px;
-    margin: 24px auto 0;
+    margin: 16px auto 0;
   }
 
   .pseudo-title {
-    font-size: 0.85rem;
-    color: #888;
+    font-size: 0.72rem;
+    color: #666670;
     margin-bottom: 8px;
     text-align: center;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-transform: uppercase;
   }
 
   .pseudocode {
-    background: #0d1b2a;
-    border-radius: 10px;
+    background: #13131a;
+    border-radius: 8px;
     padding: 16px 20px;
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
     line-height: 1.8;
     color: #b0c4de;
-    border: 1px solid #2a3a4a;
+    border: 1px solid #2a2a38;
     white-space: pre;
   }
 
@@ -283,8 +281,8 @@
   }
 
   .pseudocode .line.active-line {
-    background: rgba(240, 192, 64, 0.18);
-    color: #f0c040;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
     font-weight: 600;
   }
 
@@ -296,7 +294,7 @@
 </head>
 <body>
 
-<h1>🪙 Sorting Coins</h1>
+<h1>Sorting Coins</h1>
 <p class="subtitle">Step through Bubble Sort and Selection Sort — one comparison at a time</p>
 
 <div class="tabs">
