@@ -285,10 +285,8 @@
   }
 
   .tabs-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-  .lang-toggle { display:flex; gap:5px; }
-  .lang-btn { padding:4px 10px; border:2px solid #505055; border-radius:6px; background:#383840; color:#666670; font-size:0.72rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
-  .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
-  .lang-btn:hover:not(.active) { border-color:#888; color:#ccc; }
+  .lang-label { font-size:0.82rem; color:#888888; }
+  #langSelect { background:#383840; color:#cccccc; border:2px solid #505055; border-radius:8px; padding:4px 8px; font-size:0.82rem; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -301,10 +299,11 @@
     <button class="tab active" id="tabBuild" onclick="switchMode('build')">Build Graph</button>
     <button class="tab" id="tabRun" onclick="switchMode('run')">Run Algorithm</button>
   </div>
-  <div class="lang-toggle">
-    <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
-  </div>
+  <label class="lang-label">Language:</label>
+  <select id="langSelect" onchange="setLang(this.value)">
+    <option value="en">EN</option>
+    <option value="de">DE</option>
+  </select>
 </div>
 
 <div class="stage">
@@ -534,8 +533,7 @@ function S() { return STRINGS[lang]; }
 function setLang(l) {
   lang = l;
   localStorage.setItem('lang', l);
-  document.getElementById('langEn').classList.toggle('active', l === 'en');
-  document.getElementById('langDe').classList.toggle('active', l === 'de');
+  document.getElementById('langSelect').value = l;
   applyStaticLang();
   // rebuild steps if already running
   if (mode === 'run' && steps.length) {
@@ -1231,7 +1229,7 @@ document.getElementById('speedSlider').addEventListener('input', (ev) => {
 });
 
 const _storedLang = localStorage.getItem('lang');
-if (_storedLang === 'de') { lang = 'de'; document.getElementById('langEn').classList.remove('active'); document.getElementById('langDe').classList.add('active'); applyStaticLang(); }
+if (_storedLang === 'de') { lang = 'de'; document.getElementById('langSelect').value = 'de'; applyStaticLang(); }
 loadExample();
 switchMode('build');
 </script>
