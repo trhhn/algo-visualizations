@@ -174,6 +174,11 @@
   body.theme-light .palette-item:hover { border-color: #22c55e; }
   body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
   body.theme-light .palette-item .lbl { color: #333333; }
+
+  .lang-toggle { display:flex; gap:6px; margin-bottom:4px; }
+  .lang-btn { padding:4px 12px; border:2px solid #505055; border-radius:6px; background:#383840; color:#888890; font-size:0.72rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
+  .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
+  .lang-btn:hover:not(.active) { border-color:#aaa; color:#ccc; }
 </style>
 </head>
 <body>
@@ -181,14 +186,18 @@
 <div class="app">
 
   <div class="panel">
-    <div class="app-wordmark">Logic Circuit Simulator</div>
-    <div class="panel-title">Inputs</div>
+    <div class="app-wordmark" id="appWordmark">Logic Circuit Simulator</div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
+    </div>
+    <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
-    <div class="panel-title">Outputs</div>
+    <div class="panel-title" id="titleOutputs">Outputs</div>
     <div class="palette-grid" id="paletteOutputs"></div>
 
-    <div class="panel-title">Gates</div>
+    <div class="panel-title" id="titleGates">Gates</div>
     <div class="palette-grid" id="paletteGates"></div>
   </div>
 
@@ -197,14 +206,14 @@
       <button class="btn btn-secondary" id="btnSave">💾 Save</button>
       <button class="btn btn-secondary" id="btnLoad">📂 Load</button>
       <select id="samplesSelect" title="Load a sample circuit">
-        <option value="">Samples…</option>
-        <option value="half-adder">Half Adder</option>
-        <option value="full-adder">Full Adder</option>
-        <option value="sr-latch">SR Latch (NOR)</option>
-        <option value="sr-latch-nand">SR Latch (NAND)</option>
-        <option value="majority-voter">Majority Voter</option>
-        <option value="gated-clock">Gated Clock</option>
-        <option value="d-flip-flop">D Flip-Flop</option>
+        <option value="" data-en="Samples…" data-de="Beispiele…">Samples…</option>
+        <option value="half-adder" data-en="Half Adder" data-de="Halbaddierer">Half Adder</option>
+        <option value="full-adder" data-en="Full Adder" data-de="Volladdierer">Full Adder</option>
+        <option value="sr-latch" data-en="SR Latch (NOR)" data-de="SR-Flipflop (NOR)">SR Latch (NOR)</option>
+        <option value="sr-latch-nand" data-en="SR Latch (NAND)" data-de="SR-Flipflop (NAND)">SR Latch (NAND)</option>
+        <option value="majority-voter" data-en="Majority Voter" data-de="Mehrheitswähler">Majority Voter</option>
+        <option value="gated-clock" data-en="Gated Clock" data-de="Getakteter Takt">Gated Clock</option>
+        <option value="d-flip-flop" data-en="D Flip-Flop" data-de="D-Flipflop">D Flip-Flop</option>
       </select>
       <button class="btn btn-danger" id="btnClear">Clear</button>
       <input type="file" id="fileInput" accept=".json" style="display:none">
@@ -225,8 +234,8 @@
       </select>
       <label class="toolbar-label">Theme:</label>
       <select id="pageThemeSelect">
-        <option value="light" selected>Light</option>
-        <option value="dark">Dark</option>
+        <option value="light" selected data-en="Light" data-de="Hell">Light</option>
+        <option value="dark" data-en="Dark" data-de="Dunkel">Dark</option>
       </select>
 
       <div class="clock-control">
@@ -253,6 +262,97 @@
 </div>
 
 <script>
+// ─────────────────────────────────────────────
+//  Language
+// ─────────────────────────────────────────────
+let lang = 'en';
+
+const STRINGS = {
+  en: {
+    wordmark:    'Logic Circuit Simulator',
+    titleInputs: 'Inputs',
+    titleOutputs:'Outputs',
+    titleGates:  'Gates',
+    btnClear:    'Clear',
+    clockRun:    '▶ Run',
+    clockStop:   '⏸ Stop',
+    hintDefault: 'Click a palette item, then click the canvas to place it.',
+    hints: {
+      select: 'Click to select · Shift+click multi-select · Drag to move · Click output pin (gold) to wire · Del to delete',
+      label:  'Click on canvas to place a text label · type text · Enter to confirm',
+    },
+    placeHint:   type => `Click the canvas to place a ${type}.`,
+    wireHint:    'Click an input pin to connect · click elsewhere to cancel',
+    confirmClear:'Clear the whole circuit?',
+    loadError:   "Could not load this file — it doesn't look like a valid circuit.",
+    editLabel:   'Label text:',
+    // component labels (these override COMPONENT_DEFS labels in the palette)
+    compLabels: {
+      switch: 'Switch', clock: 'Clock', high: 'High (1)', low: 'Low (0)',
+      bulb: 'Bulb',
+      and: 'AND', nand: 'NAND', or: 'OR', nor: 'NOR',
+      xor: 'XOR', xnor: 'XNOR', not: 'NOT', buffer: 'BUF',
+    }
+  },
+  de: {
+    wordmark:    'Logikschaltkreis-Simulator',
+    titleInputs: 'Eingaben',
+    titleOutputs:'Ausgaben',
+    titleGates:  'Gatter',
+    btnClear:    'Leeren',
+    clockRun:    '▶ Starten',
+    clockStop:   '⏸ Stopp',
+    hintDefault: 'Palette-Element anklicken, dann auf die Zeichenfläche klicken.',
+    hints: {
+      select: 'Klicken zum Auswählen · Shift+Klick für Mehrfachauswahl · Ziehen zum Verschieben · Ausgangs-Pin (gold) anklicken zum Verdrahten · Entf zum Löschen',
+      label:  'Auf die Zeichenfläche klicken um eine Beschriftung zu setzen · Text eingeben · Enter zum Bestätigen',
+    },
+    placeHint:   type => `Zeichenfläche anklicken um ${type} zu platzieren.`,
+    wireHint:    'Eingangs-Pin anklicken zum Verbinden · anderswo klicken zum Abbrechen',
+    confirmClear:'Den ganzen Schaltkreis löschen?',
+    loadError:   'Die Datei konnte nicht geladen werden — kein gültiger Schaltkreis.',
+    editLabel:   'Beschriftungstext:',
+    compLabels: {
+      switch: 'Schalter', clock: 'Takt', high: 'High (1)', low: 'Low (0)',
+      bulb: 'Lampe',
+      and: 'AND', nand: 'NAND', or: 'OR', nor: 'NOR',
+      xor: 'XOR', xnor: 'XNOR', not: 'NOT', buffer: 'BUF',
+    }
+  }
+};
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  document.getElementById('langEn').classList.toggle('active', l === 'en');
+  document.getElementById('langDe').classList.toggle('active', l === 'de');
+  applyStaticLang();
+  buildPalette();
+}
+
+function applyStaticLang() {
+  const s = S();
+  document.getElementById('appWordmark').textContent   = s.wordmark;
+  document.getElementById('titleInputs').textContent   = s.titleInputs;
+  document.getElementById('titleOutputs').textContent  = s.titleOutputs;
+  document.getElementById('titleGates').textContent    = s.titleGates;
+  document.getElementById('btnClear').textContent      = s.btnClear;
+  // samples dropdown
+  document.querySelectorAll('#samplesSelect option').forEach(opt => {
+    const txt = opt.getAttribute(`data-${l}`);
+    if (txt) opt.textContent = txt;
+  });
+  // theme dropdown
+  document.querySelectorAll('#pageThemeSelect option').forEach(opt => {
+    const txt = opt.getAttribute(`data-${l}`);
+    if (txt) opt.textContent = txt;
+  });
+  // update hint
+  const curHint = S().hints[tool] || S().hintDefault;
+  setHint(curHint);
+}
+
 // ─────────────────────────────────────────────
 //  Component definitions
 // ─────────────────────────────────────────────
@@ -450,7 +550,7 @@ function buildPalette() {
 
       const lbl = document.createElement('div');
       lbl.className = 'lbl';
-      lbl.textContent = def.label;
+      lbl.textContent = S().compLabels[type] || def.label;
       item.appendChild(lbl);
 
       item.addEventListener('click', () => selectPaletteItem(type));
@@ -463,7 +563,7 @@ function selectPaletteItem(type) {
   placingType = type;
   setTool('place');
   document.querySelectorAll('.palette-item').forEach(el => el.classList.toggle('active', el.dataset.type === type));
-  setHint(`Click the canvas to place a ${COMPONENT_DEFS[type].label}.`);
+  setHint(S().placeHint(S().compLabels[type] || COMPONENT_DEFS[type].label));
 }
 
 // ─────────────────────────────────────────────
@@ -912,7 +1012,7 @@ function startWire(ev, fromCompId) {
   const p = outputPinPos(COMPONENT_DEFS[comp.type]);
   wireDraft = { fromId: fromCompId, x1: comp.x + p.x, y1: comp.y + p.y };
   document.getElementById('circuitSvg').addEventListener('pointermove', onWireDraftMove);
-  setHint('Click an input pin to connect · click elsewhere to cancel');
+  setHint(S().wireHint);
 }
 
 function onWireDraftMove(ev) {
@@ -925,7 +1025,7 @@ function cancelWireDraft() {
   document.getElementById('circuitSvg').removeEventListener('pointermove', onWireDraftMove);
   wireDraft = null;
   clearWirePreview();
-  setHint(TOOL_HINTS.select);
+  setHint(S().hints.select);
 }
 
 function completeWire(ev, toCompId, toPin) {
@@ -974,11 +1074,6 @@ function onSvgClick(ev) {
 // ─────────────────────────────────────────────
 //  Tool switching
 // ─────────────────────────────────────────────
-const TOOL_HINTS = {
-  select: 'Click to select · Shift+click multi-select · Drag to move · Click output pin (gold) to wire · Del to delete',
-  label:  'Click on canvas to place a text label · type text · Enter to confirm'
-};
-
 function setTool(t) {
   if (wireDraft) cancelWireDraft();
   tool = t;
@@ -989,7 +1084,7 @@ function setTool(t) {
   }
   const lblBtn = document.getElementById('btnLabelTool');
   if (lblBtn) lblBtn.classList.toggle('active', t === 'label');
-  if (TOOL_HINTS[t]) setHint(TOOL_HINTS[t]);
+  if (S().hints[t]) setHint(S().hints[t] || S().hintDefault);
   renderAll();
 }
 
@@ -1009,10 +1104,10 @@ function toggleClockRun() {
   clockRunning = !clockRunning;
   const btn = document.getElementById('btnClockPlay');
   if (clockRunning) {
-    btn.textContent = '⏸ Pause';
+    btn.textContent = S().clockStop;
     scheduleClockTick();
   } else {
-    btn.textContent = '▶ Run';
+    btn.textContent = S().clockRun;
     clearTimeout(clockTimer);
   }
 }
@@ -1170,13 +1265,13 @@ function loadCircuitFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
     try { applyCircuitData(JSON.parse(reader.result)); }
-    catch (e) { alert("Could not load this file — it doesn't look like a valid circuit."); }
+    catch (e) { alert(S().loadError); }
   };
   reader.readAsText(file);
 }
 
 function clearCircuit() {
-  if (components.length && !confirm('Clear the whole circuit?')) return;
+  if (components.length && !confirm(S().confirmClear)) return;
   if (wireDraft) cancelWireDraft();
   for (const id in values) delete values[id];
   components = []; wires = []; labels = [];

@@ -290,12 +290,22 @@
   .pseudocode .fn  { color: #82aaff; }
   .pseudocode .num { color: #f78c6c; }
   .pseudocode .cmt { color: #546e7a; font-style: italic; }
+
+  .lang-toggle { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+  .lang-btn { padding:5px 14px; border:2px solid #505055; border-radius:6px; background:#383840; color:#888890; font-size:0.75rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
+  .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
+  .lang-btn:hover:not(.active) { border-color:#aaa; color:#ccc; }
 </style>
 </head>
 <body>
 
-<h1>Sorting Coins</h1>
-<p class="subtitle">Step through Bubble Sort and Selection Sort — one comparison at a time</p>
+<h1 id="pageTitle">Sorting Coins</h1>
+<p class="subtitle" id="pageSubtitle">Step through Bubble Sort and Selection Sort — one comparison at a time</p>
+
+<div class="lang-toggle">
+  <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
+</div>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('bubble')">Bubble Sort</button>
@@ -311,9 +321,9 @@
     <button class="btn btn-secondary" onclick="stepBack()"  id="btnBack">◀ Back</button>
     <button class="btn btn-primary"   onclick="stepForward()" id="btnNext">Next Step ▶</button>
     <button class="btn btn-play"      onclick="togglePlay()" id="btnPlay">▶ Auto Play</button>
-    <button class="btn btn-danger"    onclick="resetSort()">↺ New Coins</button>
+    <button class="btn btn-danger"    id="btnNewCoins" onclick="resetSort()">↺ New Coins</button>
     <div class="speed-wrap">
-      Speed
+      <span id="speedText">Speed</span>
       <input type="range" id="speedSlider" min="1" max="5" value="3">
       <span id="speedLabel">3×</span>
     </div>
@@ -322,11 +332,113 @@
 </div>
 
 <div class="pseudo-wrap">
-  <div class="pseudo-title">Java Code</div>
+  <div class="pseudo-title" id="pseudoTitle">Java Code</div>
   <div class="pseudocode" id="pseudocode"></div>
 </div>
 
 <script>
+// ─────────────────────────────────────────────
+//  Language strings
+// ─────────────────────────────────────────────
+let lang = 'en';
+
+const STRINGS = {
+  en: {
+    title:    'Sorting Coins',
+    subtitle: 'Step through Bubble Sort and Selection Sort — one comparison at a time',
+    back:     '◀ Back',
+    next:     'Next Step ▶',
+    autoPlay: '▶ Auto Play',
+    pause:    '⏸ Pause',
+    newCoins: '↺ New Coins',
+    speed:    'Speed',
+    javaCode: 'Java Code',
+    stepOf:   (i, n) => `Step ${i} of ${n}`,
+    pos:      i => `pos ${i}`,
+    legend: {
+      comparing: 'Comparing', swapping: 'Swapping', sorted: 'Sorted',
+      currentPos: 'Current position', currentMin: 'Current minimum', scanning: 'Scanning'
+    },
+    bIntro:   n  => `We have ${n} coins in a random order. Let\'s sort them from smallest to largest using <strong>Bubble Sort</strong>!`,
+    bPass:    p  => `Pass ${p}: changed = false. Scan through the coins from left to right.`,
+    bCmp:     (a,b) => `Comparing <strong>${a}</strong> and <strong>${b}</strong>. Is ${a} > ${b}?`,
+    bSwap1:   (a,b,i,j) => `Yes! ${a} > ${b} — call swap(arr, ${i}, ${j}).`,
+    bSwap2:   (a,b)   => `Swapped! <strong>${a}</strong> is now left of <strong>${b}</strong>. changed = true.`,
+    bNo:      (a,b)   => `No — ${a} ≤ ${b}, no swap needed.`,
+    bEnd:     p       => `End of pass ${p}. while(changed) is true — go again.`,
+    bDone:    'No swaps this pass — changed = false, so while(changed) stops. The coins are sorted! 🎉',
+    bFinal:   'All coins are sorted! 🎉 Bubble Sort is done.',
+    sIntro:   n  => `We have ${n} coins in a random order. Let\'s sort them using <strong>Selection Sort</strong>!`,
+    sRound:   (r,i,coin) => `Round ${r}: int min = ${i}. Assume position ${i} (coin <strong>${coin}</strong>) holds the minimum.`,
+    sCmp:     (min,coin) => `Comparing current minimum <strong>${min}</strong> with coin <strong>${coin}</strong>. Is ${coin} smaller?`,
+    sNew:     (nm,old)   => `Yes! <strong>${nm}</strong> < ${old} — min = j.`,
+    sStay:    (coin,min) => `No — ${coin} ≥ ${min}, min stays at <strong>${min}</strong>.`,
+    sSwapCall:(i,mi,coin)=> `Call swap(arr, ${i}, ${mi}) — move <strong>${coin}</strong> into position ${i}.`,
+    sSwapped: coin => `Swapped! Coin <strong>${coin}</strong> is now in its correct position.`,
+    sNoSwap:  (coin,i) => `Coin <strong>${coin}</strong> is already the minimum — swap(arr, ${i}, ${i}) does nothing.`,
+    sDone:    (i,sz) => `Position ${i} is sorted. ${sz} coin${sz > 1 ? 's' : ''} placed correctly (green).`,
+    sFinal:   'All coins are sorted! 🎉 Selection Sort is done.',
+  },
+  de: {
+    title:    'Münzen sortieren',
+    subtitle: 'Schritt für Schritt durch Bubble Sort und Selection Sort',
+    back:     '◀ Zurück',
+    next:     'Nächster Schritt ▶',
+    autoPlay: '▶ Autoplay',
+    pause:    '⏸ Pause',
+    newCoins: '↺ Neue Münzen',
+    speed:    'Tempo',
+    javaCode: 'Java-Code',
+    stepOf:   (i, n) => `Schritt ${i} von ${n}`,
+    pos:      i => `Pos ${i}`,
+    legend: {
+      comparing: 'Vergleich', swapping: 'Tausch', sorted: 'Sortiert',
+      currentPos: 'Aktuelle Position', currentMin: 'Aktuelles Minimum', scanning: 'Suche'
+    },
+    bIntro:   n  => `Wir haben ${n} Münzen in zufälliger Reihenfolge. Sortieren wir sie von klein nach groß mit <strong>Bubble Sort</strong>!`,
+    bPass:    p  => `Durchlauf ${p}: changed = false. Münzen werden von links nach rechts durchsucht.`,
+    bCmp:     (a,b) => `Vergleich von <strong>${a}</strong> und <strong>${b}</strong>. Ist ${a} > ${b}?`,
+    bSwap1:   (a,b,i,j) => `Ja! ${a} > ${b} — Aufruf von swap(arr, ${i}, ${j}).`,
+    bSwap2:   (a,b)   => `Getauscht! <strong>${a}</strong> steht jetzt links von <strong>${b}</strong>. changed = true.`,
+    bNo:      (a,b)   => `Nein — ${a} ≤ ${b}, kein Tausch nötig.`,
+    bEnd:     p       => `Ende von Durchlauf ${p}. while(changed) ist true — weitermachen.`,
+    bDone:    'Kein Tausch in diesem Durchlauf — changed = false, while(changed) stoppt. Fertig! 🎉',
+    bFinal:   'Alle Münzen sind sortiert! 🎉 Bubble Sort ist abgeschlossen.',
+    sIntro:   n  => `Wir haben ${n} Münzen in zufälliger Reihenfolge. Sortieren wir sie mit <strong>Selection Sort</strong>!`,
+    sRound:   (r,i,coin) => `Runde ${r}: int min = ${i}. Position ${i} (Münze <strong>${coin}</strong>) als Minimum angenommen.`,
+    sCmp:     (min,coin) => `Vergleich aktuelles Minimum <strong>${min}</strong> mit Münze <strong>${coin}</strong>. Ist ${coin} kleiner?`,
+    sNew:     (nm,old)   => `Ja! <strong>${nm}</strong> < ${old} — min = j.`,
+    sStay:    (coin,min) => `Nein — ${coin} ≥ ${min}, min bleibt bei <strong>${min}</strong>.`,
+    sSwapCall:(i,mi,coin)=> `Aufruf swap(arr, ${i}, ${mi}) — Münze <strong>${coin}</strong> an Position ${i}.`,
+    sSwapped: coin => `Getauscht! Münze <strong>${coin}</strong> ist jetzt an der richtigen Stelle.`,
+    sNoSwap:  (coin,i) => `Münze <strong>${coin}</strong> ist bereits das Minimum — swap(arr, ${i}, ${i}) ändert nichts.`,
+    sDone:    (i,sz) => `Position ${i} sortiert. ${sz} Münze${sz > 1 ? 'n' : ''} korrekt platziert (grün).`,
+    sFinal:   'Alle Münzen sind sortiert! 🎉 Selection Sort ist abgeschlossen.',
+  }
+};
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  document.getElementById('langEn').classList.toggle('active', l === 'en');
+  document.getElementById('langDe').classList.toggle('active', l === 'de');
+  applyStaticLang();
+  resetSort();
+}
+
+function applyStaticLang() {
+  const s = S();
+  document.getElementById('pageTitle').textContent   = s.title;
+  document.getElementById('pageSubtitle').textContent = s.subtitle;
+  document.getElementById('btnBack').innerHTML        = s.back;
+  document.getElementById('btnNext').innerHTML        = s.next;
+  document.getElementById('btnNewCoins').innerHTML    = s.newCoins;
+  document.getElementById('speedText').textContent    = s.speed;
+  document.getElementById('pseudoTitle').textContent  = s.javaCode;
+  if (!playTimer) document.getElementById('btnPlay').innerHTML = s.autoPlay;
+}
+
 // ─────────────────────────────────────────────
 //  State
 // ─────────────────────────────────────────────
@@ -337,8 +449,7 @@ let playTimer = null;
 
 const COIN_VALUES = [5, 10, 20, 50, 100, 200];
 const COIN_LABELS = { 5:'5', 10:'10', 20:'20', 50:'50', 100:'1€', 200:'2€' };
-const lbl = v => COIN_LABELS[v];
-const mlbl = v => v < 100 ? `${v} Cents` : COIN_LABELS[v];
+const mlbl = v => v < 100 ? `${v} Cent${lang === 'en' ? 's' : ''}` : COIN_LABELS[v];
 
 // ─────────────────────────────────────────────
 //  Generate steps for Bubble Sort
@@ -348,6 +459,7 @@ function buildBubbleSteps(arr) {
   const a = arr.slice();
   const n = a.length;
   const sorted = new Set();
+  const s = S();
 
   const snap = (comparing, swapping, message, codeLine) => {
     steps.push({
@@ -362,34 +474,34 @@ function buildBubbleSteps(arr) {
     });
   };
 
-  snap([], [], 'We have ' + n + ' coins in a random order. Let\'s sort them from smallest to largest using <strong>Bubble Sort</strong>!', 'intro');
+  snap([], [], s.bIntro(n), 'intro');
 
   let changed = true;
   let passCount = 0;
   while (changed) {
     changed = false;
     passCount++;
-    snap([], [], `Pass ${passCount}: changed = false. Scan through the coins from left to right.`, 'newpass');
+    snap([], [], s.bPass(passCount), 'newpass');
     for (let i = 0; i < n - 1; i++) {
-      snap([i, i+1], [], `Comparing <strong>${mlbl(a[i])}</strong> and <strong>${mlbl(a[i+1])}</strong>. Is ${mlbl(a[i])} > ${mlbl(a[i+1])}?`, 'compare');
+      snap([i, i+1], [], s.bCmp(mlbl(a[i]), mlbl(a[i+1])), 'compare');
       if (a[i] > a[i+1]) {
-        snap([i, i+1], [i, i+1], `Yes! ${mlbl(a[i])} > ${mlbl(a[i+1])} — call swap(arr, ${i}, ${i+1}).`, 'swap');
+        snap([i, i+1], [i, i+1], s.bSwap1(mlbl(a[i]), mlbl(a[i+1]), i, i+1), 'swap');
         [a[i], a[i+1]] = [a[i+1], a[i]];
         changed = true;
-        snap([i, i+1], [i, i+1], `Swapped! <strong>${mlbl(a[i])}</strong> is now left of <strong>${mlbl(a[i+1])}</strong>. changed = true.`, 'swap');
+        snap([i, i+1], [i, i+1], s.bSwap2(mlbl(a[i]), mlbl(a[i+1])), 'swap');
       } else {
-        snap([i, i+1], [], `No — ${mlbl(a[i])} ≤ ${mlbl(a[i+1])}, no swap needed.`, 'compare');
+        snap([i, i+1], [], s.bNo(mlbl(a[i]), mlbl(a[i+1])), 'compare');
       }
     }
     if (changed) {
       sorted.add(n - passCount);
-      snap([], [], `End of pass ${passCount}. while(changed) is true — go again.`, 'endpass');
+      snap([], [], s.bEnd(passCount), 'endpass');
     } else {
       for (let k = 0; k < n; k++) sorted.add(k);
-      snap([], [], 'No swaps this pass — changed = false, so while(changed) stops. The coins are sorted! 🎉', 'endpass');
+      snap([], [], s.bDone, 'endpass');
     }
   }
-  snap([], [], 'All coins are sorted! 🎉 Bubble Sort is done.', 'done');
+  snap([], [], s.bFinal, 'done');
   return steps;
 }
 
@@ -401,6 +513,7 @@ function buildSelectionSteps(arr) {
   const a = arr.slice();
   const n = a.length;
   const sorted = new Set();
+  const s = S();
 
   const snap = (currentPos, minimum, comparing, swapping, message, codeLine) => {
     steps.push({
@@ -415,42 +528,42 @@ function buildSelectionSteps(arr) {
     });
   };
 
-  snap([], [], [], [], 'We have ' + n + ' coins in a random order. Let\'s sort them using <strong>Selection Sort</strong>!', 'intro');
+  snap([], [], [], [], s.sIntro(n), 'intro');
 
   for (let i = 0; i < n - 1; i++) {
     let minIdx = i;
-    snap([i], [minIdx], [], [], `Round ${i+1}: int min = ${i}. Assume position ${i} (coin <strong>${mlbl(a[i])}</strong>) holds the minimum.`, 'setmin');
+    snap([i], [minIdx], [], [], s.sRound(i+1, i, mlbl(a[i])), 'setmin');
 
     for (let j = i + 1; j < n; j++) {
-      snap([i], [minIdx], [j], [], `Comparing current minimum <strong>${mlbl(a[minIdx])}</strong> with coin <strong>${mlbl(a[j])}</strong>. Is ${mlbl(a[j])} smaller?`, 'compare');
+      snap([i], [minIdx], [j], [], s.sCmp(mlbl(a[minIdx]), mlbl(a[j])), 'compare');
       if (a[j] < a[minIdx]) {
         const old = a[minIdx];
         minIdx = j;
-        snap([i], [minIdx], [j], [], `Yes! <strong>${mlbl(a[minIdx])}</strong> < ${mlbl(old)} — min = ${j}.`, 'newmin');
+        snap([i], [minIdx], [j], [], s.sNew(mlbl(a[minIdx]), mlbl(old)), 'newmin');
       } else {
-        snap([i], [minIdx], [j], [], `No — ${mlbl(a[j])} ≥ ${mlbl(a[minIdx])}, min stays at <strong>${mlbl(a[minIdx])}</strong>.`, 'compare');
+        snap([i], [minIdx], [j], [], s.sStay(mlbl(a[j]), mlbl(a[minIdx])), 'compare');
       }
     }
 
     if (minIdx !== i) {
-      snap([i], [minIdx], [], [i, minIdx], `Call swap(arr, ${i}, ${minIdx}) — move <strong>${mlbl(a[minIdx])}</strong> into position ${i}.`, 'swap');
+      snap([i], [minIdx], [], [i, minIdx], s.sSwapCall(i, minIdx, mlbl(a[minIdx])), 'swap');
       [a[i], a[minIdx]] = [a[minIdx], a[i]];
-      snap([i], [i], [], [i, minIdx], `Swapped! Coin <strong>${mlbl(a[i])}</strong> is now in its correct position.`, 'swap');
+      snap([i], [i], [], [i, minIdx], s.sSwapped(mlbl(a[i])), 'swap');
     } else {
-      snap([i], [i], [], [], `Coin <strong>${mlbl(a[i])}</strong> is already the minimum — swap(arr, ${i}, ${i}) does nothing.`, 'swap');
+      snap([i], [i], [], [], s.sNoSwap(mlbl(a[i]), i), 'swap');
     }
 
     sorted.add(i);
-    snap([], [], [], [], `Position ${i} is sorted. ${sorted.size} coin${sorted.size > 1 ? 's' : ''} placed correctly (green).`, 'newround');
+    snap([], [], [], [], s.sDone(i, sorted.size), 'newround');
   }
 
   sorted.add(n - 1);
-  snap([], [], [], [], 'All coins are sorted! 🎉 Selection Sort is done.', 'done');
+  snap([], [], [], [], s.sFinal, 'done');
   return steps;
 }
 
 // ─────────────────────────────────────────────
-//  Java code lines (line = codeLine that activates highlight, -1 = never)
+//  Java code lines
 // ─────────────────────────────────────────────
 const PSEUDO = {
   bubble: [
@@ -487,13 +600,13 @@ const PSEUDO = {
 // ─────────────────────────────────────────────
 function render() {
   if (!steps.length) return;
-  const s = steps[stepIndex];
-  const n = s.arr.length;
+  const st = steps[stepIndex];
+  const n = st.arr.length;
 
   // coins
   const row = document.getElementById('coinsRow');
   row.innerHTML = '';
-  s.arr.forEach((val, i) => {
+  st.arr.forEach((val, i) => {
     const wrap = document.createElement('div');
     wrap.className = 'coin-wrap';
 
@@ -503,21 +616,18 @@ function render() {
     coin.textContent = COIN_LABELS[val];
 
     const stateClasses = [];
-    if (s.swapping.includes(i))    stateClasses.push('swapping');
-    else if (s.comparing.includes(i)) stateClasses.push('comparing');
-    else if (s.minimum.includes(i))   stateClasses.push('minimum');
-    else if (s.currentPos.includes(i)) stateClasses.push('current-pos');
-    else if (s.sorted.includes(i))    stateClasses.push('sorted');
+    if (st.swapping.includes(i))      stateClasses.push('swapping');
+    else if (st.comparing.includes(i)) stateClasses.push('comparing');
+    else if (st.minimum.includes(i))   stateClasses.push('minimum');
+    else if (st.currentPos.includes(i)) stateClasses.push('current-pos');
+    else if (st.sorted.includes(i))    stateClasses.push('sorted');
 
     coin.classList.add(...stateClasses);
-
-    if (s.minimum.includes(i)) {
-      coin.classList.add('min-marker');
-    }
+    if (st.minimum.includes(i)) coin.classList.add('min-marker');
 
     const lbl = document.createElement('div');
     lbl.className = 'coin-label';
-    lbl.textContent = 'pos ' + i;
+    lbl.textContent = S().pos(i);
 
     wrap.appendChild(coin);
     wrap.appendChild(lbl);
@@ -525,20 +635,20 @@ function render() {
   });
 
   // explanation
-  document.getElementById('explanation').innerHTML = s.message;
+  document.getElementById('explanation').innerHTML = st.message;
 
   // progress
   const pct = stepIndex / (steps.length - 1) * 100;
   document.getElementById('progressBar').style.width = pct + '%';
 
   // step counter
-  document.getElementById('stepInfo').textContent = 'Step ' + stepIndex + ' of ' + (steps.length - 1);
+  document.getElementById('stepInfo').textContent = S().stepOf(stepIndex, steps.length - 1);
 
   // pseudocode
   const lines = PSEUDO[mode];
   const pseudo = document.getElementById('pseudocode');
   pseudo.innerHTML = lines.map(l =>
-    `<div class="line${l.line === s.codeLine ? ' active-line' : ''}">${l.text}</div>`
+    `<div class="line${l.line === st.codeLine ? ' active-line' : ''}">${l.text}</div>`
   ).join('');
 
   // buttons
@@ -560,8 +670,8 @@ function stepBack() {
 
 function togglePlay() {
   if (playTimer) { stopPlay(); return; }
-  document.getElementById('btnPlay').textContent = '⏸ Pause';
-  document.getElementById('btnPlay').style.background = '#ffaa44';
+  document.getElementById('btnPlay').textContent = S().pause;
+  document.getElementById('btnPlay').style.background = '#b07820';
   scheduleNext();
 }
 
@@ -582,8 +692,8 @@ function scheduleNext() {
 function stopPlay() {
   clearTimeout(playTimer);
   playTimer = null;
-  document.getElementById('btnPlay').textContent = '▶ Auto Play';
-  document.getElementById('btnPlay').style.background = '#6bcb77';
+  document.getElementById('btnPlay').textContent = S().autoPlay;
+  document.getElementById('btnPlay').style.background = '';
 }
 
 document.getElementById('speedSlider').addEventListener('input', function () {
@@ -609,17 +719,18 @@ function switchTab(newMode) {
 }
 
 function updateLegend() {
+  const sl = S().legend;
   const items = mode === 'bubble'
     ? [
-        ['#f0c040','#a07020','Comparing'],
-        ['#ff6b6b','#c04040','Swapping'],
-        ['#6bcb77','#3a8a3a','Sorted'],
+        ['#f0c040','#a07020', sl.comparing],
+        ['#ff6b6b','#c04040', sl.swapping],
+        ['#6bcb77','#3a8a3a', sl.sorted],
       ]
     : [
-        ['#a78bfa','#6040c0','Current position'],
-        ['#16213e','#4ecdc4','Current minimum', true],
-        ['#f0c040','#a07020','Scanning'],
-        ['#6bcb77','#3a8a3a','Sorted'],
+        ['#a78bfa','#6040c0', sl.currentPos],
+        ['#16213e','#4ecdc4', sl.currentMin, true],
+        ['#f0c040','#a07020', sl.scanning],
+        ['#6bcb77','#3a8a3a', sl.sorted],
       ];
   document.getElementById('legend').innerHTML = items.map(([bg, border, label, dashed]) =>
     `<div class="legend-item">

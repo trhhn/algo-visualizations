@@ -285,12 +285,22 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+
+  .lang-toggle { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+  .lang-btn { padding:5px 14px; border:2px solid #505055; border-radius:6px; background:#383840; color:#888890; font-size:0.75rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
+  .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
+  .lang-btn:hover:not(.active) { border-color:#aaa; color:#ccc; }
 </style>
 </head>
 <body>
 
-<h1>Dijkstra's Algorithm</h1>
-<p class="subtitle">Draw a graph, then step through how the code finds shortest paths</p>
+<h1 id="pageTitle">Dijkstra's Algorithm</h1>
+<p class="subtitle" id="pageSubtitle">Draw a graph, then step through how the code finds shortest paths</p>
+
+<div class="lang-toggle">
+  <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
+</div>
 
 <div class="tabs">
   <button class="tab active" id="tabBuild" onclick="switchMode('build')">Build Graph</button>
@@ -300,27 +310,27 @@
 <div class="stage">
 
   <div class="toolbar" id="buildToolbar">
-    <button class="tool-btn active" data-tool="move" onclick="setTool('move')">🖐 Move / Edit</button>
-    <button class="tool-btn" data-tool="addNode" onclick="setTool('addNode')">⬤ Add Node</button>
-    <button class="tool-btn" data-tool="addEdge" onclick="setTool('addEdge')">→ Add Edge</button>
-    <button class="tool-btn" data-tool="delete" onclick="setTool('delete')">🗑 Delete</button>
+    <button class="tool-btn active" data-tool="move" id="toolMove" onclick="setTool('move')">Move / Edit</button>
+    <button class="tool-btn" data-tool="addNode" id="toolAddNode" onclick="setTool('addNode')">Add Node</button>
+    <button class="tool-btn" data-tool="addEdge" id="toolAddEdge" onclick="setTool('addEdge')">Add Edge</button>
+    <button class="tool-btn" data-tool="delete" id="toolDelete" onclick="setTool('delete')">Delete</button>
     <span class="toolbar-sep"></span>
-    <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
-    <button class="btn btn-danger" onclick="clearGraph()">Clear</button>
+    <button class="btn btn-secondary" id="btnLoadExample" onclick="loadExample()">Load Example</button>
+    <button class="btn btn-danger" id="btnClear" onclick="clearGraph()">Clear</button>
   </div>
   <div class="hint" id="buildHint">Drag a node to move it. Click (without dragging) a node or edge to rename/reweight it.</div>
 
   <div class="toolbar" id="runToolbar" style="display:none">
-    <label style="font-size:0.88rem;color:#ccc">Source:
+    <label style="font-size:0.88rem;color:#ccc"><span id="sourceLabel">Source:</span>
       <select id="sourceSelect"></select>
     </label>
-    <button class="btn btn-primary" onclick="startRun()">Start</button>
+    <button class="btn btn-primary" id="btnStart" onclick="startRun()">Start</button>
     <span class="toolbar-sep"></span>
     <button class="btn btn-secondary" onclick="stepBack()" id="btnBack" disabled>◀ Back</button>
     <button class="btn btn-primary" onclick="stepForward()" id="btnNext" disabled>Next Step ▶</button>
     <button class="btn btn-play" onclick="togglePlay()" id="btnPlay" disabled>▶ Auto Play</button>
     <div class="speed-wrap">
-      Speed
+      <span id="speedText">Speed</span>
       <input type="range" id="speedSlider" min="1" max="5" value="3">
       <span id="speedLabel">3×</span>
     </div>
@@ -351,7 +361,7 @@
 
     <div class="run-columns">
       <div>
-        <div class="pseudo-title">Java Code — dijkstra()</div>
+        <div class="pseudo-title" id="pseudoTitle">Java Code — dijkstra()</div>
         <div class="pseudocode" id="pseudocode"></div>
       </div>
       <div>
@@ -378,6 +388,188 @@ let pendingEdgeSource = null;
 let steps = [];
 let stepIndex = 0;
 let playTimer = null;
+
+// ─────────────────────────────────────────────
+//  Language strings
+// ─────────────────────────────────────────────
+let lang = 'en';
+
+const STRINGS = {
+  en: {
+    title:      "Dijkstra's Algorithm",
+    subtitle:   'Draw a graph, then step through how the code finds shortest paths',
+    buildTab:   'Build Graph',
+    runTab:     'Run Algorithm',
+    toolMove:   'Move / Edit',
+    toolAdd:    'Add Node',
+    toolEdge:   'Add Edge',
+    toolDel:    'Delete',
+    loadEx:     'Load Example',
+    clear:      'Clear',
+    source:     'Source:',
+    start:      'Start',
+    back:       '◀ Back',
+    next:       'Next Step ▶',
+    autoPlay:   '▶ Auto Play',
+    pause:      '⏸ Pause',
+    speed:      'Speed',
+    pseudoTitle:'Java Code — dijkstra()',
+    stepOf:     (i, n) => `Step ${i} of ${n}`,
+    distLabel:  d => `dist: ${d}`,
+    inQ:        'in Q',
+    finalized:  'finalized',
+    currentU:   'current u',
+    thVertex:   'Vertex',
+    thStatus:   'status',
+    hints: {
+      move:    'Drag a node to move it. Click (without dragging) a node or edge to rename/reweight it.',
+      addNode: 'Click anywhere on the canvas to add a node.',
+      addEdge: 'Click a node to start a new edge.',
+      delete:  'Click a node or edge to delete it.',
+    },
+    legend: {
+      currentU:  'Current vertex u',
+      scanning:  'Scanning candidate',
+      scanBest:  'Current best (min so far)',
+      finalized: 'Finalized',
+      relaxing:  'Edge being relaxed',
+      tree:      'Shortest-path tree',
+    },
+    // Prompts / alerts / confirms
+    edgeWeight:    (a, b) => `Weight for edge ${a} → ${b}:`,
+    nodeName:      'Node name:',
+    dupNode:       'A node with that name already exists.',
+    posNum:        'Please enter a positive number.',
+    noNodes:       'Add at least one node first (or click "Load Example").',
+    confirmClear:  'Clear the whole graph?',
+    selectedSrc:   name => `Selected source "${name}". Click the target node to draw the edge.`,
+    newEdgeHint:   'Click a node to start a new edge.',
+    exampleLoaded: 'Loaded the example graph from Dijkstra.java. Switch to "Run Algorithm" to step through it.',
+    // Step messages
+    mInit:         'Create empty maps dist, prev and the list Q.',
+    mInitVertex:   (name) => `For vertex ${name}: dist[${name}] = ∞, prev[${name}] = undefined, add ${name} to Q.`,
+    mSource:       (name) => `Set dist[${name}] = 0 — the source has distance zero to itself.`,
+    mQNotEmpty:    (n) => `Q is not empty (${n} vertex${n === 1 ? '' : 'es'} remain) — continue the loop.`,
+    mPickU:        (name) => `Tentatively pick u = ${name} (the first vertex in Q).`,
+    mScanCmp:      (c, dc, u, du, better) => `Check ${c} (dist=${dc}) against current best ${u} (dist=${du})` + (better ? ` — smaller! Update u.` : ` — not smaller, keep u.`),
+    mUpdateU:      (name) => `u = ${name}.`,
+    mRemoveU:      (name, d) => `Remove ${name} from Q — its shortest distance (${d}) is now final.`,
+    mNoEdges:      (name) => `${name} has no outgoing edges — nothing to relax.`,
+    mEdge:         (u, v, w) => `Look at edge ${u} → ${v} (weight ${w}).`,
+    mAlt:          (u, v, du, w, alt) => `alt = dist[${u}] + weight(${u}→${v}) = ${du} + ${w} = ${alt}.`,
+    mImproves:     (alt, v, dv) => `${alt} < dist[${v}] (${dv}) — a shorter path was found!`,
+    mNoImprove:    (alt, v, dv) => `${alt} is not smaller than dist[${v}] (${dv}) — no update.`,
+    mUpdate:       (v, alt, u) => `Update dist[${v}] = ${alt} and prev[${v}] = ${u}.`,
+    mDone:         'Q is empty — return dist[] and prev[]. The shortest-path tree is complete.',
+  },
+  de: {
+    title:      "Dijkstras Algorithmus",
+    subtitle:   'Zeichne einen Graphen und gehe schrittweise durch die Kürzeste-Wege-Suche',
+    buildTab:   'Graph aufbauen',
+    runTab:     'Algorithmus starten',
+    toolMove:   'Bewegen / Bearbeiten',
+    toolAdd:    'Knoten hinzufügen',
+    toolEdge:   'Kante hinzufügen',
+    toolDel:    'Löschen',
+    loadEx:     'Beispiel laden',
+    clear:      'Leeren',
+    source:     'Startknoten:',
+    start:      'Start',
+    back:       '◀ Zurück',
+    next:       'Nächster Schritt ▶',
+    autoPlay:   '▶ Autoplay',
+    pause:      '⏸ Pause',
+    speed:      'Tempo',
+    pseudoTitle:'Java-Code — dijkstra()',
+    stepOf:     (i, n) => `Schritt ${i} von ${n}`,
+    distLabel:  d => `dist: ${d}`,
+    inQ:        'in Q',
+    finalized:  'abgeschlossen',
+    currentU:   'aktuell u',
+    thVertex:   'Knoten',
+    thStatus:   'Status',
+    hints: {
+      move:    'Knoten ziehen zum Verschieben. Einfaches Klicken auf Knoten oder Kante zum Umbenennen/Neugewichten.',
+      addNode: 'Canvas anklicken, um einen neuen Knoten hinzuzufügen.',
+      addEdge: 'Knoten anklicken, um eine Kante zu beginnen.',
+      delete:  'Knoten oder Kante anklicken zum Löschen.',
+    },
+    legend: {
+      currentU:  'Aktueller Knoten u',
+      scanning:  'Kandidat beim Scannen',
+      scanBest:  'Aktuell bestes (bisheriges Minimum)',
+      finalized: 'Abgeschlossen',
+      relaxing:  'Aktuell relaxierte Kante',
+      tree:      'Kürzester-Weg-Baum',
+    },
+    edgeWeight:    (a, b) => `Kantengewicht für ${a} → ${b}:`,
+    nodeName:      'Knotenname:',
+    dupNode:       'Ein Knoten mit diesem Namen existiert bereits.',
+    posNum:        'Bitte eine positive Zahl eingeben.',
+    noNodes:       'Füge zuerst mindestens einen Knoten hinzu (oder klicke "Beispiel laden").',
+    confirmClear:  'Den ganzen Graphen löschen?',
+    selectedSrc:   name => `Quelle "${name}" gewählt. Zielknoten anklicken, um die Kante zu zeichnen.`,
+    newEdgeHint:   'Knoten anklicken, um eine neue Kante zu beginnen.',
+    exampleLoaded: 'Beispielgraph aus Dijkstra.java geladen. Wechsle zu "Algorithmus starten" um ihn durchzugehen.',
+    mInit:         'Erstelle leere Maps dist, prev und die Liste Q.',
+    mInitVertex:   (name) => `Für Knoten ${name}: dist[${name}] = ∞, prev[${name}] = undefined, ${name} zu Q hinzufügen.`,
+    mSource:       (name) => `Setze dist[${name}] = 0 — die Quelle hat Abstand 0 zu sich selbst.`,
+    mQNotEmpty:    (n) => `Q ist nicht leer (${n} Knoten verbleiben) — Schleife weiter.`,
+    mPickU:        (name) => `Vorläufig u = ${name} wählen (erster Knoten in Q).`,
+    mScanCmp:      (c, dc, u, du, better) => `Prüfe ${c} (dist=${dc}) gegen aktuell bestes ${u} (dist=${du})` + (better ? ` — kleiner! u aktualisieren.` : ` — nicht kleiner, u bleibt.`),
+    mUpdateU:      (name) => `u = ${name}.`,
+    mRemoveU:      (name, d) => `${name} aus Q entfernen — der kürzeste Weg (${d}) ist jetzt endgültig.`,
+    mNoEdges:      (name) => `${name} hat keine ausgehenden Kanten — nichts zu relaxieren.`,
+    mEdge:         (u, v, w) => `Kante ${u} → ${v} (Gewicht ${w}) betrachten.`,
+    mAlt:          (u, v, du, w, alt) => `alt = dist[${u}] + weight(${u}→${v}) = ${du} + ${w} = ${alt}.`,
+    mImproves:     (alt, v, dv) => `${alt} < dist[${v}] (${dv}) — ein kürzerer Weg wurde gefunden!`,
+    mNoImprove:    (alt, v, dv) => `${alt} ist nicht kleiner als dist[${v}] (${dv}) — keine Aktualisierung.`,
+    mUpdate:       (v, alt, u) => `Aktualisiere dist[${v}] = ${alt} und prev[${v}] = ${u}.`,
+    mDone:         'Q ist leer — dist[] und prev[] zurückgeben. Der Kürzeste-Weg-Baum ist vollständig.',
+  }
+};
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  document.getElementById('langEn').classList.toggle('active', l === 'en');
+  document.getElementById('langDe').classList.toggle('active', l === 'de');
+  applyStaticLang();
+  // rebuild steps if already running
+  if (mode === 'run' && steps.length) {
+    const sourceId = document.getElementById('sourceSelect').value;
+    if (sourceId) {
+      steps = buildDijkstraSteps(sourceId);
+      renderRunStep();
+    }
+  }
+  if (mode === 'build') {
+    setHint(S().hints[tool] || S().hints.move);
+  }
+  if (mode === 'run') renderRunLegend();
+}
+
+function applyStaticLang() {
+  const s = S();
+  document.getElementById('pageTitle').textContent    = s.title;
+  document.getElementById('pageSubtitle').textContent = s.subtitle;
+  document.getElementById('tabBuild').textContent     = s.buildTab;
+  document.getElementById('tabRun').textContent       = s.runTab;
+  document.getElementById('toolMove').textContent     = s.toolMove;
+  document.getElementById('toolAddNode').textContent  = s.toolAdd;
+  document.getElementById('toolAddEdge').textContent  = s.toolEdge;
+  document.getElementById('toolDelete').textContent   = s.toolDel;
+  document.getElementById('btnLoadExample').textContent = s.loadEx;
+  document.getElementById('btnClear').textContent     = s.clear;
+  document.getElementById('sourceLabel').textContent  = s.source;
+  document.getElementById('btnStart').textContent     = s.start;
+  document.getElementById('btnBack').innerHTML        = s.back;
+  document.getElementById('btnNext').innerHTML        = s.next;
+  document.getElementById('speedText').textContent    = s.speed;
+  document.getElementById('pseudoTitle').textContent  = s.pseudoTitle;
+  if (!playTimer) document.getElementById('btnPlay').innerHTML = s.autoPlay;
+}
 
 // ─────────────────────────────────────────────
 //  Data helpers
@@ -418,7 +610,7 @@ function svgEl(tag, attrs) {
 }
 
 // ─────────────────────────────────────────────
-//  Render graph (build mode: neutral; run mode: highlighted from steps[stepIndex])
+//  Render graph
 // ─────────────────────────────────────────────
 function renderGraph() {
   const edgesLayer = document.getElementById('edgesLayer');
@@ -444,9 +636,6 @@ function renderGraph() {
 
     let pathD, midX, midY;
     if (curved) {
-      // Use a perpendicular axis based on a canonical (id-sorted) direction shared by
-      // both edges of the pair, so the two curves bow to opposite sides instead of
-      // cancelling out when this edge's own direction vector is reversed.
       const canonStart = e.from < e.to ? from : to;
       const canonEnd = e.from < e.to ? to : from;
       const cdx = canonEnd.x - canonStart.x, cdy = canonEnd.y - canonStart.y;
@@ -470,7 +659,7 @@ function renderGraph() {
     else if (isTreeEdge) { strokeColor = '#6bcb77'; strokeWidth = 3.5; marker = 'url(#arrow-tree)'; }
 
     const path = svgEl('path', { d: pathD, fill: 'none', stroke: strokeColor, 'stroke-width': strokeWidth, 'marker-end': marker });
-    const bg = svgEl('circle', { cx: midX, cy: midY, r: 12, fill: '#16213e', stroke: strokeColor, 'stroke-width': 1.5 });
+    const bg = svgEl('circle', { cx: midX, cy: midY, r: 12, fill: '#252528', stroke: strokeColor, 'stroke-width': 1.5 });
     const text = svgEl('text', { x: midX, y: midY + 4, 'text-anchor': 'middle', 'font-size': 12, fill: '#dde' });
     text.textContent = e.weight;
 
@@ -516,7 +705,7 @@ function renderGraph() {
     if (step) {
       const distVal = step.dist[n.id];
       const distLabel = svgEl('text', { x: n.x, y: n.y + NODE_R + 16, 'text-anchor': 'middle', 'font-size': 12, fill: '#aab' });
-      distLabel.textContent = 'dist: ' + (distVal === Infinity ? '∞' : fmtNum(distVal));
+      distLabel.textContent = S().distLabel(distVal === Infinity ? '∞' : fmtNum(distVal));
       g.appendChild(distLabel);
     }
 
@@ -531,7 +720,7 @@ function renderGraph() {
 // ─────────────────────────────────────────────
 //  Build-mode interaction
 // ─────────────────────────────────────────────
-let drag = null; // { id, startX, startY, moved }
+let drag = null;
 
 function onNodePointerDown(ev, id) {
   ev.stopPropagation();
@@ -542,7 +731,7 @@ function onNodePointerDown(ev, id) {
   if (tool === 'addEdge') {
     if (pendingEdgeSource === null) {
       pendingEdgeSource = id;
-      setHint(`Selected source "${nameOf(id)}". Click the target node to draw the edge.`);
+      setHint(S().selectedSrc(nameOf(id)));
       renderGraph();
     } else {
       const sourceId = pendingEdgeSource;
@@ -550,7 +739,7 @@ function onNodePointerDown(ev, id) {
       if (sourceId !== id) {
         addOrUpdateEdge(sourceId, id);
       }
-      setHint('Click a node to start a new edge.');
+      setHint(S().newEdgeHint);
       renderGraph();
     }
     return;
@@ -600,7 +789,7 @@ function onEdgeClick(ev, edgeId) {
   if (tool === 'move' || tool === 'addEdge') {
     const e = edges.find(x => x.id === edgeId);
     if (!e) return;
-    const input = prompt(`Weight for edge ${nameOf(e.from)} → ${nameOf(e.to)}:`, e.weight);
+    const input = prompt(S().edgeWeight(nameOf(e.from), nameOf(e.to)), e.weight);
     if (input === null) return;
     const w = parseFloat(input);
     if (!isNaN(w) && w > 0) {
@@ -619,12 +808,12 @@ function addNodeAt(x, y) {
 function renameNode(id) {
   const n = nodeById(id);
   if (!n) return;
-  const input = prompt('Node name:', n.name);
+  const input = prompt(S().nodeName, n.name);
   if (input === null) return;
   const trimmed = input.trim();
   if (trimmed === '') return;
   if (nodes.some(other => other.id !== id && other.name === trimmed)) {
-    alert('A node with that name already exists.');
+    alert(S().dupNode);
     return;
   }
   n.name = trimmed;
@@ -641,11 +830,11 @@ function deleteNode(id) {
 function addOrUpdateEdge(fromId, toId) {
   const existing = edges.find(e => e.from === fromId && e.to === toId);
   const defaultWeight = existing ? existing.weight : 1;
-  const input = prompt(`Weight for edge ${nameOf(fromId)} → ${nameOf(toId)}:`, defaultWeight);
+  const input = prompt(S().edgeWeight(nameOf(fromId), nameOf(toId)), defaultWeight);
   if (input === null) return;
   const w = parseFloat(input);
   if (isNaN(w) || w <= 0) {
-    alert('Please enter a positive number.');
+    alert(S().posNum);
     return;
   }
   if (existing) {
@@ -670,18 +859,11 @@ function setHint(text) {
   document.getElementById('buildHint').textContent = text;
 }
 
-const TOOL_HINTS = {
-  move: 'Drag a node to move it. Click (without dragging) a node or edge to rename/reweight it.',
-  addNode: 'Click anywhere on the canvas to add a node.',
-  addEdge: 'Click a node to start a new edge.',
-  delete: 'Click a node or edge to delete it.'
-};
-
 function setTool(t) {
   tool = t;
   pendingEdgeSource = null;
   document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
-  setHint(TOOL_HINTS[t]);
+  setHint(S().hints[t] || S().hints.move);
   renderGraph();
 }
 
@@ -762,11 +944,11 @@ function loadExample() {
   stepIndex = 0;
   document.getElementById('runInfo').style.display = 'none';
   rebuildAfterGraphChange();
-  setHint('Loaded the example graph from Dijkstra.java. Switch to "Run Algorithm" to step through it.');
+  setHint(S().exampleLoaded);
 }
 
 function clearGraph() {
-  if (nodes.length && !confirm('Clear the whole graph?')) return;
+  if (nodes.length && !confirm(S().confirmClear)) return;
   nodes = [];
   edges = [];
   nextNodeNum = 0;
@@ -776,11 +958,11 @@ function clearGraph() {
   stepIndex = 0;
   document.getElementById('runInfo').style.display = 'none';
   rebuildAfterGraphChange();
-  setHint(TOOL_HINTS[tool]);
+  setHint(S().hints[tool] || S().hints.move);
 }
 
 // ─────────────────────────────────────────────
-//  Step generator — mirrors Dijkstra.java's dijkstra() line by line
+//  Step generator
 // ─────────────────────────────────────────────
 function neighborsOf(u) {
   return edges.filter(e => e.from === u);
@@ -792,6 +974,7 @@ function buildDijkstraSteps(sourceId) {
   const prev = {};
   let Q = [];
   const finalized = [];
+  const s = S();
 
   const snapshot = (extra) => Object.assign({
     dist: { ...dist },
@@ -805,39 +988,23 @@ function buildDijkstraSteps(sourceId) {
     message: ''
   }, extra);
 
-  steps.push(snapshot({
-    codeLine: 'declare',
-    message: 'Create empty maps dist, prev and the list Q.'
-  }));
+  steps.push(snapshot({ codeLine: 'declare', message: s.mInit }));
 
   nodes.forEach(n => {
     dist[n.id] = Infinity;
     prev[n.id] = null;
     Q.push(n.id);
-    steps.push(snapshot({
-      codeLine: 'initBody',
-      message: `For vertex ${n.name}: dist[${n.name}] = ∞, prev[${n.name}] = undefined, add ${n.name} to Q.`
-    }));
+    steps.push(snapshot({ codeLine: 'initBody', message: s.mInitVertex(n.name) }));
   });
 
   dist[sourceId] = 0;
-  steps.push(snapshot({
-    codeLine: 'setSourceDist',
-    message: `Set dist[${nameOf(sourceId)}] = 0 — the source has distance zero to itself.`
-  }));
+  steps.push(snapshot({ codeLine: 'setSourceDist', message: s.mSource(nameOf(sourceId)) }));
 
   while (Q.length > 0) {
-    steps.push(snapshot({
-      codeLine: 'whileCheck',
-      message: `Q is not empty (${Q.length} vertex${Q.length === 1 ? '' : 'es'} remain) — continue the loop.`
-    }));
+    steps.push(snapshot({ codeLine: 'whileCheck', message: s.mQNotEmpty(Q.length) }));
 
     let u = Q[0];
-    steps.push(snapshot({
-      codeLine: 'pickU',
-      scanBest: u,
-      message: `Tentatively pick u = ${nameOf(u)} (the first vertex in Q).`
-    }));
+    steps.push(snapshot({ codeLine: 'pickU', scanBest: u, message: s.mPickU(nameOf(u)) }));
 
     for (const candidate of Q) {
       const isBetter = dist[candidate] < dist[u];
@@ -845,86 +1012,51 @@ function buildDijkstraSteps(sourceId) {
         codeLine: 'scanCompare',
         scanCandidate: candidate,
         scanBest: u,
-        message: `Check ${nameOf(candidate)} (dist=${fmtNum(dist[candidate])}) against current best ${nameOf(u)} (dist=${fmtNum(dist[u])})` +
-          (isBetter ? ` — smaller! Update u.` : ` — not smaller, keep u.`)
+        message: s.mScanCmp(nameOf(candidate), fmtNum(dist[candidate]), nameOf(u), fmtNum(dist[u]), isBetter)
       }));
       if (isBetter) {
         u = candidate;
-        steps.push(snapshot({
-          codeLine: 'updateU',
-          scanCandidate: candidate,
-          scanBest: u,
-          message: `u = ${nameOf(u)}.`
-        }));
+        steps.push(snapshot({ codeLine: 'updateU', scanCandidate: candidate, scanBest: u, message: s.mUpdateU(nameOf(u)) }));
       }
     }
 
     Q = Q.filter(id => id !== u);
     finalized.push(u);
-    steps.push(snapshot({
-      codeLine: 'removeU',
-      currentU: u,
-      message: `Remove ${nameOf(u)} from Q — its shortest distance (${fmtNum(dist[u])}) is now final.`
-    }));
+    steps.push(snapshot({ codeLine: 'removeU', currentU: u, message: s.mRemoveU(nameOf(u), fmtNum(dist[u])) }));
 
     const ns = neighborsOf(u);
     if (ns.length === 0) {
-      steps.push(snapshot({
-        codeLine: 'neighborLoop',
-        currentU: u,
-        message: `${nameOf(u)} has no outgoing edges — nothing to relax.`
-      }));
+      steps.push(snapshot({ codeLine: 'neighborLoop', currentU: u, message: s.mNoEdges(nameOf(u)) }));
     }
     for (const e of ns) {
       const v = e.to;
-      steps.push(snapshot({
-        codeLine: 'neighborLoop',
-        currentU: u,
-        currentEdge: { from: u, to: v },
-        message: `Look at edge ${nameOf(u)} → ${nameOf(v)} (weight ${e.weight}).`
-      }));
+      steps.push(snapshot({ codeLine: 'neighborLoop', currentU: u, currentEdge: { from: u, to: v }, message: s.mEdge(nameOf(u), nameOf(v), e.weight) }));
 
       const alt = dist[u] + e.weight;
-      steps.push(snapshot({
-        codeLine: 'computeAlt',
-        currentU: u,
-        currentEdge: { from: u, to: v },
-        message: `alt = dist[${nameOf(u)}] + weight(${nameOf(u)}→${nameOf(v)}) = ${fmtNum(dist[u])} + ${e.weight} = ${fmtNum(alt)}.`
-      }));
+      steps.push(snapshot({ codeLine: 'computeAlt', currentU: u, currentEdge: { from: u, to: v }, message: s.mAlt(nameOf(u), nameOf(v), fmtNum(dist[u]), e.weight, fmtNum(alt)) }));
 
       const improves = alt < dist[v];
       steps.push(snapshot({
         codeLine: 'altCompare',
         currentU: u,
         currentEdge: { from: u, to: v },
-        message: improves
-          ? `${fmtNum(alt)} < dist[${nameOf(v)}] (${fmtNum(dist[v])}) — a shorter path was found!`
-          : `${fmtNum(alt)} is not smaller than dist[${nameOf(v)}] (${fmtNum(dist[v])}) — no update.`
+        message: improves ? s.mImproves(fmtNum(alt), nameOf(v), fmtNum(dist[v])) : s.mNoImprove(fmtNum(alt), nameOf(v), fmtNum(dist[v]))
       }));
 
       if (improves) {
         dist[v] = alt;
         prev[v] = u;
-        steps.push(snapshot({
-          codeLine: 'updateDistPrev',
-          currentU: u,
-          currentEdge: { from: u, to: v },
-          message: `Update dist[${nameOf(v)}] = ${fmtNum(alt)} and prev[${nameOf(v)}] = ${nameOf(u)}.`
-        }));
+        steps.push(snapshot({ codeLine: 'updateDistPrev', currentU: u, currentEdge: { from: u, to: v }, message: s.mUpdate(nameOf(v), fmtNum(alt), nameOf(u)) }));
       }
     }
   }
 
-  steps.push(snapshot({
-    codeLine: 'returnResult',
-    message: 'Q is empty — return dist[] and prev[]. The shortest-path tree is complete.'
-  }));
-
+  steps.push(snapshot({ codeLine: 'returnResult', message: s.mDone }));
   return steps;
 }
 
 // ─────────────────────────────────────────────
-//  Code panel (mirrors src/Dijkstra.java's dijkstra() method)
+//  Code panel
 // ─────────────────────────────────────────────
 const PSEUDO_DIJKSTRA = [
   { id: 'sig',            html: '<span class="kw">static</span> Result <span class="fn">dijkstra</span>(Graph graph, String source) {' },
@@ -969,14 +1101,15 @@ function renderPseudocode(activeId) {
 }
 
 function renderStateTable(step) {
+  const s = S();
   const table = document.getElementById('stateTable');
-  let html = '<tr><th>Vertex</th><th>dist</th><th>prev</th><th>status</th></tr>';
+  let html = `<tr><th>${s.thVertex}</th><th>dist</th><th>prev</th><th>${s.thStatus}</th></tr>`;
   nodes.forEach(n => {
     const isU = step.currentU === n.id;
     const inQ = step.Q.includes(n.id);
     const isFinalized = step.finalized.includes(n.id);
-    let status = inQ ? 'in Q' : (isFinalized ? 'finalized' : '');
-    if (isU) status = 'current u';
+    let status = inQ ? s.inQ : (isFinalized ? s.finalized : '');
+    if (isU) status = s.currentU;
     const rowStyle = isU ? 'background:rgba(167,139,250,0.18);' :
       isFinalized ? 'background:rgba(107,203,119,0.10);' : '';
     html += `<tr style="${rowStyle}">
@@ -998,7 +1131,7 @@ function renderRunStep() {
 
   document.getElementById('progressBar').style.width = `${Math.round((stepIndex / (steps.length - 1)) * 100)}%`;
   document.getElementById('explanation').textContent = step.message;
-  document.getElementById('stepInfo').textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+  document.getElementById('stepInfo').textContent = S().stepOf(stepIndex + 1, steps.length);
   renderPseudocode(step.codeLine);
   renderStateTable(step);
   renderGraph();
@@ -1028,7 +1161,7 @@ function togglePlay() {
   if (playTimer) {
     stopPlay();
   } else {
-    document.getElementById('btnPlay').textContent = '⏸ Pause';
+    document.getElementById('btnPlay').textContent = S().pause;
     scheduleNext();
   }
 }
@@ -1056,12 +1189,12 @@ function stopPlay() {
     clearTimeout(playTimer);
     playTimer = null;
   }
-  document.getElementById('btnPlay').textContent = '▶ Auto Play';
+  document.getElementById('btnPlay').textContent = S().autoPlay;
 }
 
 function startRun() {
   if (nodes.length === 0) {
-    alert('Add at least one node first (or click "Load Example").');
+    alert(S().noNodes);
     return;
   }
   stopPlay();
@@ -1076,14 +1209,15 @@ function startRun() {
 //  Legend (run mode)
 // ─────────────────────────────────────────────
 function renderRunLegend() {
+  const lg = S().legend;
   const legend = document.getElementById('runLegend');
   legend.innerHTML = `
-    <div class="legend-item"><span class="legend-dot" style="border-color:#a78bfa"></span> Current vertex u</div>
-    <div class="legend-item"><span class="legend-dot" style="border-color:#f0c040"></span> Scanning candidate</div>
-    <div class="legend-item"><span class="legend-dot" style="border-color:#4ecdc4;border-style:dashed;border-width:2px"></span> Current best (min so far)</div>
-    <div class="legend-item"><span class="legend-dot" style="border-color:#6bcb77;background:#2f6b3a"></span> Finalized</div>
-    <div class="legend-item"><span class="legend-line" style="border-color:#f0a030"></span> Edge being relaxed</div>
-    <div class="legend-item"><span class="legend-line" style="border-color:#6bcb77"></span> Shortest-path tree</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#a78bfa"></span> ${lg.currentU}</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#f0c040"></span> ${lg.scanning}</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#4ecdc4;border-style:dashed;border-width:2px"></span> ${lg.scanBest}</div>
+    <div class="legend-item"><span class="legend-dot" style="border-color:#6bcb77;background:#2f6b3a"></span> ${lg.finalized}</div>
+    <div class="legend-item"><span class="legend-line" style="border-color:#f0a030"></span> ${lg.relaxing}</div>
+    <div class="legend-item"><span class="legend-line" style="border-color:#6bcb77"></span> ${lg.tree}</div>
   `;
 }
 
