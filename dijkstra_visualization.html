@@ -31,9 +31,7 @@
 
   .tabs {
     display: flex;
-    justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
   }
 
   .tab {
@@ -286,10 +284,11 @@
     letter-spacing: 0.5px;
   }
 
-  .lang-toggle { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
-  .lang-btn { padding:5px 14px; border:2px solid #505055; border-radius:6px; background:#383840; color:#888890; font-size:0.75rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
+  .tabs-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .lang-toggle { display:flex; gap:5px; }
+  .lang-btn { padding:4px 10px; border:2px solid #505055; border-radius:6px; background:#383840; color:#666670; font-size:0.72rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
   .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
-  .lang-btn:hover:not(.active) { border-color:#aaa; color:#ccc; }
+  .lang-btn:hover:not(.active) { border-color:#888; color:#ccc; }
 </style>
 </head>
 <body>
@@ -297,14 +296,15 @@
 <h1 id="pageTitle">Dijkstra's Algorithm</h1>
 <p class="subtitle" id="pageSubtitle">Draw a graph, then step through how the code finds shortest paths</p>
 
-<div class="lang-toggle">
-  <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
-  <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
-</div>
-
-<div class="tabs">
-  <button class="tab active" id="tabBuild" onclick="switchMode('build')">Build Graph</button>
-  <button class="tab" id="tabRun" onclick="switchMode('run')">Run Algorithm</button>
+<div class="tabs-row">
+  <div class="tabs">
+    <button class="tab active" id="tabBuild" onclick="switchMode('build')">Build Graph</button>
+    <button class="tab" id="tabRun" onclick="switchMode('run')">Run Algorithm</button>
+  </div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
+  </div>
 </div>
 
 <div class="stage">
@@ -533,6 +533,7 @@ function S() { return STRINGS[lang]; }
 
 function setLang(l) {
   lang = l;
+  localStorage.setItem('lang', l);
   document.getElementById('langEn').classList.toggle('active', l === 'en');
   document.getElementById('langDe').classList.toggle('active', l === 'de');
   applyStaticLang();
@@ -1229,6 +1230,8 @@ document.getElementById('speedSlider').addEventListener('input', (ev) => {
   document.getElementById('speedLabel').textContent = `${ev.target.value}×`;
 });
 
+const _storedLang = localStorage.getItem('lang');
+if (_storedLang === 'de') { lang = 'de'; document.getElementById('langEn').classList.remove('active'); document.getElementById('langDe').classList.add('active'); applyStaticLang(); }
 loadExample();
 switchMode('build');
 </script>

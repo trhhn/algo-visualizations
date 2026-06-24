@@ -175,10 +175,10 @@
   body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
   body.theme-light .palette-item .lbl { color: #333333; }
 
-  .lang-toggle { display:flex; gap:6px; margin-bottom:4px; }
-  .lang-btn { padding:4px 12px; border:2px solid #505055; border-radius:6px; background:#383840; color:#888890; font-size:0.72rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
+  .lang-toggle { display:flex; gap:5px; }
+  .lang-btn { padding:4px 10px; border:2px solid #505055; border-radius:6px; background:#383840; color:#666670; font-size:0.72rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:border-color 0.2s, color 0.2s; }
   .lang-btn.active { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,0.1); }
-  .lang-btn:hover:not(.active) { border-color:#aaa; color:#ccc; }
+  .lang-btn:hover:not(.active) { border-color:#888; color:#ccc; }
 </style>
 </head>
 <body>
@@ -187,10 +187,6 @@
 
   <div class="panel">
     <div class="app-wordmark" id="appWordmark">Logic Circuit Simulator</div>
-    <div class="lang-toggle">
-      <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
-    </div>
     <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
@@ -237,6 +233,10 @@
         <option value="light" selected data-en="Light" data-de="Hell">Light</option>
         <option value="dark" data-en="Dark" data-de="Dunkel">Dark</option>
       </select>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="langDe" onclick="setLang('de')">DE</button>
+      </div>
 
       <div class="clock-control">
         Clock:
@@ -325,6 +325,7 @@ function S() { return STRINGS[lang]; }
 
 function setLang(l) {
   lang = l;
+  localStorage.setItem('lang', l);
   document.getElementById('langEn').classList.toggle('active', l === 'en');
   document.getElementById('langDe').classList.toggle('active', l === 'de');
   applyStaticLang();
@@ -1392,6 +1393,8 @@ _cs.addEventListener('pointerup', _pu, { capture: true });
 _cs.addEventListener('pointercancel', _pu, { capture: true });
 
 document.body.classList.add('theme-light');
+const _storedLang = localStorage.getItem('lang');
+if (_storedLang === 'de') { lang = 'de'; document.getElementById('langEn').classList.remove('active'); document.getElementById('langDe').classList.add('active'); applyStaticLang(); }
 buildPalette();
 pushHistory();
 setTool('select');
