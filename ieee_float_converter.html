@@ -115,26 +115,14 @@
     margin-top: 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-size: 0.82rem;
     color: #888890;
     border-top: 1px solid #383840;
     padding-top: 12px;
   }
-  .rounding-row label.radio-label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    color: #aaaaaa;
-    font-size: 0.82rem;
-    font-weight: normal;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-  .rounding-row input[type=radio] { accent-color: #22c55e; cursor: pointer; }
-  .rounding-row label.radio-label:hover { color: #eeeeee; }
-  .rounding-heading { font-weight: 700; color: #666670; }
+  .rounding-heading { font-weight: 700; color: #666670; font-size: 0.82rem; }
+  .rounding-row select { background:#383840; color:#cccccc; border:2px solid #505055; border-radius:8px; padding:4px 8px; font-size:0.82rem; cursor:pointer; }
 
   /* ── Bit display ── */
   .bit-section {
@@ -148,23 +136,23 @@
 
   .bit-row {
     display: flex;
-    gap: 3px;
+    gap: 10px;
     flex-wrap: nowrap;
     justify-content: center;
-    overflow-x: auto;
     padding-bottom: 4px;
   }
+  .bit-group { display: flex; gap: 2px; }
 
   .bit-box {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 700;
     font-family: 'Consolas', 'Courier New', monospace;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
     user-select: none;
     transition: background 0.12s, color 0.12s, transform 0.08s;
@@ -197,9 +185,9 @@
     justify-content: center;
     user-select: none;
   }
-  .bit-label-sign  { width: calc(28px + 2px); text-align: center; }
-  .bit-label-exp   { width: calc(8 * 28px + 7 * 3px + 3px); text-align: center; color: #4a7acc; }
-  .bit-label-man   { width: calc(23 * 28px + 22 * 3px); text-align: center; color: #22c55e; }
+  .bit-label-sign  { width: 24px; text-align: center; }
+  .bit-label-exp   { width: calc(8 * 24px + 7 * 2px); text-align: center; color: #4a7acc; }
+  .bit-label-man   { width: calc(23 * 24px + 22 * 2px); text-align: center; color: #22c55e; }
 
   /* tooltip */
   .bit-box::after {
@@ -443,20 +431,26 @@
       <label for="hexInput">Hex / Binary</label>
       <div class="input-with-btn">
         <input type="text" id="hexInput" placeholder="e.g. C0870000" />
-        <button class="convert-btn" id="decodeBtn">Decode →</button>
+        <button class="convert-btn" id="decodeBtn">← From Bits</button>
       </div>
     </div>
   </div>
   <div class="rounding-row">
-    <span class="rounding-heading">Rounding:</span>
-    <label class="radio-label"><input type="radio" name="rounding" value="round" checked> Round (half-to-even)</label>
-    <label class="radio-label"><input type="radio" name="rounding" value="truncate"> Truncate</label>
+    <span class="rounding-heading">Mantissa overflow:</span>
+    <select id="roundMode">
+      <option value="truncate" selected>Truncate (cut off)</option>
+      <option value="round">Round (half-to-even)</option>
+    </select>
   </div>
 </div>
 
 <!-- Bit display -->
 <div class="bit-section">
-  <div class="bit-row" id="bitRow"></div>
+  <div class="bit-row">
+    <div class="bit-group" id="bitGroupSign"></div>
+    <div class="bit-group" id="bitGroupExp"></div>
+    <div class="bit-group" id="bitGroupMan"></div>
+  </div>
   <div class="bit-labels">
     <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
     <div class="bit-label-exp">Exponent (8 bits)</div>
@@ -477,6 +471,10 @@
   <div class="summary-item">
     <span class="summary-label">Binary</span>
     <span class="summary-value" id="sumBinary" style="font-size:0.78rem; word-break:break-all;">—</span>
+  </div>
+  <div class="summary-item">
+    <span class="summary-label">Error</span>
+    <span class="summary-value" id="sumError">—</span>
   </div>
 </div>
 
@@ -518,31 +516,31 @@ let lastMode = null; // 'decimal' | 'decode'
 let lastDecimalValue = null;
 
 // ── Bit display ──────────────────────────────────────────────────────────────
+function makeBox(i) {
+  const box = document.createElement('div');
+  const bitPos = 31 - i;
+  const cls = i === 0 ? 'sign' : i <= 8 ? 'exp' : 'man';
+  box.className = 'bit-box ' + cls + '-' + currentBits[i];
+  box.textContent = currentBits[i];
+  box.dataset.tip = 'bit ' + bitPos;
+  box.addEventListener('click', () => toggleBit(i));
+  return box;
+}
+
 function buildBitRow() {
-  const row = document.getElementById('bitRow');
-  row.innerHTML = '';
-  for (let i = 0; i < 32; i++) {
-    const box = document.createElement('div');
-    const bitPos = 31 - i; // display MSB on left
-    let cls;
-    if (i === 0) cls = 'sign';
-    else if (i <= 8) cls = 'exp';
-    else cls = 'man';
-    box.className = 'bit-box ' + cls + '-' + currentBits[i];
-    box.textContent = currentBits[i];
-    box.dataset.tip = 'bit ' + bitPos;
-    box.addEventListener('click', () => toggleBit(i));
-    row.appendChild(box);
-  }
+  const gs = document.getElementById('bitGroupSign');
+  const ge = document.getElementById('bitGroupExp');
+  const gm = document.getElementById('bitGroupMan');
+  gs.innerHTML = ''; ge.innerHTML = ''; gm.innerHTML = '';
+  gs.appendChild(makeBox(0));
+  for (let i = 1; i <= 8; i++) ge.appendChild(makeBox(i));
+  for (let i = 9; i < 32; i++) gm.appendChild(makeBox(i));
 }
 
 function updateBitRow() {
-  const boxes = document.querySelectorAll('#bitRow .bit-box');
+  const boxes = document.querySelectorAll('.bit-group .bit-box');
   boxes.forEach((box, i) => {
-    let cls;
-    if (i === 0) cls = 'sign';
-    else if (i <= 8) cls = 'exp';
-    else cls = 'man';
+    const cls = i === 0 ? 'sign' : i <= 8 ? 'exp' : 'man';
     box.className = 'bit-box ' + cls + '-' + currentBits[i];
     box.textContent = currentBits[i];
   });
@@ -569,28 +567,33 @@ function toggleBit(idx) {
 }
 
 // ── Summary bar ──────────────────────────────────────────────────────────────
-function updateSummary(u32) {
+function updateSummary(u32, origValue = null) {
   const val = u32ToDecimal(u32);
-  const hex = u32ToHex(u32);
-  const bin = u32ToBitString(u32);
-  document.getElementById('sumHex').textContent = hex;
-  document.getElementById('sumBinary').textContent = bin;
+  document.getElementById('sumHex').textContent = u32ToHex(u32);
+  document.getElementById('sumBinary').textContent = u32ToBitString(u32);
   const valEl = document.getElementById('sumValue');
+  const errEl = document.getElementById('sumError');
   if (isNaN(val)) {
-    valEl.textContent = 'NaN';
-    valEl.className = 'summary-value special';
+    valEl.textContent = 'NaN'; valEl.className = 'summary-value special';
+    errEl.textContent = '—';
   } else if (!isFinite(val)) {
-    valEl.textContent = val > 0 ? '+Infinity' : '-Infinity';
-    valEl.className = 'summary-value special';
+    valEl.textContent = val > 0 ? '+Infinity' : '-Infinity'; valEl.className = 'summary-value special';
+    errEl.textContent = '—';
   } else if (Object.is(val, -0)) {
-    valEl.textContent = '-0';
-    valEl.className = 'summary-value special';
+    valEl.textContent = '-0'; valEl.className = 'summary-value special';
+    errEl.textContent = '—';
   } else if (val === 0) {
-    valEl.textContent = '+0';
-    valEl.className = 'summary-value special';
+    valEl.textContent = '+0'; valEl.className = 'summary-value special';
+    errEl.textContent = origValue !== null ? (origValue >= 0 ? '+0' : '−0') : '—';
   } else {
-    valEl.textContent = val;
-    valEl.className = 'summary-value';
+    valEl.textContent = val; valEl.className = 'summary-value';
+    if (origValue !== null && isFinite(origValue)) {
+      const err = val - origValue;
+      errEl.textContent = (err >= 0 ? '+' : '') + err.toPrecision(4);
+      errEl.className = err !== 0 ? 'summary-value special' : 'summary-value';
+    } else {
+      errEl.textContent = '—'; errEl.className = 'summary-value';
+    }
   }
 }
 
@@ -665,6 +668,35 @@ function fracToBinTableHtml(frac, maxBits) {
   return { bits, html };
 }
 
+// ── Decimal → u32 with explicit truncate vs round ───────────────────────────
+function decimalToU32WithMode(value, mode) {
+  // Special values and round mode: defer to Float32Array (authoritative)
+  if (!isFinite(value) || value === 0 || isNaN(value) || mode === 'round') {
+    _f32[0] = value;
+    return _u32[0] >>> 0;
+  }
+  // Truncate: extract top 23 mantissa bits from the 64-bit double directly
+  const negative = value < 0;
+  const absVal = Math.abs(value);
+  const dv = new DataView(new ArrayBuffer(8));
+  dv.setFloat64(0, absVal, false); // big-endian
+  const hi = dv.getUint32(0, false);
+  const lo = dv.getUint32(4, false);
+  const doubleExpBiased = (hi >>> 20) & 0x7FF;
+  if (doubleExpBiased === 0 || doubleExpBiased === 0x7FF) {
+    // subnormal double, NaN, Inf: fall back to Float32Array
+    _f32[0] = value; return _u32[0] >>> 0;
+  }
+  const doubleExp = doubleExpBiased - 1023;
+  const f32ExpBiased = doubleExp + 127;
+  if (f32ExpBiased >= 255) return negative ? 0xFF800000 : 0x7F800000; // overflow → Inf
+  if (f32ExpBiased <= 0)   { _f32[0] = value; return _u32[0] >>> 0; } // subnormal f32
+  // Top 23 bits of the 52-bit double mantissa (bits 51..29)
+  // hi[19..0] = mantissa bits 51..32, lo[31..0] = mantissa bits 31..0
+  const mant23 = (((hi & 0x000FFFFF) << 3) | (lo >>> 29)) & 0x7FFFFF;
+  return (((negative ? 1 : 0) << 31) | (f32ExpBiased << 23) | mant23) >>> 0;
+}
+
 // ── Round 23-bit mantissa ────────────────────────────────────────────────────
 function applyRounding(mantBits, mode) {
   // mantBits: string longer than 23 chars (raw mantissa including guard bits)
@@ -719,11 +751,11 @@ function convertDecimal() {
   lastDecimalValue = value;
   lastMode = 'decimal';
 
-  const mode = document.querySelector('input[name=rounding]:checked').value;
-  const u32 = decimalToU32(value);
+  const mode = document.getElementById('roundMode').value;
+  const u32 = decimalToU32WithMode(value, mode);
   setBitsFromU32(u32);
   updateBitRow();
-  updateSummary(u32);
+  updateSummary(u32, value);
   document.getElementById('hexInput').value = u32ToHex(u32);
 
   // Build steps
@@ -732,7 +764,7 @@ function convertDecimal() {
 }
 
 function buildSteps(value, mode) {
-  const u32 = decimalToU32(value);
+  const u32 = decimalToU32WithMode(value, mode);
   const bits = u32ToBitString(u32);
 
   // Special cases
@@ -860,8 +892,8 @@ function buildSteps(value, mode) {
   }
   step5 += `</div></div>`;
 
-  // Verify with Float32Array (the authoritative result)
-  const verifyBits = u32ToBitString(decimalToU32(value));
+  // Assemble from the already-computed u32 (respects truncate vs round)
+  const verifyBits = u32ToBitString(u32);
   const verifySign = verifyBits[0];
   const verifyExp  = verifyBits.slice(1, 9);
   const verifyMan  = verifyBits.slice(9);
@@ -878,9 +910,9 @@ function buildSteps(value, mode) {
       <div class="assemble-row"><span class="assemble-lbl">Mantissa:</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
       <div style="border-top:1px solid #2e2e34; margin: 6px 0;"></div>
       <div class="assemble-row"><span class="assemble-lbl">Result:</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Hex:</span>      <span class="assemble-hex">${u32ToHex(decimalToU32(value))}</span></div>
+      <div class="assemble-row"><span class="assemble-lbl">Hex:</span>      <span class="assemble-hex">${u32ToHex(u32)}</span></div>
     </div>
-    <div style="font-size:0.8rem; color:#666670; margin-top:8px;">(Bit pattern verified using <code>Float32Array</code>)</div>
+    <div style="font-size:0.8rem; color:#666670; margin-top:8px;">(Bit pattern uses <code>Float32Array</code> for round mode, manual truncation for truncate mode)</div>
   </div>
 </div>`;
 
@@ -1049,15 +1081,16 @@ document.getElementById('hexInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') decodeHex();
 });
 
-document.querySelectorAll('input[name=rounding]').forEach(r => {
-  r.addEventListener('change', () => {
-    if (lastMode === 'decimal' && lastDecimalValue !== null) {
-      const mode = document.querySelector('input[name=rounding]:checked').value;
-      // Re-run steps only (bits come from Float32Array so they don't change)
-      const stepsHtml = buildSteps(lastDecimalValue, mode);
-      showSteps(stepsHtml);
-    }
-  });
+document.getElementById('roundMode').addEventListener('change', () => {
+  if (lastMode === 'decimal' && lastDecimalValue !== null) {
+    const mode = document.getElementById('roundMode').value;
+    const u32 = decimalToU32WithMode(lastDecimalValue, mode);
+    setBitsFromU32(u32);
+    updateBitRow();
+    updateSummary(u32, lastDecimalValue);
+    document.getElementById('hexInput').value = u32ToHex(u32);
+    showSteps(buildSteps(lastDecimalValue, mode));
+  }
 });
 
 // ── Initial render ───────────────────────────────────────────────────────────
