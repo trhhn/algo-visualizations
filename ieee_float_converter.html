@@ -939,35 +939,48 @@ function buildSteps(value, mode) {
     finalExpBits8 = finalBiasedExp.toString(2).padStart(8, '0');
   }
 
-  // Explain why raw23 has the length it does
-  let rawLenNote = '';
-  if (fracPeriod && intPart === 0) {
-    const leadingZeros = fracBits.indexOf('1'); // zeros before first 1 in frac
-    rawLenNote = `<span style="color:#666670; font-size:0.88rem;">
-      Why ${raw23.length} bits? We computed the fractional binary to 30 digits.
-      The first <code>1</code> in <code>.${fracBits.slice(0,8)}…</code> appears ${leadingZeros > 0 ? `after ${leadingZeros} zero${leadingZeros > 1 ? 's' : ''}` : 'immediately'},
-      so the mantissa starts at digit ${leadingZeros + 1}, leaving <strong>${raw23.length} raw bits</strong>
-      (30 − ${30 - raw23.length} = ${raw23.length}).
-      Since the fraction repeats forever, this is an arbitrary cut — the mantissa is also infinite.
-    </span><br>`;
+  // Build a 26-bit extension of the mantissa from the period (for rounding display)
+  function expandPeriod(bits, pd, totalLen) {
+    if (!pd) return bits.slice(0, totalLen).padEnd(totalLen, '0');
+    let out = bits.slice(0, pd.offset);
+    while (out.length < totalLen) out += pd.period;
+    return out.slice(0, totalLen);
   }
 
   let step5 = `
 <div class="step">
   <div class="step-badge">5</div>
   <div class="step-body">
-    <div class="step-title">Mantissa (Significand)</div>
-    After the leading <code>1.</code>, the raw bits are: <code>${raw23 || '(none)'}${fracPeriod ? '…' : ''}</code><br>
-    ${rawLenNote}`;
-  if (raw23.length <= 23) {
-    step5 += `Pad to 23 bits with trailing zeros: <code class="code-green">${bits23}</code>`;
-  } else {
-    step5 += `Raw mantissa has <strong>${raw23.length}</strong> bits (need 23).<br>`;
-    step5 += `Kept (bits 1–23): <code>${raw23.slice(0, 23)}</code><br>`;
-    step5 += `Dropped: <code>${raw23.slice(23)}</code>${fracPeriod ? '…' : ''}<br>`;
-    if (roundNote) {
-      step5 += `<div class="rounding-note">${roundNote}</div>`;
+    <div class="step-title">Mantissa (Significand)</div>`;
+
+  if (mantissaPeriod) {
+    // Repeating mantissa: explain cleanly without mentioning internal bit counts
+    const ext26 = expandPeriod(mantissaRaw, mantissaPeriod, 26);
+    const kept23 = ext26.slice(0, 23);
+    const guardBit = ext26[23];
+    step5 += `
+    After the leading <code>1.</code>, the mantissa is <code>(${mantissaPeriod.period})</code> repeating forever.<br><br>
+    IEEE 754 stores exactly <strong>23 bits</strong>. We extend the repeating pattern to get them:<br>
+    <code>${ext26.slice(0,23)} | ${ext26.slice(23)}</code><br>
+    <span style="color:#666670; font-size:0.88rem;">(the <code>|</code> marks where bit 23 ends; bits to the right are dropped or used for rounding)</span><br><br>`;
+    if (mode === 'truncate') {
+      step5 += `<strong>Truncate:</strong> keep the first 23 bits, drop the rest.<br>`;
+    } else {
+      step5 += `<strong>Round (half-to-even):</strong> bit 24 = <code>${guardBit}</code>${guardBit === '1' ? ' → round up' : ' → round down (keep bits 1–23)'}.<br>`;
     }
+    if (roundNote) step5 += `<div class="rounding-note">${roundNote}</div>`;
+    step5 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+  } else if (raw23.length <= 23) {
+    step5 += `
+    After the leading <code>1.</code>, the bits are: <code>${raw23 || '(none)'}</code><br>
+    Fewer than 23 bits — pad with trailing zeros:<br>
+    Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+  } else {
+    step5 += `
+    After the leading <code>1.</code>, the bits are: <code>${raw23.slice(0, 26)}…</code><br><br>
+    More than 23 bits — need to cut at position 23:<br>
+    <code>${raw23.slice(0,23)} | ${raw23.slice(23)}</code><br>`;
+    if (roundNote) step5 += `<div class="rounding-note">${roundNote}</div>`;
     step5 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
   }
   step5 += `</div></div>`;
