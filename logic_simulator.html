@@ -11,7 +11,8 @@
     font-family: 'Segoe UI', sans-serif;
     background: #1e1e22;
     color: #cccccc;
-    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -39,8 +40,9 @@
     align-items: stretch;
   }
 
-  /* Canvas panel stretches to fill grid row; SVG takes remaining space */
-  .app > .panel:last-child { display: flex; flex-direction: column; }
+  /* Left panel scrolls its own content; right panel is a flex column */
+  .app > .panel:first-child { overflow-y: auto; min-height: 0; }
+  .app > .panel:last-child { display: flex; flex-direction: column; min-height: 0; }
 
   .panel {
     background: #252528;
@@ -205,7 +207,7 @@
 <div class="app">
 
   <div class="panel">
-    <div class="app-wordmark" id="appWordmark">Logic Circuit Simulator</div>
+    <div class="app-wordmark"><span id="appWordmark">Logic Circuit Simulator</span><span style="display:block;font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-top:2px;">v1.9</span></div>
     <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
@@ -1533,6 +1535,5 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.9</div>
 </body>
 </html>
