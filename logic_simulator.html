@@ -163,9 +163,11 @@
     .palette-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .palette-item { padding: 8px 4px 6px; }
     .app > .panel:first-child { max-height: 36vh; overflow-y: auto; }
-    #circuitSvg { height: calc(100dvh - 36vh - 120px); min-height: 220px; }
-    .toolbar { gap: 6px; }
+    /* Canvas panel: flex column so we can reorder children */
+    .app > .panel:last-child { display: flex; flex-direction: column; }
+    #circuitSvg { order: -1; height: calc(100dvh - 36vh - 120px); min-height: 220px; }
     .hint { font-size: 0.78rem; }
+    .toolbar { order: 1; gap: 6px; }
   }
 
   /* Landscape mobile: short viewport, keep palette as sidebar */
@@ -1424,6 +1426,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.2</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.3</div>
 </body>
 </html>
