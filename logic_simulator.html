@@ -427,7 +427,7 @@ function inputPinPos(def, idx) {
 }
 
 function outputPinPos(def) {
-  const bubbleGap = def.negated ? 8 : 0;
+  const bubbleGap = def.negated ? 16 : 0;
   return { x: def.w + bubbleGap, y: def.h / 2 };
 }
 
@@ -1531,6 +1531,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.7</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.8</div>
 </body>
 </html>
