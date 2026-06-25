@@ -11,8 +11,10 @@
     font-family: 'Segoe UI', sans-serif;
     background: #1e1e22;
     color: #cccccc;
-    min-height: 100vh;
+    min-height: 100dvh;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
   }
 
   .app-wordmark {
@@ -24,6 +26,7 @@
     margin-bottom: 16px;
     padding-bottom: 12px;
     border-bottom: 1px solid #38383e;
+    flex-shrink: 0;
   }
 
   .app {
@@ -31,8 +34,15 @@
     grid-template-columns: 220px 1fr;
     gap: 16px;
     max-width: 1280px;
+    width: 100%;
     margin: 0 auto;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
   }
+
+  /* Canvas panel stretches to fill grid row; SVG takes remaining space */
+  .app > .panel:last-child { display: flex; flex-direction: column; }
 
   .panel {
     background: #252528;
@@ -140,7 +150,8 @@
 
   #circuitSvg {
     width: 100%;
-    height: 600px;
+    flex: 1;
+    min-height: 300px;
     background: #13131a;
     border-radius: 8px;
     border: 1px solid #2a2a38;
@@ -163,9 +174,7 @@
     .palette-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .palette-item { padding: 8px 4px 6px; }
     .app > .panel:first-child { max-height: 36vh; overflow-y: auto; }
-    /* Canvas panel: flex column so we can reorder children */
-    .app > .panel:last-child { display: flex; flex-direction: column; }
-    #circuitSvg { order: -1; height: calc(100dvh - 36vh - 120px); min-height: 220px; }
+    #circuitSvg { order: -1; flex: none; height: calc(100dvh - 36vh - 120px); min-height: 220px; }
     .hint { font-size: 0.78rem; }
     .toolbar { order: 1; gap: 6px; }
   }
@@ -176,7 +185,7 @@
     .app-wordmark { display: none; }
     .app { grid-template-columns: 180px 1fr; gap: 8px; }
     .app > .panel:first-child { max-height: calc(100dvh - 16px); overflow-y: auto; }
-    #circuitSvg { height: calc(100dvh - 90px); min-height: 180px; }
+    #circuitSvg { flex: none; height: calc(100dvh - 90px); min-height: 180px; }
     .hint { font-size: 0.72rem; }
   }
 
@@ -846,6 +855,7 @@ function onLabelPointerDown(ev, id) {
 //  Component interaction: select/move/toggle, delete
 // ─────────────────────────────────────────────
 function onComponentPointerDown(ev, id) {
+  if (ev.button !== 0) return;
   if (wireDraft || tool === 'place') return;
   if (svgPtrs.size >= 2) return;
   ev.stopPropagation();
@@ -913,6 +923,7 @@ function deleteSelected() {
 }
 
 function onSvgPointerDown(ev) {
+  if (ev.button !== 0) return;
   if (wireDraft) return;
   if (svgPtrs.size >= 2) return;
   if (ev.target.closest('g[data-comp-id]')) return;
@@ -1423,20 +1434,50 @@ document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(0.7)
 document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(1 / 0.7));
 document.getElementById('btnZoomReset').addEventListener('click', () => { vbX = 0; vbY = 0; vbW = 1040; updateViewBox(); });
 
-// Scroll to pan · Ctrl+scroll or trackpad pinch to zoom
+// Scroll wheel → zoom · trackpad two-finger swipe (deltaMode=0, no Ctrl) → pan
 document.getElementById('circuitSvg').addEventListener('wheel', (ev) => {
   ev.preventDefault();
-  if (ev.ctrlKey) {
-    const p = svgPoint(ev);
-    zoomBy(Math.pow(1.002, ev.deltaY), p.x, p.y);
-  } else {
+  if (ev.deltaMode === 0 && !ev.ctrlKey) {
+    // Trackpad two-finger pan
     const r = document.getElementById('circuitSvg').getBoundingClientRect();
-    const mult = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? 400 : 1;
-    vbX += ev.deltaX * mult * (vbW / r.width);
-    vbY += ev.deltaY * mult * (vbH / r.height);
+    vbX += ev.deltaX * (vbW / r.width);
+    vbY += ev.deltaY * (vbH / r.height);
     updateViewBox();
+  } else {
+    // Mouse scroll wheel (deltaMode=1) or trackpad pinch (ctrlKey) → zoom
+    const p = svgPoint(ev);
+    const factor = ev.deltaMode === 1
+      ? Math.pow(1.15, ev.deltaY)    // one discrete step per wheel click
+      : Math.pow(1.002, ev.deltaY);  // pixel-smooth for trackpad pinch
+    zoomBy(factor, p.x, p.y);
   }
 }, { passive: false });
+
+// Middle mouse button → pan
+let middlePan = null;
+function onMiddlePanMove(ev) {
+  if (!middlePan) return;
+  const sc = vbW / middlePan.svgW;
+  vbX = middlePan.vbX0 - (ev.clientX - middlePan.x0) * sc;
+  vbY = middlePan.vbY0 - (ev.clientY - middlePan.y0) * sc;
+  updateViewBox();
+}
+function onMiddlePanUp(ev) {
+  if (ev.button !== 1) return;
+  middlePan = null;
+  document.getElementById('circuitSvg').style.cursor = '';
+  window.removeEventListener('pointermove', onMiddlePanMove);
+  window.removeEventListener('pointerup', onMiddlePanUp);
+}
+document.getElementById('circuitSvg').addEventListener('pointerdown', ev => {
+  if (ev.button !== 1) return;
+  ev.preventDefault();
+  const r = document.getElementById('circuitSvg').getBoundingClientRect();
+  middlePan = { x0: ev.clientX, y0: ev.clientY, vbX0: vbX, vbY0: vbY, svgW: r.width };
+  document.getElementById('circuitSvg').style.cursor = 'grabbing';
+  window.addEventListener('pointermove', onMiddlePanMove);
+  window.addEventListener('pointerup', onMiddlePanUp);
+});
 
 // Pinch zoom + 2-finger pan (touch)
 const _cs = document.getElementById('circuitSvg');
@@ -1492,6 +1533,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.5</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.6</div>
 </body>
 </html>
