@@ -179,6 +179,7 @@
 
   .bit-labels {
     display: flex;
+    gap: 10px; /* match .bit-row gap so labels align with groups */
     margin-top: 8px;
     font-size: 0.72rem;
     color: #666670;
@@ -187,10 +188,11 @@
     letter-spacing: 0.5px;
     justify-content: center;
     user-select: none;
+    min-width: max-content; /* scroll with bits, don't wrap */
   }
-  .bit-label-sign  { width: 24px; text-align: center; }
-  .bit-label-exp   { width: calc(8 * 24px + 7 * 2px); text-align: center; color: #4a7acc; }
-  .bit-label-man   { width: calc(23 * 24px + 22 * 2px); text-align: center; color: #22c55e; }
+  .bit-label-sign  { width: 24px; text-align: center; flex-shrink: 0; }
+  .bit-label-exp   { width: calc(8 * 24px + 7 * 2px); text-align: center; color: #4a7acc; flex-shrink: 0; }
+  .bit-label-man   { width: calc(23 * 24px + 22 * 2px); text-align: center; color: #22c55e; flex-shrink: 0; }
 
   /* tooltip */
   .bit-box::after {
@@ -349,10 +351,11 @@
     font-size: 0.84rem;
     margin-top: 8px;
     line-height: 1.9;
+    overflow-x: auto;
   }
-  .assemble-row { display: flex; gap: 12px; }
-  .assemble-lbl { color: #666670; min-width: 90px; }
-  .assemble-val { color: #eeeeee; }
+  .assemble-row { display: flex; gap: 12px; min-width: max-content; }
+  .assemble-lbl { color: #666670; min-width: 90px; flex-shrink: 0; }
+  .assemble-val { color: #eeeeee; white-space: nowrap; }
   .assemble-val .s-bit { color: #fca5a5; }
   .assemble-val .e-bit { color: #bfdbfe; }
   .assemble-val .m-bit { color: #86efac; }
@@ -1191,6 +1194,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.6</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.7</div>
 </body>
 </html>
