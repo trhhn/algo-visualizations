@@ -9,6 +9,7 @@
 
   body {
     font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
     background: #1e1e22;
     color: #cccccc;
     min-height: 100vh;
@@ -132,7 +133,9 @@
     border-radius: 12px;
     padding: 20px 20px 16px;
     border: 1px solid #2e2e34;
+    overflow: hidden;
   }
+  .bit-scroll { overflow-x: auto; padding-bottom: 6px; }
 
   .bit-row {
     display: flex;
@@ -149,7 +152,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     font-weight: 700;
     font-family: 'Consolas', 'Courier New', monospace;
     border-radius: 4px;
@@ -234,9 +237,18 @@
 
   /* ── Steps panel ── */
   .steps-section {
-    max-width: 700px;
+    max-width: 1000px;
     margin: 0 auto;
     display: none;
+  }
+  .period-note {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    color: #86efac;
   }
   .steps-section.visible { display: block; }
 
@@ -282,8 +294,8 @@
 
   .step-body {
     flex: 1;
-    font-size: 0.88rem;
-    line-height: 1.65;
+    font-size: 0.95rem;
+    line-height: 1.7;
   }
 
   .step-body strong { color: #eeeeee; }
@@ -446,15 +458,17 @@
 
 <!-- Bit display -->
 <div class="bit-section">
-  <div class="bit-row">
-    <div class="bit-group" id="bitGroupSign"></div>
-    <div class="bit-group" id="bitGroupExp"></div>
-    <div class="bit-group" id="bitGroupMan"></div>
-  </div>
-  <div class="bit-labels">
-    <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
-    <div class="bit-label-exp">Exponent (8 bits)</div>
-    <div class="bit-label-man">Mantissa (23 bits)</div>
+  <div class="bit-scroll">
+    <div class="bit-row">
+      <div class="bit-group" id="bitGroupSign"></div>
+      <div class="bit-group" id="bitGroupExp"></div>
+      <div class="bit-group" id="bitGroupMan"></div>
+    </div>
+    <div class="bit-labels">
+      <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
+      <div class="bit-label-exp">Exponent (8 bits)</div>
+      <div class="bit-label-man">Mantissa (23 bits)</div>
+    </div>
   </div>
 </div>
 
@@ -634,6 +648,23 @@ function intToBinTableHtml(n, label) {
   return { bits, html };
 }
 
+// ── Detect repeating period in a bit string ───────────────────────────────────
+function detectPeriod(bits) {
+  const n = bits.length;
+  for (let off = 0; off <= 4; off++) {
+    for (let pLen = 1; pLen <= 16; pLen++) {
+      const period = bits.slice(off, off + pLen);
+      if (period.length < pLen) continue;
+      let ok = true;
+      for (let i = off; i < n; i++) {
+        if (bits[i] !== period[(i - off) % pLen]) { ok = false; break; }
+      }
+      if (ok && n - off >= 2 * pLen) return { offset: off, period };
+    }
+  }
+  return null;
+}
+
 // ── Fraction → binary (repeated multiplication) ───────────────────────────────
 function fracToBinary(frac, maxBits) {
   // Returns string of bits (no leading "0.")
@@ -659,13 +690,34 @@ function fracToBinTableHtml(frac, maxBits) {
     if (f === 0) break;
   }
   const bits = rows.map(r => r.bit).join('');
+  const pd = detectPeriod(bits);
+
+  // Cap table rows: if period found, show prefix + 2 full periods; else show all
+  const showRows = pd
+    ? Math.min(rows.length, pd.offset + 2 * pd.period.length)
+    : rows.length;
+
   let html = '<table class="conv-table"><thead><tr><th>Value</th><th>× 2</th><th>Bit</th></tr></thead><tbody>';
-  for (const r of rows) {
-    html += `<tr><td>${r.val}</td><td>${r.product}</td><td>${r.bit}</td></tr>`;
+  for (let i = 0; i < showRows; i++) {
+    const r = rows[i];
+    const mark = pd && i === pd.offset ? ' style="border-top:2px solid #22c55e;"' : '';
+    html += `<tr${mark}><td>${r.val}</td><td>${r.product}</td><td>${r.bit}</td></tr>`;
   }
+  if (pd) html += `<tr><td colspan="3" style="color:#666670; text-align:center;">⋯ repeats ⋯</td></tr>`;
   html += '</tbody></table>';
-  html += `<div style="font-size:0.8rem; color:#666670; margin-top:4px;">Read bits top-to-bottom: <code>.${bits}</code></div>`;
-  return { bits, html };
+
+  if (pd) {
+    const pre = bits.slice(0, pd.offset);
+    html += `<div class="period-note">
+      ♻ <strong>Repeating binary fraction</strong><br>
+      0.${pre ? pre + '<span style="border-bottom:2px solid #22c55e;">' + pd.period + '</span>' : '<span style="border-bottom:2px solid #22c55e;">' + pd.period + '</span>'}…
+      &nbsp;— the block <code>${pd.period}</code> (length ${pd.period.length}) repeats indefinitely.
+      <br>0.${frac} has <strong>no exact binary representation</strong>.
+    </div>`;
+  } else {
+    html += `<div style="font-size:0.85rem; color:#666670; margin-top:4px;">Read bits top-to-bottom: <code>.${bits}</code></div>`;
+  }
+  return { bits, html, period: pd };
 }
 
 // ── Decimal → u32 with explicit truncate vs round ───────────────────────────
@@ -791,9 +843,9 @@ function buildSteps(value, mode) {
 
   // Step 2: integer and fraction parts to binary
   const { bits: intBits, html: intTableHtml } = intToBinTableHtml(intPart, 'Integer');
-  const { bits: fracBits, html: fracTableHtml } = fracPart > 0
+  const { bits: fracBits, html: fracTableHtml, period: fracPeriod } = fracPart > 0
     ? fracToBinTableHtml(fracPart, 30)
-    : { bits: '', html: '<p style="color:#666670; font-size:0.82rem;">No fractional part.</p>' };
+    : { bits: '', html: '<p style="color:#666670; font-size:0.85rem;">No fractional part.</p>', period: null };
 
   const binaryRep = (intBits === '0' ? '0' : intBits) + (fracBits ? '.' + fracBits : '');
   const step2 = `
@@ -837,10 +889,11 @@ function buildSteps(value, mode) {
   <div class="step-body">
     <div class="step-title">Normalize</div>
     Write in the form <code>1.xxx × 2<sup>n</sup></code>:<br><br>
-    <code>${binaryRep}</code> = <code>${normalizedStr} × 2<sup>${exponent}</sup></code>
+    <code>${binaryRep}${fracPeriod ? '…' : ''}</code> = <code>1.${mantissaRaw || '0'}${fracPeriod ? '…' : ''} × 2<sup>${exponent}</sup></code>
     ${intPart > 0
-      ? `<br><span style="color:#666670; font-size:0.82rem;">(Shift binary point left ${exponent} place${exponent !== 1 ? 's' : ''})</span>`
-      : `<br><span style="color:#666670; font-size:0.82rem;">(Shift binary point right ${-exponent} place${exponent !== -1 ? 's' : ''})</span>`}
+      ? `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point left ${exponent} place${exponent !== 1 ? 's' : ''})</span>`
+      : `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point right ${-exponent} place${exponent !== -1 ? 's' : ''})</span>`}
+    ${(() => { const mp = detectPeriod(mantissaRaw); return fracPeriod ? `<div class="period-note">♻ The mantissa bits after the <code>1.</code> are also infinite and repeating${mp ? ` (period: <code>${mp.period}</code>)` : ''}. IEEE 754 stores only 23 bits — the rest are discarded (truncated or rounded in step 5).</div>` : ''; })()}
   </div>
 </div>`;
 
@@ -874,17 +927,32 @@ function buildSteps(value, mode) {
     finalExpBits8 = finalBiasedExp.toString(2).padStart(8, '0');
   }
 
+  // Explain why raw23 has the length it does
+  let rawLenNote = '';
+  if (fracPeriod && intPart === 0) {
+    const leadingZeros = fracBits.indexOf('1'); // zeros before first 1 in frac
+    rawLenNote = `<span style="color:#666670; font-size:0.88rem;">
+      Why ${raw23.length} bits? We computed the fractional binary to 30 digits.
+      The first <code>1</code> in <code>.${fracBits.slice(0,8)}…</code> appears ${leadingZeros > 0 ? `after ${leadingZeros} zero${leadingZeros > 1 ? 's' : ''}` : 'immediately'},
+      so the mantissa starts at digit ${leadingZeros + 1}, leaving <strong>${raw23.length} raw bits</strong>
+      (30 − ${30 - raw23.length} = ${raw23.length}).
+      Since the fraction repeats forever, this is an arbitrary cut — the mantissa is also infinite.
+    </span><br>`;
+  }
+
   let step5 = `
 <div class="step">
   <div class="step-badge">5</div>
   <div class="step-body">
     <div class="step-title">Mantissa (Significand)</div>
-    After the leading <code>1.</code>, the raw bits are: <code>${raw23 || '(none)'}</code><br>`;
+    After the leading <code>1.</code>, the raw bits are: <code>${raw23 || '(none)'}${fracPeriod ? '…' : ''}</code><br>
+    ${rawLenNote}`;
   if (raw23.length <= 23) {
-    step5 += `Pad to 23 bits: <code class="code-green">${bits23}</code>`;
+    step5 += `Pad to 23 bits with trailing zeros: <code class="code-green">${bits23}</code>`;
   } else {
-    step5 += `Raw mantissa has <strong>${raw23.length}</strong> bits — longer than 23.<br>`;
-    step5 += `Kept bits (1–23): <code>${raw23.slice(0, 23)}</code>, dropped: <code>${raw23.slice(23)}</code><br>`;
+    step5 += `Raw mantissa has <strong>${raw23.length}</strong> bits (need 23).<br>`;
+    step5 += `Kept (bits 1–23): <code>${raw23.slice(0, 23)}</code><br>`;
+    step5 += `Dropped: <code>${raw23.slice(23)}</code>${fracPeriod ? '…' : ''}<br>`;
     if (roundNote) {
       step5 += `<div class="rounding-note">${roundNote}</div>`;
     }
