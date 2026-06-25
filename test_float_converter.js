@@ -50,13 +50,27 @@ function detectPeriod(bits) {
 }
 
 function fracToBits(frac, n) {
-  let bits = '';
+  let bits = '', f = frac;
   for (let i = 0; i < n; i++) {
-    frac *= 2;
-    bits += frac >= 1 ? '1' : '0';
-    if (frac >= 1) frac -= 1;
+    const p = f * 2;
+    const bit = p >= 1 ? 1 : 0;
+    bits += bit;
+    f = bit === 1 ? p - 1 : p;
+    if (f === 0) break; // exact fraction — stop here
   }
   return bits;
+}
+
+function fracPeriod(frac, maxBits = 30) {
+  let f = frac, bits = '';
+  for (let i = 0; i < maxBits; i++) {
+    const p = f * 2;
+    const bit = p >= 1 ? 1 : 0;
+    bits += bit;
+    f = bit === 1 ? p - 1 : p;
+    if (f === 0) return null; // exact — no period
+  }
+  return detectPeriod(bits);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -210,19 +224,39 @@ checkPd('"000011" — algorithm sees "1" repeating at tail (converter guards thi
   '000011', '1');
 checkPd('"00" — period "0"', '00', '0');
 
-// fracToBits of an exact fraction will have trailing zeros → period "0" detected.
-// Again, the converter guard (fracPeriod !== null) prevents this from showing in the UI.
-const frac075bits = fracToBits(0.75, 8); // "11000000"
-checkPd(`fracToBits(0.75,8)="${frac075bits}" — algorithm sees trailing "0" period (converter guards)`,
-  frac075bits, '0');
+// fracToBits now breaks early for exact fractions — "11" for 0.75, no trailing zeros
+const frac075bits = fracToBits(0.75, 30);
+if (frac075bits === '11') {
+  console.log(`  ✓  fracToBits(0.75) = "11" (exact, stops at f=0)`);
+  pass++;
+} else {
+  console.log(`  ✗  fracToBits(0.75) = "${frac075bits}", expected "11"`);
+  fail++;
+}
+
+console.log('\nfracPeriod (exact fraction terminates → null; repeating → period string):');
+function checkFP(label, frac, expectedPeriod) {
+  const pd = fracPeriod(frac);
+  const got = pd ? pd.period : null;
+  if (got === expectedPeriod) { console.log(`  ✓  ${label}`); pass++; }
+  else { console.log(`  ✗  ${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(expectedPeriod)}`); fail++; }
+}
+checkFP('0.75  exact', 0.75, null);
+checkFP('0.5   exact', 0.5,  null);
+checkFP('0.25  exact', 0.25, null);
+checkFP('0.125 exact', 0.125, null);
+checkFP('0.2   repeating "0011"', 0.2, '0011');
+checkFP('0.1   repeating "0011"', 0.1, '0011');
+checkFP('0.3   repeating "1001" (offset 1 — same cycle as 0011, different phase)', 0.3, '1001');
+checkFP('1/3   repeating "01"',   1/3, '01');
 
 const frac02bits = fracToBits(0.2, 30);
 const pd02 = detectPeriod(frac02bits);
 if (pd02 && pd02.period === '0011') {
-  console.log(`  ✓  fracToBits(0.2,30) period="0011"`);
+  console.log(`  ✓  fracToBits(0.2,30) detectPeriod="0011"`);
   pass++;
 } else {
-  console.log(`  ✗  fracToBits(0.2,30) period: got ${JSON.stringify(pd02)}`);
+  console.log(`  ✗  fracToBits(0.2,30) detectPeriod: got ${JSON.stringify(pd02)}`);
   fail++;
 }
 

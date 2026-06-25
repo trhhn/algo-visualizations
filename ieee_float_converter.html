@@ -690,7 +690,8 @@ function fracToBinTableHtml(frac, maxBits) {
     if (f === 0) break;
   }
   const bits = rows.map(r => r.bit).join('');
-  const pd = detectPeriod(bits);
+  const isExact = (f === 0); // fraction terminated — no period, even if bits repeat by coincidence
+  const pd = isExact ? null : detectPeriod(bits);
 
   // Cap table rows: if period found, show prefix + 2 full periods; else show all
   const showRows = pd
@@ -1190,5 +1191,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.4</div>
 </body>
 </html>
