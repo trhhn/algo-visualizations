@@ -221,28 +221,19 @@
     margin: 0 auto 20px;
     background: #13131a;
     border-radius: 10px;
-    padding: 14px 24px;
+    padding: 12px 20px;
     display: flex;
-    gap: 28px;
+    gap: 24px;
     flex-wrap: wrap;
     align-items: center;
     border: 1px solid #2e2e34;
     font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
   }
   .summary-item { display: flex; gap: 8px; align-items: baseline; }
-  .summary-item-binary { flex: 1; min-width: 320px; }
   .summary-label { color: #666670; font-size: 0.78rem; font-family: 'Segoe UI', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .summary-value { color: #eeeeee; font-weight: 600; }
   .summary-value.special { color: #f59e0b; }
-  .sum-hex-btn {
-    background: none; border: 1px solid #3a3a42; color: #555560;
-    border-radius: 4px; padding: 1px 7px; font-size: 0.72rem;
-    font-family: 'Segoe UI', sans-serif; cursor: pointer; margin-left: 8px;
-    vertical-align: middle;
-  }
-  .sum-hex-btn:hover { color: #aaaaaa; border-color: #666670; }
-  .sum-hex-active { color: #cccccc; border-color: #666670; }
 
   /* ── Steps panel ── */
   .steps-section {
@@ -449,7 +440,7 @@
       </div>
     </div>
     <div class="input-group">
-      <label for="hexInput">Binary</label>
+      <label for="hexInput">Hex / Binary</label>
       <div class="input-with-btn">
         <input type="text" id="hexInput" placeholder="e.g. C0870000" />
         <button class="convert-btn" id="decodeBtn">← From Bits</button>
@@ -487,14 +478,13 @@
     <span class="summary-label">Value</span>
     <span class="summary-value" id="sumValue">—</span>
   </div>
-  <div class="summary-item summary-item-binary">
-    <span class="summary-label">Binary
-      <button class="sum-hex-btn" id="sumHexToggle" onclick="toggleSumHex()">show hex</button>
-    </span>
-    <span class="summary-value" id="sumBinaryDisplay">
-      <span id="sumBitSign" style="color:#fca5a5">—</span>&thinsp;<span id="sumBitExp" style="color:#bfdbfe">—</span>&thinsp;<span id="sumBitMan" style="color:#86efac">—</span>
-    </span>
-    <span class="summary-value" id="sumHex" style="display:none; color:#f59e0b; margin-left:12px;">—</span>
+  <div class="summary-item">
+    <span class="summary-label">Hex</span>
+    <span class="summary-value" id="sumHex">—</span>
+  </div>
+  <div class="summary-item">
+    <span class="summary-label">Binary</span>
+    <span class="summary-value" id="sumBinary" style="font-size:0.78rem; word-break:break-all;">—</span>
   </div>
   <div class="summary-item">
     <span class="summary-label">Error</span>
@@ -591,22 +581,10 @@ function toggleBit(idx) {
 }
 
 // ── Summary bar ──────────────────────────────────────────────────────────────
-function toggleSumHex() {
-  const el  = document.getElementById('sumHex');
-  const btn = document.getElementById('sumHexToggle');
-  const show = el.style.display === 'none';
-  el.style.display = show ? 'inline' : 'none';
-  btn.textContent = show ? 'hide hex' : 'show hex';
-  btn.classList.toggle('sum-hex-active', show);
-}
-
 function updateSummary(u32, origValue = null) {
-  const val  = u32ToDecimal(u32);
-  const bits = u32ToBitString(u32);
-  document.getElementById('sumBitSign').textContent = bits[0];
-  document.getElementById('sumBitExp').textContent  = bits.slice(1, 9);
-  document.getElementById('sumBitMan').textContent  = bits.slice(9);
-  document.getElementById('sumHex').textContent     = u32ToHex(u32);
+  const val = u32ToDecimal(u32);
+  document.getElementById('sumHex').textContent = u32ToHex(u32);
+  document.getElementById('sumBinary').textContent = u32ToBitString(u32);
   const valEl = document.getElementById('sumValue');
   const errEl = document.getElementById('sumError');
   if (isNaN(val)) {
@@ -1213,6 +1191,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.5</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.4</div>
 </body>
 </html>
