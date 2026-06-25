@@ -487,9 +487,11 @@ function updateViewBox() {
 
 function zoomBy(factor, cx, cy) {
   if (cx === undefined) { cx = vbX + vbW / 2; cy = vbY + vbH / 2; }
-  vbX = cx + (vbX - cx) * factor;
-  vbY = cy + (vbY - cy) * factor;
-  vbW *= factor;
+  const newVbW = Math.max(200, Math.min(5000, vbW * factor));
+  const actual = newVbW / vbW;  // actual ratio after clamping
+  vbX = cx + (vbX - cx) * actual;
+  vbY = cy + (vbY - cy) * actual;
+  vbW = newVbW;
   updateViewBox();
 }
 
@@ -1531,6 +1533,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.8</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.9</div>
 </body>
 </html>
