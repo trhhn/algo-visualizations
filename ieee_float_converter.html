@@ -848,6 +848,11 @@ function buildSteps(value, mode) {
     : { bits: '', html: '<p style="color:#666670; font-size:0.85rem;">No fractional part.</p>', period: null };
 
   const binaryRep = (intBits === '0' ? '0' : intBits) + (fracBits ? '.' + fracBits : '');
+  function binaryRepCompact() {
+    if (!fracPeriod) return binaryRep;
+    const pre = fracBits.slice(0, fracPeriod.offset);
+    return (intPart > 0 ? intBits : '0') + '.' + (pre || '') + '(' + fracPeriod.period + ')';
+  }
   const step2 = `
 <div class="step">
   <div class="step-badge">2</div>
@@ -856,7 +861,7 @@ function buildSteps(value, mode) {
     <strong>Integer part (${intPart}):</strong><br>
     ${intTableHtml}
     ${fracPart > 0 ? `<br><strong>Fractional part (${fracPart.toPrecision(8).replace(/\.?0+$/, '')}):</strong><br>${fracTableHtml}` : ''}
-    <br>Binary: <code>${binaryRep}</code>
+    <br>Binary: <code>${fracPeriod ? binaryRepCompact() : binaryRep}</code>
   </div>
 </div>`;
 
@@ -882,18 +887,25 @@ function buildSteps(value, mode) {
     mantissaRaw = fracBits.slice(firstOne + 1);
   }
 
-  const normalizedStr = '1.' + (mantissaRaw || '0');
+  // Build compact mantissa string using period notation
+  const mantissaPeriod = detectPeriod(mantissaRaw);
+  function periodStr(bits, pd) {
+    if (!pd) return bits || '0';
+    const pre = bits.slice(0, pd.offset);
+    return (pre || '') + '(' + pd.period + ')';
+  }
+
   const step3 = `
 <div class="step">
   <div class="step-badge">3</div>
   <div class="step-body">
-    <div class="step-title">Normalize</div>
+    <div class="step-title">Normalized Scientific Representation</div>
     Write in the form <code>1.xxx × 2<sup>n</sup></code>:<br><br>
-    <code>${binaryRep}${fracPeriod ? '…' : ''}</code> = <code>1.${mantissaRaw || '0'}${fracPeriod ? '…' : ''} × 2<sup>${exponent}</sup></code>
+    <code>${binaryRepCompact()}</code> = <code>1.${periodStr(mantissaRaw, mantissaPeriod)} × 2<sup>${exponent}</sup></code>
     ${intPart > 0
       ? `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point left ${exponent} place${exponent !== 1 ? 's' : ''})</span>`
       : `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point right ${-exponent} place${exponent !== -1 ? 's' : ''})</span>`}
-    ${(() => { const mp = detectPeriod(mantissaRaw); return fracPeriod ? `<div class="period-note">♻ The mantissa bits after the <code>1.</code> are also infinite and repeating${mp ? ` (period: <code>${mp.period}</code>)` : ''}. IEEE 754 stores only 23 bits — the rest are discarded (truncated or rounded in step 5).</div>` : ''; })()}
+    ${mantissaPeriod ? `<div class="period-note">♻ The mantissa bits after the <code>1.</code> repeat with period <code>${mantissaPeriod.period}</code> (length ${mantissaPeriod.period.length}) — infinite, so IEEE 754 stores only 23 bits (step 5).</div>` : ''}
   </div>
 </div>`;
 
