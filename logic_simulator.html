@@ -184,8 +184,8 @@
 
   /* ── Light theme canvas + palette overrides ── */
   body.theme-light #circuitSvg { background: #f6f6f4; border-color: #cccccc; }
-  #gridPath { stroke: #21212e; }
-  body.theme-light #gridPath { stroke: #d8d8e2; }
+  #gridPath { stroke: #2c2c40; }
+  body.theme-light #gridPath { stroke: #c8c8d4; }
   body.theme-light .palette-item { background: #f0f0ee; border-color: #cccccc; }
   body.theme-light .palette-item:hover { border-color: #22c55e; }
   body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
@@ -228,6 +228,7 @@
       <span class="toolbar-sep"></span>
       <button class="btn btn-secondary" id="btnUndo" title="Undo (Cmd+Z)">↩</button>
       <button class="btn btn-secondary" id="btnRedo" title="Redo (Cmd+Shift+Z)">↪</button>
+      <button class="btn btn-danger"    id="btnDelete" title="Delete selected (Del)">🗑</button>
       <span class="toolbar-sep"></span>
       <button class="btn btn-secondary" id="btnZoomOut" title="Zoom Out">−</button>
       <button class="btn btn-secondary" id="btnZoomIn" title="Zoom In">+</button>
@@ -266,8 +267,8 @@
 
     <svg id="circuitSvg" viewBox="0 0 1040 600" preserveAspectRatio="none">
       <defs>
-        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-          <path id="gridPath" d="M 40 0 L 0 0 0 40" fill="none" stroke-width="0.5"/>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path id="gridPath" d="M 20 0 L 0 0 0 20" fill="none" stroke-width="0.5"/>
         </pattern>
       </defs>
       <rect x="-9999" y="-9999" width="19998" height="19998" fill="url(#grid)"/>
@@ -293,6 +294,7 @@ const STRINGS = {
     titleOutputs:'Outputs',
     titleGates:  'Gates',
     btnClear:    'Clear',
+    btnDelete:   '🗑 Delete',
     clockRun:    '▶ Run',
     clockStop:   '⏸ Stop',
     hintDefault: 'Click a palette item, then click the canvas to place it.',
@@ -319,6 +321,7 @@ const STRINGS = {
     titleOutputs:'Ausgaben',
     titleGates:  'Gatter',
     btnClear:    'Leeren',
+    btnDelete:   '🗑 Löschen',
     clockRun:    '▶ Starten',
     clockStop:   '⏸ Stopp',
     hintDefault: 'Palette-Element anklicken, dann auf die Zeichenfläche klicken.',
@@ -357,6 +360,7 @@ function applyStaticLang() {
   document.getElementById('titleOutputs').textContent  = s.titleOutputs;
   document.getElementById('titleGates').textContent    = s.titleGates;
   document.getElementById('btnClear').textContent      = s.btnClear;
+  document.getElementById('btnDelete').textContent     = s.btnDelete;
   // samples dropdown
   document.querySelectorAll('#samplesSelect option').forEach(opt => {
     const txt = opt.getAttribute(`data-${lang}`);
@@ -1413,6 +1417,7 @@ document.getElementById('circuitSvg').addEventListener('pointermove', (ev) => {
 
 document.getElementById('btnUndo').addEventListener('click', undo);
 document.getElementById('btnRedo').addEventListener('click', redo);
+document.getElementById('btnDelete').addEventListener('click', () => { if (wireDraft) cancelWireDraft(); else deleteSelected(); });
 document.getElementById('btnLabelTool').addEventListener('click', () => setTool(tool === 'label' ? 'select' : 'label'));
 document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(0.7));
 document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(1 / 0.7));
@@ -1487,6 +1492,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.4</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.5</div>
 </body>
 </html>
