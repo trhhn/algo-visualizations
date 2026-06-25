@@ -43,6 +43,12 @@
   /* Left panel scrolls its own content; right panel is a flex column */
   .app > .panel:first-child { overflow-y: auto; min-height: 0; }
   .app > .panel:last-child { display: flex; flex-direction: column; min-height: 0; }
+  /* Prevent shift+click from triggering browser text selection in the canvas area */
+  .app { user-select: none; }
+  input, textarea, select { user-select: text; }
+  /* Pan cursor states */
+  #circuitSvg.pan-ready, #circuitSvg.pan-ready * { cursor: grab !important; }
+  #circuitSvg.pan-drag,  #circuitSvg.pan-drag  * { cursor: grabbing !important; }
 
   .panel {
     background: #252528;
@@ -207,7 +213,7 @@
 <div class="app">
 
   <div class="panel">
-    <div class="app-wordmark"><span id="appWordmark">Logic Circuit Simulator</span><span style="display:block;font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-top:2px;">v1.9</span></div>
+    <div class="app-wordmark"><span id="appWordmark">Logic Circuit Simulator</span><span style="display:block;font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-top:2px;">v2.0</span></div>
     <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
@@ -857,7 +863,22 @@ function onLabelPointerDown(ev, id) {
 //  Component interaction: select/move/toggle, delete
 // ─────────────────────────────────────────────
 function onComponentPointerDown(ev, id) {
+  if (ev.button === 1) {
+    // Middle mouse on a component → move it (or the current selection)
+    ev.preventDefault(); ev.stopPropagation();
+    if (!selectedIds.has(id)) { selectedIds.clear(); selectedWireIds.clear(); selectedIds.add(id); renderAll(); }
+    const p = svgPoint(ev);
+    const snapshot = [...selectedIds].map(sid => {
+      const c = componentById(sid) || labels.find(l => l.id === sid);
+      return c ? { id: sid, origX: c.x, origY: c.y } : null;
+    }).filter(Boolean);
+    dragState = { startX: p.x, startY: p.y, snapshot, moved: false };
+    window.addEventListener('pointermove', onComponentDragMove);
+    window.addEventListener('pointerup', onMiddleComponentDragUp);
+    return;
+  }
   if (ev.button !== 0) return;
+  if (ev.ctrlKey) { startCtrlPan(ev); ev.stopPropagation(); return; }
   if (wireDraft || tool === 'place') return;
   if (svgPtrs.size >= 2) return;
   ev.stopPropagation();
@@ -926,6 +947,7 @@ function deleteSelected() {
 
 function onSvgPointerDown(ev) {
   if (ev.button !== 0) return;
+  if (ev.ctrlKey) { startCtrlPan(ev); return; }
   if (wireDraft) return;
   if (svgPtrs.size >= 2) return;
   if (ev.target.closest('g[data-comp-id]')) return;
@@ -1434,7 +1456,36 @@ document.getElementById('btnDelete').addEventListener('click', () => { if (wireD
 document.getElementById('btnLabelTool').addEventListener('click', () => setTool(tool === 'label' ? 'select' : 'label'));
 document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(0.7));
 document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(1 / 0.7));
-document.getElementById('btnZoomReset').addEventListener('click', () => { vbX = 0; vbY = 0; vbW = 1040; updateViewBox(); });
+function fitToComponents() {
+  const svg = document.getElementById('circuitSvg');
+  const r = svg.getBoundingClientRect();
+  if (components.length === 0 && labels.length === 0) {
+    vbX = 0; vbY = 0; vbW = 1040; updateViewBox(); return;
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  components.forEach(c => {
+    const def = COMPONENT_DEFS[c.type];
+    minX = Math.min(minX, c.x);
+    minY = Math.min(minY, c.y);
+    maxX = Math.max(maxX, c.x + def.w + (def.outputs > 0 ? (def.negated ? 16 : 6) : 0));
+    maxY = Math.max(maxY, c.y + def.h);
+  });
+  labels.forEach(l => {
+    minX = Math.min(minX, l.x - 30);
+    minY = Math.min(minY, l.y - 20);
+    maxX = Math.max(maxX, l.x + 80);
+    maxY = Math.max(maxY, l.y + 10);
+  });
+  const pad = 80;
+  const cW = maxX - minX + 2 * pad;
+  const cH = maxY - minY + 2 * pad;
+  const aspect = r.width > 0 ? r.height / r.width : 0.6;
+  vbW = Math.max(cW, cH / aspect, 200);
+  vbX = minX - pad - (vbW - cW) / 2;
+  vbY = minY - pad - (vbW * aspect - cH) / 2;
+  updateViewBox();
+}
+document.getElementById('btnZoomReset').addEventListener('click', fitToComponents);
 
 // Scroll wheel → zoom · trackpad two-finger swipe (deltaMode=0, no Ctrl) → pan
 document.getElementById('circuitSvg').addEventListener('wheel', (ev) => {
@@ -1455,7 +1506,8 @@ document.getElementById('circuitSvg').addEventListener('wheel', (ev) => {
   }
 }, { passive: false });
 
-// Middle mouse button → pan
+// Middle mouse on empty canvas → pan canvas
+// Middle mouse on a component → move component (handled in onComponentPointerDown)
 let middlePan = null;
 function onMiddlePanMove(ev) {
   if (!middlePan) return;
@@ -1479,6 +1531,51 @@ document.getElementById('circuitSvg').addEventListener('pointerdown', ev => {
   document.getElementById('circuitSvg').style.cursor = 'grabbing';
   window.addEventListener('pointermove', onMiddlePanMove);
   window.addEventListener('pointerup', onMiddlePanUp);
+});
+
+// Middle mouse on component drag → clean up dragState without switch-toggle
+function onMiddleComponentDragUp(ev) {
+  if (ev.button !== 1) return;
+  window.removeEventListener('pointermove', onComponentDragMove);
+  window.removeEventListener('pointerup', onMiddleComponentDragUp);
+  if (dragState?.moved) pushHistory();
+  dragState = null;
+}
+
+// Ctrl + left drag → pan canvas (works over components and empty canvas)
+let ctrlPan = null;
+function startCtrlPan(ev) {
+  ev.preventDefault();
+  const r = document.getElementById('circuitSvg').getBoundingClientRect();
+  ctrlPan = { x0: ev.clientX, y0: ev.clientY, vbX0: vbX, vbY0: vbY, svgW: r.width };
+  document.getElementById('circuitSvg').classList.remove('pan-ready');
+  document.getElementById('circuitSvg').classList.add('pan-drag');
+  window.addEventListener('pointermove', onCtrlPanMove);
+  window.addEventListener('pointerup', onCtrlPanUp);
+}
+function onCtrlPanMove(ev) {
+  if (!ctrlPan) return;
+  const sc = vbW / ctrlPan.svgW;
+  vbX = ctrlPan.vbX0 - (ev.clientX - ctrlPan.x0) * sc;
+  vbY = ctrlPan.vbY0 - (ev.clientY - ctrlPan.y0) * sc;
+  updateViewBox();
+}
+function onCtrlPanUp(ev) {
+  if (ev.button !== 0) return;
+  ctrlPan = null;
+  document.getElementById('circuitSvg').classList.remove('pan-drag');
+  window.removeEventListener('pointermove', onCtrlPanMove);
+  window.removeEventListener('pointerup', onCtrlPanUp);
+}
+// Show grab cursor while Ctrl is held over the canvas
+window.addEventListener('keydown', ev => {
+  if (ev.key === 'Control') document.getElementById('circuitSvg').classList.add('pan-ready');
+});
+window.addEventListener('keyup', ev => {
+  if (ev.key === 'Control') {
+    document.getElementById('circuitSvg').classList.remove('pan-ready');
+    document.getElementById('circuitSvg').classList.remove('pan-drag');
+  }
 });
 
 // Pinch zoom + 2-finger pan (touch)
