@@ -294,6 +294,7 @@
 
   .step-body {
     flex: 1;
+    min-width: 0; /* allow flex child to shrink so overflow-x:auto works inside */
     font-size: 0.95rem;
     line-height: 1.7;
   }
@@ -1194,6 +1195,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.8</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.9</div>
 </body>
 </html>
