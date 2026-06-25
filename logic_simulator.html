@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logic Circuit Simulator</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -157,13 +158,24 @@
   }
 
   @media (max-width: 700px) {
-    body { padding: 8px; }
-    .app { grid-template-columns: 1fr; }
+    body { padding: 6px; }
+    .app { grid-template-columns: 1fr; gap: 8px; }
     .palette-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .palette-item { padding: 8px 4px 6px; }
-    #circuitSvg { height: 55vh; min-height: 260px; }
+    .app > .panel:first-child { max-height: 36vh; overflow-y: auto; }
+    #circuitSvg { height: calc(100dvh - 36vh - 120px); min-height: 220px; }
     .toolbar { gap: 6px; }
     .hint { font-size: 0.78rem; }
+  }
+
+  /* Landscape mobile: short viewport, keep palette as sidebar */
+  @media (max-height: 500px) {
+    body { padding: 4px 10px; }
+    .app-wordmark { display: none; }
+    .app { grid-template-columns: 180px 1fr; gap: 8px; }
+    .app > .panel:first-child { max-height: calc(100dvh - 16px); overflow-y: auto; }
+    #circuitSvg { height: calc(100dvh - 90px); min-height: 180px; }
+    .hint { font-size: 0.72rem; }
   }
 
   .toolbar-label { font-size: 0.82rem; color: #888888; }
@@ -446,8 +458,10 @@ function svgPoint(evt) {
 
 function updateViewBox() {
   vbW = Math.max(200, Math.min(5000, vbW));
-  vbH = vbW * (600 / 1040);
-  document.getElementById('circuitSvg').setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
+  const svg = document.getElementById('circuitSvg');
+  const r = svg.getBoundingClientRect();
+  if (r.width > 0 && r.height > 0) vbH = vbW * r.height / r.width;
+  svg.setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
 }
 
 function zoomBy(factor, cx, cy) {
@@ -1387,6 +1401,13 @@ _cs.addEventListener('pointermove', ev => {
 const _pu = ev => { svgPtrs.delete(ev.pointerId); if (svgPtrs.size < 2) prevPinch = null; };
 _cs.addEventListener('pointerup', _pu, { capture: true });
 _cs.addEventListener('pointercancel', _pu, { capture: true });
+
+// Prevent iOS Safari from triggering browser zoom on 2-finger gesture over the canvas
+_cs.addEventListener('touchstart', ev => { if (ev.touches.length >= 2) ev.preventDefault(); }, { passive: false });
+_cs.addEventListener('touchmove',  ev => ev.preventDefault(), { passive: false });
+
+// Recompute viewBox aspect ratio whenever the SVG element is resized (e.g. window resize)
+new ResizeObserver(() => updateViewBox()).observe(_cs);
 
 document.body.classList.add('theme-light');
 const _storedLang = localStorage.getItem('lang');
