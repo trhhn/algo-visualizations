@@ -234,6 +234,52 @@ for (const v of trunc_leq_cases) {
   }
 }
 
+// ── Subnormal values ──────────────────────────────────────────────────────
+// For subnormals trunc == round when the binary mantissa terminates exactly.
+// Smallest subnormal  = 2^-149 → mantissa = 1        → 0x00000001
+// 2^-148              = 2^-149 × 2    → mantissa = 2  → 0x00000002
+// 2^-127              = 0.5 × 2^-126  → mantissa = 2^22 = 0x400000 → 0x00400000
+// Largest subnormal   = (1-2^-23) × 2^-126 → mantissa = 0x7FFFFF → 0x007FFFFF
+// Negative subnormal: sign bit set  → -2^-149 = 0x80000001
+
+console.log('\nSubnormal exact values (trunc == round):');
+const subExact = [
+  [Math.pow(2,-149),   0x00000001, 'smallest +subnormal'],
+  [Math.pow(2,-148),   0x00000002, '2^-148'],
+  [Math.pow(2,-127),   0x00400000, '2^-127 (= 0.5 × 2^-126)'],
+  [-Math.pow(2,-149),  0x80000001, 'smallest -subnormal'],
+  [-Math.pow(2,-127),  0x80400000, '-2^-127'],
+];
+for (const [v, expected, label] of subExact) {
+  const t = decimalToU32Trunc(v);
+  const r = decimalToU32Round(v);
+  if (t === expected) { console.log(`  ✓  trunc ${label}: ${hex(t)}`); pass++; }
+  else { console.log(`  ✗  trunc ${label}: got ${hex(t)}, expected ${hex(expected)}`); fail++; }
+  if (r === expected) { console.log(`  ✓  round ${label}: ${hex(r)}`); pass++; }
+  else { console.log(`  ✗  round ${label}: got ${hex(r)}, expected ${hex(expected)}`); fail++; }
+}
+
+console.log('\nSubnormal trunc <= round for inexact positive values:');
+const subInexact = [1e-40, 5e-40, 1e-39, 1e-38];
+for (const v of subInexact) {
+  const t = decimalToU32Trunc(v);
+  const r = decimalToU32Round(v);
+  if (t <= r) { console.log(`  ✓  ${v}: trunc=${hex(t)} <= round=${hex(r)}`); pass++; }
+  else { console.log(`  ✗  ${v}: trunc=${hex(t)} > round=${hex(r)}`); fail++; }
+}
+// For negatives: truncation toward zero means smaller magnitude, so smaller abs mantissa bits,
+// so smaller u32 for negative subnormals (sign+mantissa, but sign=1 is already set)
+// Actually for negative subnormals: trunc gives smaller magnitude → smaller mantissa int
+// → u32 closer to 0x80000000, so u32 for trunc is SMALLER than u32 for round.
+// Just check they differ or are equal (trunc ≤ round in the abs-value sense):
+console.log('\nSubnormal trunc abs(mantissa) <= round abs(mantissa) for negative values:');
+for (const v of [-1e-40, -1e-39]) {
+  const t = decimalToU32Trunc(v) & 0x7FFFFF; // mantissa only
+  const r = decimalToU32Round(v) & 0x7FFFFF;
+  if (t <= r) { console.log(`  ✓  ${v}: trunc mantissa=${hex(t)} <= round=${hex(r)}`); pass++; }
+  else { console.log(`  ✗  ${v}: trunc=${hex(t)} > round=${hex(r)}`); fail++; }
+}
+
 // ── detectPeriod tests ────────────────────────────────────────────────────
 
 console.log('\ndetectPeriod:');

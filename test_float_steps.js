@@ -259,6 +259,64 @@ console.log('\nMantissa 23 bits:');
   }
 }
 
+// ── Subnormal steps ───────────────────────────────────────────────────────
+console.log('\nSubnormal step text:');
+{
+  const sub = Math.pow(2, -127); // = 0.5 × 2^-126, exact subnormal
+  const s  = steps(sub);
+  const sh = stepsHtml(sub);
+  checkHas('subnormal: badge present',       sh, 'Subnormal');
+  checkHas('subnormal: step2 title',         s,  'Subnormal');
+  checkHas('subnormal: exponent all zeros',  sh, '00000000');
+  checkHas('subnormal: fixed exp -126',      s,  '−126');
+  checkHas('subnormal: sign bit 0',          s,  'sign bit = 0');
+  checkHas('subnormal: mantissa green code', sh, 'code-green');
+  checkLacks('subnormal: no normalized step', s, 'Normalized Scientific');
+
+  // Negative subnormal
+  const ns = steps(-sub);
+  checkHas('neg subnormal: sign bit 1', ns, 'sign bit = 1');
+  checkHas('neg subnormal: badge',      stepsHtml(-sub), 'Subnormal');
+
+  // 2^-149 (smallest positive subnormal)
+  const tiny = Math.pow(2, -149);
+  const ts = steps(tiny);
+  checkHas('tiny: subnormal badge',  stepsHtml(tiny), 'Subnormal');
+  checkHas('tiny: sign bit 0',       ts, 'sign bit = 0');
+
+  // Repeating subnormal (1e-39 has non-terminating binary mantissa)
+  const rep = 1e-39;
+  const rs  = steps(rep);
+  const rsh = stepsHtml(rep);
+  checkHas('1e-39: subnormal',  rsh, 'Subnormal');
+  checkHas('1e-39: sign bit 0', rs,  'sign bit = 0');
+  checkHas('1e-39: truncate label', steps(rep, 'truncate'), 'Truncate');
+  checkHas('1e-39: round label',    steps(rep, 'round'),    'Round');
+
+  // Mantissa 23 bits for subnormals
+  function subnormalMantissa23(value, mode) {
+    const h = stepsHtml(value, mode);
+    const m = h.match(/Final 23-bit mantissa:.*?<code[^>]*>([01]+)<\/code>/);
+    return m ? m[1].length : null;
+  }
+  for (const v of [Math.pow(2,-127), Math.pow(2,-149), 1e-39, 1e-40, -Math.pow(2,-127)]) {
+    const len = subnormalMantissa23(v, 'truncate');
+    if (len === 23) { console.log(`  ✓  subnormal mantissa 23 bits: ${v}`); pass++; }
+    else { console.log(`  ✗  subnormal mantissa ${len} bits (expected 23): ${v}`); fail++; }
+  }
+}
+
+// ── Boundary: smallest normal is NOT subnormal ────────────────────────────
+console.log('\nBoundary (smallest normal must not be subnormal):');
+{
+  // 2^-126 is the minimum normal float32. The step renderer can't expand 126
+  // fractional bits, so it falls back — but it must NOT be labelled Subnormal.
+  const minNormal = Math.pow(2, -126);
+  checkLacks('2^-126: no Subnormal badge', stepsHtml(minNormal), 'Subnormal');
+  // Bit pattern must be correct: sign=0, exp=00000001, man=all zeros → 0x00800000
+  // Verified via the bit display (updateSummary / setBitsFromU32 paths, not buildSteps).
+}
+
 // ── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n${'─'.repeat(52)}`);
 console.log(`  ${pass} passed, ${fail} failed`);
