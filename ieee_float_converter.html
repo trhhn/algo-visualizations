@@ -439,10 +439,10 @@
         <button class="convert-btn" id="convertBtn">Convert →</button>
       </div>
     </div>
-    <div class="input-group">
-      <label for="hexInput">Hex / Binary</label>
+    <div class="input-group" style="flex:2; min-width:300px;">
+      <label for="hexInput">Binary</label>
       <div class="input-with-btn">
-        <input type="text" id="hexInput" placeholder="e.g. C0870000" />
+        <input type="text" id="hexInput" placeholder="32 bits, e.g. 11000001100001100000000000000000" style="font-size:0.78rem;" />
         <button class="convert-btn" id="decodeBtn">← From Bits</button>
       </div>
     </div>
@@ -574,7 +574,7 @@ function toggleBit(idx) {
   updateBitRow();
   const u32 = bitsToU32();
   updateSummary(u32);
-  document.getElementById('hexInput').value = u32ToHex(u32);
+  document.getElementById('hexInput').value = u32ToBitString(u32);
   document.getElementById('decInput').value = '';
   lastMode = null;
   hideSteps();
@@ -809,7 +809,7 @@ function convertDecimal() {
   setBitsFromU32(u32);
   updateBitRow();
   updateSummary(u32, value);
-  document.getElementById('hexInput').value = u32ToHex(u32);
+  document.getElementById('hexInput').value = u32ToBitString(u32);
 
   // Build steps
   const stepsHtml = buildSteps(value, mode);
@@ -1065,7 +1065,7 @@ function decodeHex() {
   updateBitRow();
   updateSummary(u32);
   document.getElementById('decInput').value = '';
-  document.getElementById('hexInput').value = u32ToHex(u32);
+  document.getElementById('hexInput').value = u32ToBitString(u32);
 
   showSteps(buildDecodePanel(u32));
 }
@@ -1181,7 +1181,7 @@ document.getElementById('roundMode').addEventListener('change', () => {
     setBitsFromU32(u32);
     updateBitRow();
     updateSummary(u32, lastDecimalValue);
-    document.getElementById('hexInput').value = u32ToHex(u32);
+    document.getElementById('hexInput').value = u32ToBitString(u32);
     showSteps(buildSteps(lastDecimalValue, mode));
   }
 });
@@ -1191,6 +1191,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.4</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.5</div>
 </body>
 </html>
