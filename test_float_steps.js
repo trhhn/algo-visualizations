@@ -158,16 +158,101 @@ console.log('\nSpecial values:');
   checkHas('-0 special step',        steps(-0),        '0');
 }
 
+// ── Integer-only numbers (no fractional part) ─────────────────────────────
+console.log('\nInteger values (no fractional part):');
+{
+  for (const [v, expBias] of [[1.0, 127], [2.0, 128], [42.0, 132], [255.0, 134], [256.0, 135]]) {
+    const s  = steps(v);
+    const sh = stepsHtml(v);
+    checkHas(`${v}: sign 0`,               s,  'sign bit = 0');
+    checkHas(`${v}: biased exp ${expBias}`, s,  String(expBias));
+    checkLacks(`${v}: no period`,          sh, 'period-note');
+    checkLacks(`${v}: no frac table`,      sh, 'Fractional part');  // frac section omitted for integers
+    checkLacks(`${v}: binary has no dot`,  s,  `${v} has no exact`); // no "no exact rep" note
+  }
+}
+
+// ── Numbers between 1 and 2 (exponent = 0, no shift) ─────────────────────
+console.log('\nNumbers 1 ≤ v < 2 (exp = 0, biased 127):');
+{
+  for (const [v, isExact] of [[1.5, true], [1.25, true], [1.75, true], [1.2, false]]) {
+    const s  = steps(v);
+    const sh = stepsHtml(v);
+    checkHas(`${v}: biased exp 127`, s, '127');
+    if (isExact) checkLacks(`${v}: no period`, sh, 'period-note');
+    else         checkHas(`${v}: period present`, sh, 'period-note');
+  }
+}
+
+// ── Numbers > 2 with exact fraction: shift-left check ────────────────────
+console.log('\nShift-left (int part > 1):');
+{
+  checkHas('12.5  shift left 3',  steps(12.5),  'left 3');
+  checkHas('16.75 shift left 4',  steps(16.75), 'left 4');
+  checkHas('100.5 shift left 6',  steps(100.5), 'left 6');
+  checkHas('42.0  shift left 5',  steps(42.0),  'left 5');
+  checkHas('255.0 shift left 7',  steps(255.0), 'left 7');
+}
+
+// ── Numbers < 1: shift-right check ───────────────────────────────────────
+console.log('\nShift-right (pure fractions):');
+{
+  checkHas('0.5  shift right 1', steps(0.5),  'right 1');
+  checkHas('0.25 shift right 2', steps(0.25), 'right 2');
+  checkHas('0.2  shift right 3', steps(0.2),  'right 3');
+  checkHas('0.1  shift right 4', steps(0.1),  'right 4');
+}
+
+// ── Repeating with integer part ───────────────────────────────────────────
+console.log('\nRepeating fraction with integer part:');
+{
+  checkHas('1.2: period note shown',  stepsHtml(1.2),  'period-note');
+  checkHas('10.3: period note shown', stepsHtml(10.3), 'period-note');
+  checkHas('-0.1: sign bit 1',        steps(-0.1),     'sign bit = 1');
+  checkHas('-1.2: sign bit 1',        steps(-1.2),     'sign bit = 1');
+  checkHas('-0.1: period note',       stepsHtml(-0.1), 'period-note');
+}
+
+// ── Exact fractions: no period note ──────────────────────────────────────
+console.log('\nExact fractions (no period note):');
+{
+  for (const v of [0.5, 0.25, 0.125, 0.75, 0.625, 1.5, 12.5, 100.5, -0.5, -12.5]) {
+    checkLacks(`${v}: no period`, stepsHtml(v), 'period-note');
+  }
+}
+
+// ── Biased exponent sanity ────────────────────────────────────────────────
+console.log('\nBiased exponent values:');
+{
+  const biasedExpCases = [
+    [0.5,    126],  // exp -1
+    [0.25,   125],  // exp -2
+    [0.1,    123],  // exp -4
+    [0.2,    124],  // exp -3
+    [1.0,    127],  // exp 0
+    [1.5,    127],  // exp 0
+    [2.0,    128],  // exp 1
+    [12.5,   130],  // exp 3
+    [16.75,  131],  // exp 4
+    [100.5,  133],  // exp 6
+    [255.0,  134],  // exp 7
+    [256.0,  135],  // exp 8
+  ];
+  for (const [v, bias] of biasedExpCases) {
+    checkHas(`${v}: biased exp ${bias}`, steps(v), String(bias));
+  }
+}
+
 // ── Mantissa bit count sanity ──────────────────────────────────────────────
 console.log('\nMantissa 23 bits:');
 {
-  // The final mantissa shown in step 5 should always be exactly 23 bits
   function mantissa23(value, mode) {
     const h = stepsHtml(value, mode);
     const m = h.match(/Final 23-bit mantissa:.*?<code[^>]*>([01]+)<\/code>/);
     return m ? m[1].length : null;
   }
-  for (const v of [0.2, 0.1, 16.75, -16.75, 3.14159, 1/3]) {
+  for (const v of [0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.2, 1.5, 12.5, 16.75,
+                   -0.1, -16.75, 3.14159, 1/3, 42.0, 255.0, 100.5]) {
     const len = mantissa23(v, 'truncate');
     if (len === 23) { console.log(`  ✓  ${v}: mantissa 23 bits`); pass++; }
     else { console.log(`  ✗  ${v}: mantissa ${len} bits (expected 23)`); fail++; }

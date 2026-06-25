@@ -112,14 +112,39 @@ function checkPd(label, bitstr, expectedPeriod) {
 console.log('\nRound mode (must equal Float32Array):');
 const cases_round = [
   // [value, label]
+  // — pure fractions —
   [0.2,       '0.2   → repeating 0011'],
   [0.1,       '0.1   → repeating 0011 (shorter period after norm)'],
   [0.3,       '0.3   → repeating 1001'],
-  [16.75,     '16.75 → exact (10000.11)'],
-  [-16.75,    '-16.75 → exact, negative'],
   [0.5,       '0.5   → exact (0.1)'],
+  [0.75,      '0.75  → exact (0.11)'],
+  [0.25,      '0.25  → exact (0.01)'],
+  [0.125,     '0.125 → exact (0.001)'],
+  [1/3,       '1/3   → repeating'],
+  [1/6,       '1/6   → repeating'],
+  [2/3,       '2/3   → repeating'],
+  // — integers —
   [1.0,       '1.0   → exact'],
+  [2.0,       '2.0   → exact (power of 2)'],
+  [42.0,      '42    → exact integer'],
+  [255.0,     '255   → exact, all 1s in 8-bit int'],
+  [256.0,     '256   → exact, power of 2'],
+  // — mixed —
+  [1.5,       '1.5   → exact (1.1)'],
+  [1.25,      '1.25  → exact (1.01)'],
+  [1.2,       '1.2   → repeating (int+frac)'],
+  [12.5,      '12.5  → exact (1100.1)'],
+  [16.75,     '16.75 → exact (10000.11)'],
+  [100.5,     '100.5 → exact'],
   [3.14159,   '3.14159 → >23 bits, no clean period'],
+  [10.3,      '10.3  → repeating frac'],
+  // — negatives —
+  [-0.2,      '-0.2  → repeating, negative'],
+  [-0.1,      '-0.1  → repeating, negative'],
+  [-16.75,    '-16.75 → exact, negative'],
+  [-1.5,      '-1.5  → exact, negative'],
+  [-42.0,     '-42   → exact integer, negative'],
+  // — specials —
   [0.0,       '0.0'],
   [-0.0,      '-0.0'],
   [Infinity,  '+Infinity'],
@@ -182,13 +207,24 @@ check('0.0  trunc', decimalToU32Trunc(0.0), 0x00000000);
 check('+Inf trunc', decimalToU32Trunc(Infinity),  0x7F800000);
 check('-Inf trunc', decimalToU32Trunc(-Infinity), 0xFF800000);
 
-// Trunc must always be <= round in magnitude (mantissa bits only dropped, not added)
-console.log('\nTrunc mantissa <= round mantissa (for positive values):');
-const trunc_leq_cases = [0.1, 0.2, 0.3, 1/3, Math.PI, Math.E, 1.23456789];
+// For exact values trunc == round; for repeating trunc <= round (both positive and negative,
+// since truncation always moves toward zero → smaller magnitude → smaller u32)
+console.log('\nTrunc == round for exact values:');
+const exact_cases = [0.5, 0.25, 0.125, 0.75, 1.0, 1.5, 1.25, 2.0, 12.5, 16.75, 100.5,
+                     -0.5, -1.5, -16.75, 42.0, 255.0, 256.0];
+for (const v of exact_cases) {
+  const t = decimalToU32Trunc(v);
+  const r = decimalToU32Round(v);
+  if (t === r) { console.log(`  ✓  ${v}: ${hex(t)}`); pass++; }
+  else { console.log(`  ✗  ${v}: trunc=${hex(t)} != round=${hex(r)}`); fail++; }
+}
+
+console.log('\nTrunc <= round for repeating values:');
+const trunc_leq_cases = [0.1, 0.2, 0.3, 1/3, 1/6, 2/3, Math.PI, Math.E,
+                          1.2, 10.3, 1.23456789, -0.1, -0.2, -1/3];
 for (const v of trunc_leq_cases) {
   const t = decimalToU32Trunc(v);
   const r = decimalToU32Round(v);
-  // For positive normal numbers, trunc mantissa <= round mantissa
   if (t <= r) {
     console.log(`  ✓  ${v}: trunc=${hex(t)} <= round=${hex(r)}`);
     pass++;
@@ -241,14 +277,20 @@ function checkFP(label, frac, expectedPeriod) {
   if (got === expectedPeriod) { console.log(`  ✓  ${label}`); pass++; }
   else { console.log(`  ✗  ${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(expectedPeriod)}`); fail++; }
 }
-checkFP('0.75  exact', 0.75, null);
-checkFP('0.5   exact', 0.5,  null);
-checkFP('0.25  exact', 0.25, null);
+// Exact: terminates in binary
+checkFP('0.75  exact', 0.75,  null);
+checkFP('0.5   exact', 0.5,   null);
+checkFP('0.25  exact', 0.25,  null);
 checkFP('0.125 exact', 0.125, null);
+checkFP('0.625 exact', 0.625, null);
+checkFP('0.875 exact', 0.875, null);
+// Repeating: never terminates
 checkFP('0.2   repeating "0011"', 0.2, '0011');
 checkFP('0.1   repeating "0011"', 0.1, '0011');
-checkFP('0.3   repeating "1001" (offset 1 — same cycle as 0011, different phase)', 0.3, '1001');
+checkFP('0.3   repeating "1001" (offset 1)', 0.3, '1001');
 checkFP('1/3   repeating "01"',   1/3, '01');
+checkFP('1/6   repeating "01"',    1/6, '01');
+checkFP('2/3   repeating "10"',   2/3, '10');
 
 const frac02bits = fracToBits(0.2, 30);
 const pd02 = detectPeriod(frac02bits);
