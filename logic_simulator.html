@@ -182,6 +182,8 @@
 
   /* ── Light theme canvas + palette overrides ── */
   body.theme-light #circuitSvg { background: #f6f6f4; border-color: #cccccc; }
+  #gridPath { stroke: #21212e; }
+  body.theme-light #gridPath { stroke: #d8d8e2; }
   body.theme-light .palette-item { background: #f0f0ee; border-color: #cccccc; }
   body.theme-light .palette-item:hover { border-color: #22c55e; }
   body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
@@ -261,6 +263,12 @@
     <div class="hint" id="hint">Click a palette item, then click the canvas to place it.</div>
 
     <svg id="circuitSvg" viewBox="0 0 1040 600" preserveAspectRatio="none">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path id="gridPath" d="M 40 0 L 0 0 0 40" fill="none" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect x="-9999" y="-9999" width="19998" height="19998" fill="url(#grid)"/>
       <g id="wiresLayer"></g>
       <g id="labelsLayer"></g>
       <g id="previewLayer"></g>
@@ -1416,6 +1424,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.1</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.2</div>
 </body>
 </html>
