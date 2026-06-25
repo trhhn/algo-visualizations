@@ -888,7 +888,7 @@ function buildSteps(value, mode) {
   }
 
   // Build compact mantissa string using period notation
-  const mantissaPeriod = detectPeriod(mantissaRaw);
+  const mantissaPeriod = fracPeriod ? detectPeriod(mantissaRaw) : null;
   function periodStr(bits, pd) {
     if (!pd) return bits || '0';
     const pre = bits.slice(0, pd.offset);
