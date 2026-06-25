@@ -724,9 +724,19 @@ function renderComponent(comp) {
     const p = outputPinPos(def);
     const pin = svgEl('circle', { cx: p.x, cy: p.y, r: 6, fill: tc('#13131a','#eef2f9'), stroke: tc('#f0c040','#f59e0b'), 'stroke-width': 1.5 });
     pin.style.cursor = 'crosshair';
-    pin.addEventListener('pointerdown', (ev) => ev.stopPropagation());
-    pin.addEventListener('click', (ev) => { ev.stopPropagation(); startWire(ev, comp.id); });
+    // Larger invisible hit zone so the output pin is easier to tap when zoomed out
+    const pinHit = svgEl('circle', { cx: p.x, cy: p.y, r: 14, fill: 'transparent', stroke: 'none' });
+    pinHit.style.cursor = 'crosshair';
+    // Use pointerdown (not click) so wire starts immediately on touch without iOS delay
+    const onOutputDown = (ev) => { ev.stopPropagation(); startWire(ev, comp.id); };
+    // Consume the synthetic click iOS fires after touchstart so it doesn't bubble to onSvgClick
+    const stopClick = (ev) => ev.stopPropagation();
+    pin.addEventListener('pointerdown', onOutputDown);
+    pin.addEventListener('click', stopClick);
+    pinHit.addEventListener('pointerdown', onOutputDown);
+    pinHit.addEventListener('click', stopClick);
     g.appendChild(pin);
+    g.appendChild(pinHit);
   }
 
   g.addEventListener('pointerdown', (ev) => onComponentPointerDown(ev, comp.id));
@@ -1025,13 +1035,47 @@ function renderPlacePreview(ev) {
 // ─────────────────────────────────────────────
 //  Wire drawing
 // ─────────────────────────────────────────────
+// Returns snap radius in viewBox units so it's always ~44 CSS px regardless of zoom
+function wireSnapRadius() {
+  const svg = document.getElementById('circuitSvg');
+  const r = svg.getBoundingClientRect();
+  return r.width > 0 ? 44 * vbW / r.width : 40;
+}
+
+// Nearest input pin within snapRadius viewBox units, excluding the wire's source component
+function nearestInputPin(p) {
+  if (!wireDraft) return null;
+  const maxDist = wireSnapRadius();
+  let best = null, bestDist = maxDist;
+  components.forEach(comp => {
+    if (comp.id === wireDraft.fromId) return;
+    const def = COMPONENT_DEFS[comp.type];
+    for (let i = 0; i < def.inputs; i++) {
+      const pp = inputPinPos(def, i);
+      const dist = Math.hypot(comp.x + pp.x - p.x, comp.y + pp.y - p.y);
+      if (dist < bestDist) { bestDist = dist; best = { compId: comp.id, pinIdx: i, x: comp.x + pp.x, y: comp.y + pp.y }; }
+    }
+  });
+  return best;
+}
+
+function setSnapHighlight(snap) {
+  const old = document.getElementById('snapRing');
+  if (old) old.remove();
+  if (!snap) return;
+  const ring = svgEl('circle', { id: 'snapRing', cx: snap.x, cy: snap.y, r: 12,
+    fill: 'none', stroke: '#22c55e', 'stroke-width': 2.5, opacity: '0.9' });
+  document.getElementById('previewLayer').appendChild(ring);
+}
+
 function startWire(ev, fromCompId) {
   ev.stopPropagation();
   document.getElementById('circuitSvg').removeEventListener('pointermove', onWireDraftMove);
   clearWirePreview();
   const comp = componentById(fromCompId);
-  const p = outputPinPos(COMPONENT_DEFS[comp.type]);
-  wireDraft = { fromId: fromCompId, x1: comp.x + p.x, y1: comp.y + p.y };
+  const op = outputPinPos(COMPONENT_DEFS[comp.type]);
+  const ptrStart = svgPoint(ev);
+  wireDraft = { fromId: fromCompId, x1: comp.x + op.x, y1: comp.y + op.y, ptrX0: ptrStart.x, ptrY0: ptrStart.y, dragging: false };
   document.getElementById('circuitSvg').addEventListener('pointermove', onWireDraftMove);
   setHint(S().wireHint);
 }
@@ -1039,7 +1083,13 @@ function startWire(ev, fromCompId) {
 function onWireDraftMove(ev) {
   if (!wireDraft) return;
   const p = svgPoint(ev);
-  renderWirePreview(wireDraft.x1, wireDraft.y1, p.x, p.y);
+  if (!wireDraft.dragging) {
+    const dx = p.x - wireDraft.ptrX0, dy = p.y - wireDraft.ptrY0;
+    if (Math.hypot(dx, dy) > 12) wireDraft.dragging = true;
+  }
+  const snap = nearestInputPin(p);
+  renderWirePreview(wireDraft.x1, wireDraft.y1, snap ? snap.x : p.x, snap ? snap.y : p.y);
+  setSnapHighlight(snap);
 }
 
 function cancelWireDraft() {
@@ -1073,7 +1123,12 @@ function placeComponent(type, x, y) {
 }
 
 function onSvgClick(ev) {
-  if (wireDraft) { cancelWireDraft(); return; }
+  if (wireDraft) {
+    const snap = nearestInputPin(svgPoint(ev));
+    if (snap) completeWire(ev, snap.compId, snap.pinIdx);
+    else cancelWireDraft();
+    return;
+  }
   if (tool === 'label') {
     if (ev.target.closest('g[data-comp-id]') || ev.target.closest('g[data-label-id]')) return;
     const p = svgPoint(ev);
@@ -1320,6 +1375,12 @@ document.getElementById('fileInput').addEventListener('change', (ev) => { const 
 document.getElementById('btnClear').addEventListener('click', clearCircuit);
 document.getElementById('circuitSvg').addEventListener('click', onSvgClick);
 document.getElementById('circuitSvg').addEventListener('pointerdown', onSvgPointerDown);
+// Drag-to-wire: complete wire on pointerup if the finger moved (dragging=true)
+document.getElementById('circuitSvg').addEventListener('pointerup', ev => {
+  if (!wireDraft || !wireDraft.dragging || svgPtrs.size >= 1) return;
+  const snap = nearestInputPin(svgPoint(ev));
+  if (snap) completeWire(ev, snap.compId, snap.pinIdx);
+});
 
 document.addEventListener('keydown', (ev) => {
   if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT' || ev.target.tagName === 'TEXTAREA') return;
@@ -1426,6 +1487,6 @@ buildPalette();
 pushHistory();
 setTool('select');
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.3</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.4</div>
 </body>
 </html>
