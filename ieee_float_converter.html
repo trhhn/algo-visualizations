@@ -135,13 +135,13 @@
     border: 1px solid #2e2e34;
     overflow: hidden;
   }
-  .bit-scroll { overflow-x: auto; padding-bottom: 6px; }
+  .bit-scroll { overflow-x: auto; padding-bottom: 6px; text-align: center; }
+  .bit-inner  { display: inline-flex; flex-direction: column; align-items: flex-start; }
 
   .bit-row {
     display: flex;
     gap: 10px;
     flex-wrap: nowrap;
-    justify-content: center;
     padding-bottom: 4px;
   }
   .bit-group { display: flex; gap: 2px; }
@@ -179,16 +179,14 @@
 
   .bit-labels {
     display: flex;
-    gap: 10px; /* match .bit-row gap so labels align with groups */
+    gap: 10px;
     margin-top: 8px;
     font-size: 0.72rem;
     color: #666670;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    justify-content: center;
     user-select: none;
-    min-width: max-content; /* scroll with bits, don't wrap */
   }
   .bit-label-sign  { width: 24px; text-align: center; flex-shrink: 0; }
   .bit-label-exp   { width: calc(8 * 24px + 7 * 2px); text-align: center; color: #4a7acc; flex-shrink: 0; }
@@ -462,15 +460,17 @@
 <!-- Bit display -->
 <div class="bit-section">
   <div class="bit-scroll">
-    <div class="bit-row">
-      <div class="bit-group" id="bitGroupSign"></div>
-      <div class="bit-group" id="bitGroupExp"></div>
-      <div class="bit-group" id="bitGroupMan"></div>
-    </div>
-    <div class="bit-labels">
-      <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
-      <div class="bit-label-exp">Exponent (8 bits)</div>
-      <div class="bit-label-man">Mantissa (23 bits)</div>
+    <div class="bit-inner">
+      <div class="bit-row">
+        <div class="bit-group" id="bitGroupSign"></div>
+        <div class="bit-group" id="bitGroupExp"></div>
+        <div class="bit-group" id="bitGroupMan"></div>
+      </div>
+      <div class="bit-labels">
+        <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
+        <div class="bit-label-exp">Exponent (8 bits)</div>
+        <div class="bit-label-man">Mantissa (23 bits)</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1194,6 +1194,6 @@ buildBitRow();
 // Default: convert -16.75 on load
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.7</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v1.8</div>
 </body>
 </html>
