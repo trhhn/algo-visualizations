@@ -422,27 +422,45 @@
     color: #9090cc;
     margin-top: 8px;
   }
+
+  .header-row {
+    max-width: 1000px;
+    margin: 0 auto 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .lang-label { font-size:0.78rem; color:#888890; display:flex; align-items:center; gap:6px; }
+  #langSelect  { background:#383840; color:#cccccc; border:2px solid #505055; border-radius:8px; padding:4px 8px; font-size:0.82rem; cursor:pointer; }
 </style>
 </head>
 <body>
 
-<a class="back-link" href="index.html">← Back</a>
+<div class="header-row">
+  <a class="back-link" href="index.html" id="backLink">← Back</a>
+  <label class="lang-label">Language:
+    <select id="langSelect" onchange="setLang(this.value)">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+  </label>
+</div>
 
-<h1>IEEE 754 Float Converter</h1>
-<p class="subtitle">Explore how decimal numbers are represented as 32-bit single-precision floats</p>
+<h1 id="pageTitle">IEEE 754 Float Converter</h1>
+<p class="subtitle" id="subtitle">Explore how decimal numbers are represented as 32-bit single-precision floats</p>
 
 <!-- Input section -->
 <div class="input-section">
   <div class="input-row">
     <div class="input-group">
-      <label for="decInput">Decimal</label>
+      <label for="decInput" id="labelDecimal">Decimal</label>
       <div class="input-with-btn">
         <input type="text" id="decInput" value="-16.75" placeholder="e.g. -16.75" />
         <button class="convert-btn" id="convertBtn">Convert →</button>
       </div>
     </div>
     <div class="input-group" style="flex:2; min-width:300px;">
-      <label for="hexInput">Binary</label>
+      <label for="hexInput" id="labelBinary">Binary</label>
       <div class="input-with-btn">
         <input type="text" id="hexInput" placeholder="32 bits, e.g. 11000001100001100000000000000000" style="font-size:0.78rem;" />
         <button class="convert-btn" id="decodeBtn">← From Bits</button>
@@ -450,10 +468,10 @@
     </div>
   </div>
   <div class="rounding-row">
-    <span class="rounding-heading">Mantissa overflow:</span>
+    <span class="rounding-heading" id="roundingHeading">Mantissa overflow:</span>
     <select id="roundMode">
-      <option value="truncate" selected>Truncate (cut off)</option>
-      <option value="round">Round (half-to-even)</option>
+      <option value="truncate" id="optTruncate" selected>Truncate (cut off)</option>
+      <option value="round"    id="optRound">Round (half-to-even)</option>
     </select>
   </div>
 </div>
@@ -468,9 +486,9 @@
         <div class="bit-group" id="bitGroupMan"></div>
       </div>
       <div class="bit-labels">
-        <div class="bit-label-sign" style="color:#f87171;">Sign<br>(1)</div>
-        <div class="bit-label-exp">Exponent (8 bits)</div>
-        <div class="bit-label-man">Mantissa (23 bits)</div>
+        <div class="bit-label-sign" id="bitLabelSign" style="color:#f87171;">Sign<br>(1)</div>
+        <div class="bit-label-exp" id="bitLabelExp">Exponent (8 bits)</div>
+        <div class="bit-label-man" id="bitLabelMan">Mantissa (23 bits)</div>
       </div>
     </div>
   </div>
@@ -479,19 +497,19 @@
 <!-- Summary bar -->
 <div class="summary-bar">
   <div class="summary-item">
-    <span class="summary-label">Value</span>
+    <span class="summary-label" id="sumLabelValue">Value</span>
     <span class="summary-value" id="sumValue">—</span>
   </div>
   <div class="summary-item">
-    <span class="summary-label">Hex</span>
+    <span class="summary-label" id="sumLabelHex">Hex</span>
     <span class="summary-value" id="sumHex">—</span>
   </div>
   <div class="summary-item">
-    <span class="summary-label">Binary</span>
+    <span class="summary-label" id="sumLabelBin">Binary</span>
     <span class="summary-value" id="sumBinary" style="font-size:0.78rem; word-break:break-all;">—</span>
   </div>
   <div class="summary-item">
-    <span class="summary-label">Error</span>
+    <span class="summary-label" id="sumLabelError">Error</span>
     <span class="summary-value" id="sumError">—</span>
   </div>
 </div>
@@ -502,6 +520,238 @@
 </div>
 
 <script>
+// ── Language ─────────────────────────────────────────────────────────────────
+let lang = localStorage.getItem('lang') || 'en';
+
+const STRINGS = {
+  en: {
+    back:'← Back', pageTitle:'IEEE 754 Float Converter',
+    subtitle:'Explore how decimal numbers are represented as 32-bit single-precision floats',
+    labelDecimal:'Decimal', labelBinary:'Binary',
+    btnConvert:'Convert →', btnFromBits:'← From Bits',
+    roundingHeading:'Mantissa overflow:',
+    optTruncate:'Truncate (cut off)', optRound:'Round (half-to-even)',
+    bitSign:'Sign<br>(1)', bitExp:'Exponent (8 bits)', bitMan:'Mantissa (23 bits)',
+    sumValue:'Value', sumHex:'Hex', sumBin:'Binary', sumError:'Error',
+    // Tables
+    col2:'÷ 2', colQ:'Quotient', colR:'Remainder',
+    readBtT: b => `Read remainders bottom-to-top: <code>${b}</code>`,
+    colVal:'Value', colX2:'× 2', colBit:'Bit',
+    readTtB: b => `Read bits top-to-bottom: <code>.${b}</code>`,
+    repsEll:'⋯ repeats ⋯',
+    repFracTitle:'Repeating binary fraction',
+    repFracBlock: (p,n) => `the block <code>${p}</code> (length ${n}) repeats indefinitely.`,
+    noExact: f => `0.${f} has <strong>no exact binary representation</strong>.`,
+    // Rounding notes
+    truncNote: b => `Truncate mode: drop bits after position 23 (<code>${b}</code>).`,
+    roundDownNote: (g,t) => `Guard bit = <code>${g}</code>, tail = <code>${t||'(empty)'}</code> → round down (keep bits 1–23).`,
+    roundUpNote: (g,t,l,ov) => `Guard bit = <code>${g}</code>, tail = <code>${t||'(empty)'}</code>, LSB = <code>${l}</code> → round up. Adding 1 to mantissa${ov?' caused overflow (exponent increments by 1)':''}.`,
+    // Step titles
+    tSign:'Sign Bit',
+    tConvert: (v,a) => `Convert |${v}| = ${a} to Binary`,
+    tNorm:'Normalized Scientific Representation',
+    tBias:'Biased Exponent',
+    tMant:'Mantissa (Significand)',
+    tAssemble:'Assemble the 32 Bits',
+    // Step bodies
+    pos:'positive', neg:'negative',
+    signIs: (w,b,c) => `The number is <strong>${w}</strong> → sign bit = <code class="${c}">${b}</code>`,
+    intPart: n => `Integer part (${n}):`,
+    fracPart: f => `Fractional part (${f}):`,
+    normForm:'Write in the form <code>1.xxx × 2<sup>n</sup></code>:<br><br>',
+    shiftL: n => `<span style="color:#666670;font-size:0.85rem;">(Shift binary point left ${n} place${n!==1?'s':''})</span>`,
+    shiftR: n => `<span style="color:#666670;font-size:0.85rem;">(Shift binary point right ${-n} place${n!==-1?'s':''})</span>`,
+    mantPeriod: (p,n) => `<div class="period-note">♻ The mantissa bits after the <code>1.</code> repeat with period <code>${p}</code> (length ${n}) — infinite, so IEEE 754 stores only 23 bits (step 5).</div>`,
+    biasAdd: e => `Exponent = <strong>${e}</strong>. Add bias 127:<br>`,
+    biasConvert: n => `Convert ${n} to 8-bit binary:<br>`,
+    biasResult:'8-bit exponent:',
+    m5RepForever: p => `After the leading <code>1.</code>, the mantissa is <code>(${p})</code> repeating forever.<br><br>`,
+    m5Store23:'IEEE 754 stores exactly <strong>23 bits</strong>. We extend the repeating pattern to get them:<br>',
+    m5Marker:`<span style="color:#666670;font-size:0.88rem;">(the <code>|</code> marks where bit 23 ends; bits to the right are dropped or used for rounding)</span><br><br>`,
+    m5Trunc:'<strong>Truncate:</strong> keep the first 23 bits, drop the rest.<br>',
+    m5Round: g => `<strong>Round (half-to-even):</strong> bit 24 = <code>${g}</code>${g==='1'?' → round up':' → round down (keep bits 1–23)'}.<br>`,
+    m5Short: b => `After the leading <code>1.</code>, the bits are: <code>${b||'(none)'}</code><br>Fewer than 23 bits — pad with trailing zeros:<br>`,
+    m5Long:  b => `After the leading <code>1.</code>, the bits are: <code>${b}…</code><br><br>More than 23 bits — need to cut at position 23:<br>`,
+    m5RoundHdr:'<strong>Round (half-to-even):</strong><br>',
+    m5Final:'Final 23-bit mantissa:',
+    aSign:'Sign:', aExp:'Exponent:', aMan:'Mantissa:', aRes:'Result:', aHex:'Hex:',
+    stepByStep:'Step-by-Step Conversion',
+    // Subnormal
+    tSubRecog:'Recognize Subnormal (Denormalized)',
+    tSubComp:'Compute the Mantissa Bits',
+    tSubStore:'Store 23 Mantissa Bits',
+    subBadge:'Subnormal',
+    subSmaller: v => `|value| = <code>${v}</code> is smaller than the minimum normal float`,
+    subMinNorm:'<code>2<sup>−126</sup> ≈ 1.17549 × 10<sup>−38</sup></code>.',
+    subCantNorm:'Normalized form <code>1.xxx × 2<sup>n</sup></code> would need <code>n &lt; −126</code>, which the 8-bit biased exponent cannot encode.<br><br>',
+    subUses:'IEEE 754 uses the <strong>subnormal (denormalized) encoding</strong> instead:',
+    subFields:[
+      'Exponent field = <code class="code-blue">00000000</code> (all zeros — the subnormal signal)',
+      'The implicit leading bit is <strong>0</strong> instead of 1',
+      'Fixed effective exponent is always <strong>−126</strong>',
+      'Value = <code>(−1)<sup>s</sup> × <span style="color:#86efac">0.mantissa</span> × 2<sup>−126</sup></code>',
+    ],
+    subMantFrom: (v,m) => `From the subnormal form: <code>0.mantissa × 2<sup>−126</sup> = ${v}</code><br>Rearrange: <code>0.mantissa = ${v} × 2<sup>126</sup> ≈ ${m}</code><br><br>Convert this to binary using repeated doubling:<br>`,
+    subRepPeriod: p => `The mantissa fraction repeats: <code>(${p})</code>.<br><br>Extend the repeating pattern to 26 bits:<br>`,
+    subTrunc:'<strong>Truncate:</strong> keep the first 23 bits, drop the rest.<br>',
+    subRound: g => `<strong>Round (half-to-even):</strong> guard bit = <code>${g}</code>${g==='1'?' → round up':' → round down (keep bits 1–23)'}.<br>`,
+    subShort: b => `Mantissa bits: <code>${b||'(none)'}</code><br>Fewer than 23 bits — pad with trailing zeros:<br>`,
+    subLong:  b => `Mantissa bits: <code>${b}…</code><br>More than 23 bits — cut at position 23:<br>`,
+    subRoundHdr:'<strong>Round (half-to-even):</strong><br>',
+    subFinal:'Final 23-bit mantissa:',
+    subExpNote:'(all zeros = subnormal)',
+    // Special values
+    specialTitle:'Special Value',
+    specialPat:'Pattern', specialExpl:'Explanation',
+    nanDesc:'All exponent bits are <code>1</code> and the mantissa is <strong>non-zero</strong> → <strong>Not a Number (NaN)</strong>.',
+    infDesc:'All exponent bits are <code>1</code> and the mantissa is all <code>0</code> → <strong>Infinity</strong>. Sign bit determines direction.',
+    zeroDesc:'All exponent bits are <code>0</code> and the mantissa is all <code>0</code> → <strong>Zero</strong>. IEEE 754 has both +0 and −0.',
+    // Decode panel
+    decodeTitle:'Decode',
+    dBits:'Bits', dSign:'Sign bit', dExp:'Exponent bits', dMan:'Mantissa bits',
+    dBinFrac:'binary fraction',
+    dForm:'Form', dResult:'Result',
+    dNeg:'negative', dPos:'positive',
+    dAllOnes:'(special — all 1s)', dAllZeros:'(special — all 0s)',
+    dSubForm:'(subnormal: no implicit leading 1)',
+    dNaN:'Not a Number. All exponent bits are 1 and mantissa is non-zero.',
+    dInf:'All exponent bits are 1 and mantissa is all 0 → Infinity.',
+    dZero:'All exponent and mantissa bits are 0 → Zero.',
+    dSubResult: v => `Subnormal (denormalized) number. Exponent = −126, value = ±0.mantissa × 2<sup>−126</sup> = ${v}`,
+  },
+  de: {
+    back:'← Zurück', pageTitle:'IEEE 754 Float-Konverter',
+    subtitle:'Untersuche, wie Dezimalzahlen als 32-Bit-Gleitkommazahlen gespeichert werden',
+    labelDecimal:'Dezimal', labelBinary:'Binär',
+    btnConvert:'Konvertieren →', btnFromBits:'← Aus Bits',
+    roundingHeading:'Mantissen-Überlauf:',
+    optTruncate:'Abschneiden', optRound:'Runden (Half-to-Even)',
+    bitSign:'Vorz.<br>(1)', bitExp:'Exponent (8 Bits)', bitMan:'Mantisse (23 Bits)',
+    sumValue:'Wert', sumHex:'Hex', sumBin:'Binär', sumError:'Fehler',
+    // Tables
+    col2:'÷ 2', colQ:'Quotient', colR:'Rest',
+    readBtT: b => `Reste von unten nach oben lesen: <code>${b}</code>`,
+    colVal:'Wert', colX2:'× 2', colBit:'Bit',
+    readTtB: b => `Bits von oben nach unten lesen: <code>.${b}</code>`,
+    repsEll:'⋯ wiederholt sich ⋯',
+    repFracTitle:'Periodische Binärdarstellung',
+    repFracBlock: (p,n) => `der Block <code>${p}</code> (Länge ${n}) wiederholt sich endlos.`,
+    noExact: f => `0.${f} hat <strong>keine exakte Binärdarstellung</strong>.`,
+    // Rounding notes
+    truncNote: b => `Abschneide-Modus: Bits ab Position 23 verwerfen (<code>${b}</code>).`,
+    roundDownNote: (g,t) => `Guard-Bit = <code>${g}</code>, Rest = <code>${t||'(leer)'}</code> → abrunden (Bits 1–23 behalten).`,
+    roundUpNote: (g,t,l,ov) => `Guard-Bit = <code>${g}</code>, Rest = <code>${t||'(leer)'}</code>, LSB = <code>${l}</code> → aufrunden. 1 zur Mantisse addieren${ov?' (Überlauf: Exponent wird um 1 erhöht)':''}.`,
+    // Step titles
+    tSign:'Vorzeichen-Bit',
+    tConvert: (v,a) => `Konvertiere |${v}| = ${a} in Binärdarstellung`,
+    tNorm:'Normalisierte wissenschaftliche Darstellung',
+    tBias:'Verschobener Exponent (Biased Exponent)',
+    tMant:'Mantisse (Signifikand)',
+    tAssemble:'Die 32 Bits zusammensetzen',
+    // Step bodies
+    pos:'positiv', neg:'negativ',
+    signIs: (w,b,c) => `Die Zahl ist <strong>${w}</strong> → Vorzeichen-Bit = <code class="${c}">${b}</code>`,
+    intPart: n => `Ganzzahliger Anteil (${n}):`,
+    fracPart: f => `Nachkommaanteil (${f}):`,
+    normForm:'Schreibe in der Form <code>1.xxx × 2<sup>n</sup></code>:<br><br>',
+    shiftL: n => `<span style="color:#666670;font-size:0.85rem;">(Komma um ${n} Stelle${n!==1?'n':''} nach links verschieben)</span>`,
+    shiftR: n => `<span style="color:#666670;font-size:0.85rem;">(Komma um ${-n} Stelle${n!==-1?'n':''} nach rechts verschieben)</span>`,
+    mantPeriod: (p,n) => `<div class="period-note">♻ Die Mantissenbits nach der <code>1.</code> wiederholen sich mit der Periode <code>${p}</code> (Länge ${n}) — unendlich, daher speichert IEEE 754 nur 23 Bits (Schritt 5).</div>`,
+    biasAdd: e => `Exponent = <strong>${e}</strong>. Bias 127 addieren:<br>`,
+    biasConvert: n => `${n} in 8-Bit-Binär umrechnen:<br>`,
+    biasResult:'8-Bit-Exponent:',
+    m5RepForever: p => `Nach der führenden <code>1.</code> wiederholt sich die Mantisse <code>(${p})</code> endlos.<br><br>`,
+    m5Store23:'IEEE 754 speichert genau <strong>23 Bits</strong>. Wir verlängern das Muster:<br>',
+    m5Marker:`<span style="color:#666670;font-size:0.88rem;">(der <code>|</code> markiert das Ende von Bit 23; Bits rechts davon werden verworfen oder zum Runden verwendet)</span><br><br>`,
+    m5Trunc:'<strong>Abschneiden:</strong> erste 23 Bits behalten, Rest verwerfen.<br>',
+    m5Round: g => `<strong>Runden (Half-to-Even):</strong> Bit 24 = <code>${g}</code>${g==='1'?' → aufrunden':' → abrunden (Bits 1–23 behalten)'}.<br>`,
+    m5Short: b => `Nach der führenden <code>1.</code> lauten die Bits: <code>${b||'(keine)'}</code><br>Weniger als 23 Bits — mit Nullen auffüllen:<br>`,
+    m5Long:  b => `Nach der führenden <code>1.</code> lauten die Bits: <code>${b}…</code><br><br>Mehr als 23 Bits — bei Position 23 abschneiden:<br>`,
+    m5RoundHdr:'<strong>Runden (Half-to-Even):</strong><br>',
+    m5Final:'Finale 23-Bit-Mantisse:',
+    aSign:'Vorz.:', aExp:'Exponent:', aMan:'Mantisse:', aRes:'Ergebnis:', aHex:'Hex:',
+    stepByStep:'Schritt-für-Schritt-Umrechnung',
+    // Subnormal
+    tSubRecog:'Subnormale Zahl erkennen (denormalisiert)',
+    tSubComp:'Mantissenbits berechnen',
+    tSubStore:'23 Mantissenbits speichern',
+    subBadge:'Subnormal',
+    subSmaller: v => `|Wert| = <code>${v}</code> ist kleiner als die kleinste normale Gleitkommazahl`,
+    subMinNorm:'<code>2<sup>−126</sup> ≈ 1,17549 × 10<sup>−38</sup></code>.',
+    subCantNorm:'Die normalisierte Form <code>1.xxx × 2<sup>n</sup></code> würde <code>n &lt; −126</code> erfordern, was der 8-Bit-Exponent nicht kodieren kann.<br><br>',
+    subUses:'IEEE 754 verwendet stattdessen die <strong>subnormale (denormalisierte) Kodierung</strong>:',
+    subFields:[
+      'Exponentenfeld = <code class="code-blue">00000000</code> (alle Nullen — Subnormal-Signal)',
+      'Das implizite führende Bit ist <strong>0</strong> (statt 1)',
+      'Der feste effektive Exponent ist immer <strong>−126</strong>',
+      'Wert = <code>(−1)<sup>s</sup> × <span style="color:#86efac">0.Mantisse</span> × 2<sup>−126</sup></code>',
+    ],
+    subMantFrom: (v,m) => `Aus der Subnormal-Form: <code>0.Mantisse × 2<sup>−126</sup> = ${v}</code><br>Umformen: <code>0.Mantisse = ${v} × 2<sup>126</sup> ≈ ${m}</code><br><br>Diese Zahl mit wiederholter Verdopplung in Binär umrechnen:<br>`,
+    subRepPeriod: p => `Der Nachkommaanteil der Mantisse wiederholt sich: <code>(${p})</code>.<br><br>Muster auf 26 Bits verlängern:<br>`,
+    subTrunc:'<strong>Abschneiden:</strong> erste 23 Bits behalten, Rest verwerfen.<br>',
+    subRound: g => `<strong>Runden (Half-to-Even):</strong> Guard-Bit = <code>${g}</code>${g==='1'?' → aufrunden':' → abrunden (Bits 1–23 behalten)'}.<br>`,
+    subShort: b => `Mantissenbits: <code>${b||'(keine)'}</code><br>Weniger als 23 Bits — mit Nullen auffüllen:<br>`,
+    subLong:  b => `Mantissenbits: <code>${b}…</code><br>Mehr als 23 Bits — bei Position 23 abschneiden:<br>`,
+    subRoundHdr:'<strong>Runden (Half-to-Even):</strong><br>',
+    subFinal:'Finale 23-Bit-Mantisse:',
+    subExpNote:'(alle Nullen = subnormal)',
+    // Special values
+    specialTitle:'Sonderwert',
+    specialPat:'Bitmuster', specialExpl:'Erklärung',
+    nanDesc:'Alle Exponentenbits sind <code>1</code> und die Mantisse ist <strong>ungleich null</strong> → <strong>Keine Zahl (NaN)</strong>.',
+    infDesc:'Alle Exponentenbits sind <code>1</code> und die Mantisse ist <code>0</code> → <strong>Unendlich</strong>. Das Vorzeichen-Bit bestimmt die Richtung.',
+    zeroDesc:'Alle Exponentenbits sind <code>0</code> und die Mantisse ist <code>0</code> → <strong>Null</strong>. IEEE 754 kennt +0 und −0.',
+    // Decode panel
+    decodeTitle:'Dekodieren',
+    dBits:'Bits', dSign:'Vorzeichen-Bit', dExp:'Exponentenbits', dMan:'Mantissenbits',
+    dBinFrac:'Binärbruch',
+    dForm:'Form', dResult:'Ergebnis',
+    dNeg:'negativ', dPos:'positiv',
+    dAllOnes:'(Sonderwert — alle 1)', dAllZeros:'(Sonderwert — alle 0)',
+    dSubForm:'(subnormal: keine implizite führende 1)',
+    dNaN:'Keine Zahl. Alle Exponentenbits sind 1, die Mantisse ist ungleich null.',
+    dInf:'Alle Exponentenbits sind 1, die Mantisse ist 0 → Unendlich.',
+    dZero:'Alle Exponenten- und Mantissenbits sind 0 → Null.',
+    dSubResult: v => `Subnormale Zahl (denormalisiert). Exponent = −126, Wert = ±0.Mantisse × 2<sup>−126</sup> = ${v}`,
+  }
+};
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('langSelect').value = l;
+  applyStaticLang();
+  if (lastMode === 'decimal' && lastDecimalValue !== null) {
+    const mode = document.getElementById('roundMode').value;
+    showSteps(buildSteps(lastDecimalValue, mode));
+  } else if (lastMode === 'decode') {
+    showSteps(buildDecodePanel(bitsToU32()));
+  }
+}
+
+function applyStaticLang() {
+  const s = S();
+  document.getElementById('backLink').textContent        = s.back;
+  document.getElementById('pageTitle').textContent       = s.pageTitle;
+  document.getElementById('subtitle').textContent        = s.subtitle;
+  document.getElementById('labelDecimal').textContent    = s.labelDecimal;
+  document.getElementById('labelBinary').textContent     = s.labelBinary;
+  document.getElementById('convertBtn').textContent      = s.btnConvert;
+  document.getElementById('decodeBtn').textContent       = s.btnFromBits;
+  document.getElementById('roundingHeading').textContent = s.roundingHeading;
+  document.getElementById('optTruncate').textContent     = s.optTruncate;
+  document.getElementById('optRound').textContent        = s.optRound;
+  document.getElementById('bitLabelSign').innerHTML      = s.bitSign;
+  document.getElementById('bitLabelExp').textContent     = s.bitExp;
+  document.getElementById('bitLabelMan').textContent     = s.bitMan;
+  document.getElementById('sumLabelValue').textContent   = s.sumValue;
+  document.getElementById('sumLabelHex').textContent     = s.sumHex;
+  document.getElementById('sumLabelBin').textContent     = s.sumBin;
+  document.getElementById('sumLabelError').textContent   = s.sumError;
+}
+
 // ── Core bit-level utilities ─────────────────────────────────────────────────
 const buf = new ArrayBuffer(4);
 const _f32 = new Float32Array(buf);
@@ -643,12 +893,12 @@ function intToBinaryTable(n) {
 function intToBinTableHtml(n, label) {
   const { bits, rows } = intToBinaryTable(n);
   if (rows.length === 0) return { bits: '0', html: '<p><code>0</code> → <code>0</code></p>' };
-  let html = '<table class="conv-table"><thead><tr><th>÷ 2</th><th>Quotient</th><th>Remainder</th></tr></thead><tbody>';
+  let html = `<table class="conv-table"><thead><tr><th>${S().col2}</th><th>${S().colQ}</th><th>${S().colR}</th></tr></thead><tbody>`;
   for (const r of rows) {
     html += `<tr><td>${r.n}</td><td>${r.quotient}</td><td>${r.remainder}</td></tr>`;
   }
   html += '</tbody></table>';
-  html += `<div style="font-size:0.8rem; color:#666670; margin-top:4px;">Read remainders bottom-to-top: <code>${bits}</code></div>`;
+  html += `<div style="font-size:0.8rem; color:#666670; margin-top:4px;">${S().readBtT(bits)}</div>`;
   return { bits, html };
 }
 
@@ -702,25 +952,25 @@ function fracToBinTableHtml(frac, maxBits) {
     ? Math.min(rows.length, pd.offset + 2 * pd.period.length)
     : rows.length;
 
-  let html = '<table class="conv-table"><thead><tr><th>Value</th><th>× 2</th><th>Bit</th></tr></thead><tbody>';
+  let html = `<table class="conv-table"><thead><tr><th>${S().colVal}</th><th>${S().colX2}</th><th>${S().colBit}</th></tr></thead><tbody>`;
   for (let i = 0; i < showRows; i++) {
     const r = rows[i];
     const mark = pd && i === pd.offset ? ' style="border-top:2px solid #22c55e;"' : '';
     html += `<tr${mark}><td>${r.val}</td><td>${r.product}</td><td>${r.bit}</td></tr>`;
   }
-  if (pd) html += `<tr><td colspan="3" style="color:#666670; text-align:center;">⋯ repeats ⋯</td></tr>`;
+  if (pd) html += `<tr><td colspan="3" style="color:#666670; text-align:center;">${S().repsEll}</td></tr>`;
   html += '</tbody></table>';
 
   if (pd) {
     const pre = bits.slice(0, pd.offset);
     html += `<div class="period-note">
-      ♻ <strong>Repeating binary fraction</strong><br>
+      ♻ <strong>${S().repFracTitle}</strong><br>
       0.${pre ? pre + '<span style="border-bottom:2px solid #22c55e;">' + pd.period + '</span>' : '<span style="border-bottom:2px solid #22c55e;">' + pd.period + '</span>'}…
-      &nbsp;— the block <code>${pd.period}</code> (length ${pd.period.length}) repeats indefinitely.
-      <br>0.${frac} has <strong>no exact binary representation</strong>.
+      &nbsp;— ${S().repFracBlock(pd.period, pd.period.length)}
+      <br>${S().noExact(frac)}
     </div>`;
   } else {
-    html += `<div style="font-size:0.85rem; color:#666670; margin-top:4px;">Read bits top-to-bottom: <code>.${bits}</code></div>`;
+    html += `<div style="font-size:0.85rem; color:#666670; margin-top:4px;">${S().readTtB(bits)}</div>`;
   }
   return { bits, html, period: pd };
 }
@@ -771,11 +1021,7 @@ function applyRounding(mantBits, mode) {
   const tail  = mantBits.slice(24);
 
   if (mode === 'truncate') {
-    return {
-      bits23: kept,
-      overflow: false,
-      note: `Truncate mode: drop bits after position 23 (<code>${mantBits.slice(23)}</code>).`
-    };
+    return { bits23: kept, overflow: false, note: S().truncNote(mantBits.slice(23)) };
   }
   // Round half-to-even
   const guardBit = parseInt(guard, 10);
@@ -784,21 +1030,13 @@ function applyRounding(mantBits, mode) {
   const shouldRoundUp = guardBit === 1 && (tailHasOnes || lsb === 1);
 
   if (!shouldRoundUp) {
-    return {
-      bits23: kept,
-      overflow: false,
-      note: `Guard bit = <code>${guard}</code>, tail = <code>${tail || '(empty)'}</code> → round down (keep bits 1–23).`
-    };
+    return { bits23: kept, overflow: false, note: S().roundDownNote(guard, tail) };
   }
   // Add 1 to 23-bit integer
   let val = parseInt(kept, 2) + 1;
   const overflow = val >= (1 << 23);
   const bits23 = (val & 0x7FFFFF).toString(2).padStart(23, '0');
-  return {
-    bits23,
-    overflow,
-    note: `Guard bit = <code>${guard}</code>, tail = <code>${tail || '(empty)'}</code>, LSB = <code>${lsb}</code> → round up. Adding 1 to mantissa${overflow ? ' caused overflow (exponent increments by 1)' : ''}.`
-  };
+  return { bits23, overflow, note: S().roundUpNote(guard, tail, lsb, overflow) };
 }
 
 // ── Expand repeating mantissa to a fixed length ──────────────────────────────
@@ -850,13 +1088,14 @@ function buildSteps(value, mode) {
 
   // Step 1: sign
   const signBit = negative ? 1 : 0;
+  const signWord = negative ? S().neg : S().pos;
+  const signCls  = negative ? 'code-red' : 'code-green';
   const step1 = `
 <div class="step">
   <div class="step-badge">1</div>
   <div class="step-body">
-    <div class="step-title">Sign Bit</div>
-    The number is <strong>${negative ? 'negative' : 'positive'}</strong> →
-    sign bit = <code class="${negative ? 'code-red' : 'code-green'}">${signBit}</code>
+    <div class="step-title">${S().tSign}</div>
+    ${S().signIs(signWord, signBit, signCls)}
   </div>
 </div>`;
 
@@ -864,7 +1103,7 @@ function buildSteps(value, mode) {
   const { bits: intBits, html: intTableHtml } = intToBinTableHtml(intPart, 'Integer');
   const { bits: fracBits, html: fracTableHtml, period: fracPeriod } = fracPart > 0
     ? fracToBinTableHtml(fracPart, 30)
-    : { bits: '', html: '<p style="color:#666670; font-size:0.85rem;">No fractional part.</p>', period: null };
+    : { bits: '', html: '', period: null };
 
   const binaryRep = (intBits === '0' ? '0' : intBits) + (fracBits ? '.' + fracBits : '');
   function binaryRepCompact() {
@@ -872,41 +1111,33 @@ function buildSteps(value, mode) {
     const pre = fracBits.slice(0, fracPeriod.offset);
     return (intPart > 0 ? intBits : '0') + '.' + (pre || '') + '(' + fracPeriod.period + ')';
   }
+  const fracPartStr = fracPart > 0 ? fracPart.toPrecision(8).replace(/\.?0+$/, '') : '';
   const step2 = `
 <div class="step">
   <div class="step-badge">2</div>
   <div class="step-body">
-    <div class="step-title">Convert |${value}| = ${absVal} to Binary</div>
-    <strong>Integer part (${intPart}):</strong><br>
+    <div class="step-title">${S().tConvert(value, absVal)}</div>
+    <strong>${S().intPart(intPart)}</strong><br>
     ${intTableHtml}
-    ${fracPart > 0 ? `<br><strong>Fractional part (${fracPart.toPrecision(8).replace(/\.?0+$/, '')}):</strong><br>${fracTableHtml}` : ''}
-    <br>Binary: <code>${fracPeriod ? binaryRepCompact() : binaryRep}</code>
+    ${fracPart > 0 ? `<br><strong>${S().fracPart(fracPartStr)}</strong><br>${fracTableHtml}` : ''}
+    <br><strong>${fracPeriod ? binaryRepCompact() : binaryRep}</strong>
   </div>
 </div>`;
 
   // Step 3: Normalize
-  // Find the position of the leading 1
-  const fullBin = (intBits === '0' ? '' : intBits) + (fracBits || '');
-  // fullBin is the binary digits without the dot
-  // We need to find leading 1 in binaryRep
   let exponent, mantissaRaw;
   if (intPart > 0) {
-    // Leading 1 is in integer part
-    exponent = intBits.length - 1; // intBits.length digits, shift left by (length-1)
-    // Mantissa is everything after leading 1
+    exponent = intBits.length - 1;
     mantissaRaw = intBits.slice(1) + fracBits;
   } else {
-    // Leading 1 is in fractional part
     const firstOne = fracBits.indexOf('1');
     if (firstOne === -1) {
-      // Zero (shouldn't happen since we checked earlier)
       return buildSpecialSteps('+0', u32ToBitString(decimalToU32(0)));
     }
     exponent = -(firstOne + 1);
     mantissaRaw = fracBits.slice(firstOne + 1);
   }
 
-  // Build compact mantissa string using period notation
   const mantissaPeriod = fracPeriod ? detectPeriod(mantissaRaw) : null;
   function periodStr(bits, pd) {
     if (!pd) return bits || '0';
@@ -918,13 +1149,11 @@ function buildSteps(value, mode) {
 <div class="step">
   <div class="step-badge">3</div>
   <div class="step-body">
-    <div class="step-title">Normalized Scientific Representation</div>
-    Write in the form <code>1.xxx × 2<sup>n</sup></code>:<br><br>
+    <div class="step-title">${S().tNorm}</div>
+    ${S().normForm}
     <code>${binaryRepCompact()}</code> = <code>1.${periodStr(mantissaRaw, mantissaPeriod)} × 2<sup>${exponent}</sup></code>
-    ${intPart > 0
-      ? `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point left ${exponent} place${exponent !== 1 ? 's' : ''})</span>`
-      : `<br><span style="color:#666670; font-size:0.85rem;">(Shift binary point right ${-exponent} place${exponent !== -1 ? 's' : ''})</span>`}
-    ${mantissaPeriod ? `<div class="period-note">♻ The mantissa bits after the <code>1.</code> repeat with period <code>${mantissaPeriod.period}</code> (length ${mantissaPeriod.period.length}) — infinite, so IEEE 754 stores only 23 bits (step 5).</div>` : ''}
+    ${intPart > 0 ? `<br>${S().shiftL(exponent)}` : `<br>${S().shiftR(exponent)}`}
+    ${mantissaPeriod ? S().mantPeriod(mantissaPeriod.period, mantissaPeriod.period.length) : ''}
   </div>
 </div>`;
 
@@ -937,62 +1166,46 @@ function buildSteps(value, mode) {
 <div class="step">
   <div class="step-badge">4</div>
   <div class="step-body">
-    <div class="step-title">Biased Exponent</div>
-    Exponent = <strong>${exponent}</strong>. Add bias 127:<br>
+    <div class="step-title">${S().tBias}</div>
+    ${S().biasAdd(exponent)}
     <code>${exponent} + 127 = ${biasedExp}</code><br><br>
-    Convert ${biasedExp} to 8-bit binary:<br>
+    ${S().biasConvert(biasedExp)}
     ${expTableHtml}
-    <br>8-bit exponent: <code class="code-blue">${expBits8}</code>
+    <br>${S().biasResult} <code class="code-blue">${expBits8}</code>
   </div>
 </div>`;
 
   // Step 5: Mantissa with rounding
-  const raw23 = mantissaRaw.slice(0, 50); // cap for display
+  const raw23 = mantissaRaw.slice(0, 50);
   const { bits23, overflow, note: roundNote } = applyRounding(raw23, mode);
-  let finalExponent = exponent;
-  let finalBiasedExp = biasedExp;
-  let finalExpBits8 = expBits8;
   if (overflow) {
-    finalExponent = exponent + 1;
-    finalBiasedExp = finalExponent + bias;
-    finalExpBits8 = finalBiasedExp.toString(2).padStart(8, '0');
+    // exponent already correct in u32; no display change needed here
   }
 
   let step5 = `
 <div class="step">
   <div class="step-badge">5</div>
   <div class="step-body">
-    <div class="step-title">Mantissa (Significand)</div>`;
+    <div class="step-title">${S().tMant}</div>`;
 
   if (mantissaPeriod) {
-    // Repeating mantissa: explain cleanly without mentioning internal bit counts
     const ext26 = expandPeriod(mantissaRaw, mantissaPeriod, 26);
-    const kept23 = ext26.slice(0, 23);
     const guardBit = ext26[23];
-    step5 += `
-    After the leading <code>1.</code>, the mantissa is <code>(${mantissaPeriod.period})</code> repeating forever.<br><br>
-    IEEE 754 stores exactly <strong>23 bits</strong>. We extend the repeating pattern to get them:<br>
-    <code>${ext26.slice(0,23)} | ${ext26.slice(23)}</code><br>
-    <span style="color:#666670; font-size:0.88rem;">(the <code>|</code> marks where bit 23 ends; bits to the right are dropped or used for rounding)</span><br><br>`;
-    if (mode === 'truncate') {
-      step5 += `<strong>Truncate:</strong> keep the first 23 bits, drop the rest.<br>`;
-    } else {
-      step5 += `<strong>Round (half-to-even):</strong> bit 24 = <code>${guardBit}</code>${guardBit === '1' ? ' → round up' : ' → round down (keep bits 1–23)'}.<br>`;
-    }
+    step5 += S().m5RepForever(mantissaPeriod.period);
+    step5 += S().m5Store23;
+    step5 += `<code>${ext26.slice(0,23)} | ${ext26.slice(23)}</code><br>`;
+    step5 += S().m5Marker;
+    step5 += mode === 'truncate' ? S().m5Trunc : S().m5Round(guardBit);
     if (roundNote) step5 += `<div class="rounding-note">${roundNote}</div>`;
-    step5 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step5 += `<br>${S().m5Final} <code class="code-green">${bits23}</code>`;
   } else if (raw23.length <= 23) {
-    step5 += `
-    After the leading <code>1.</code>, the bits are: <code>${raw23 || '(none)'}</code><br>
-    Fewer than 23 bits — pad with trailing zeros:<br>
-    Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step5 += S().m5Short(raw23);
+    step5 += `${S().m5Final} <code class="code-green">${bits23}</code>`;
   } else {
-    step5 += `
-    After the leading <code>1.</code>, the bits are: <code>${raw23.slice(0, 26)}…</code><br><br>
-    More than 23 bits — need to cut at position 23:<br>
-    <code>${raw23.slice(0,23)} | ${raw23.slice(23)}</code><br>`;
+    step5 += S().m5Long(raw23.slice(0,26));
+    step5 += `<code>${raw23.slice(0,23)} | ${raw23.slice(23)}</code><br>`;
     if (roundNote) step5 += `<div class="rounding-note">${roundNote}</div>`;
-    step5 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step5 += `<br>${S().m5Final} <code class="code-green">${bits23}</code>`;
   }
   step5 += `</div></div>`;
 
@@ -1007,19 +1220,19 @@ function buildSteps(value, mode) {
 <div class="step">
   <div class="step-badge">6</div>
   <div class="step-body">
-    <div class="step-title">Assemble the 32 Bits</div>
+    <div class="step-title">${S().tAssemble}</div>
     <div class="assemble-block">
-      <div class="assemble-row"><span class="assemble-lbl">Sign:</span>     <span class="assemble-val"><span class="s-bit">${verifySign}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Exponent:</span> <span class="assemble-val"><span class="e-bit">${verifyExp}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Mantissa:</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aSign}</span>     <span class="assemble-val"><span class="s-bit">${verifySign}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aExp}</span> <span class="assemble-val"><span class="e-bit">${verifyExp}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aMan}</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
       <div style="border-top:1px solid #2e2e34; margin: 6px 0;"></div>
-      <div class="assemble-row"><span class="assemble-lbl">Result:</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Hex:</span>      <span class="assemble-hex">${u32ToHex(u32)}</span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aRes}</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aHex}</span>      <span class="assemble-hex">${u32ToHex(u32)}</span></div>
     </div>
   </div>
 </div>`;
 
-  return `<div class="steps-panel"><h2>Step-by-Step Conversion</h2>${step1}${step2}${step3}${step4}${step5}${step6}</div>`;
+  return `<div class="steps-panel"><h2>${S().stepByStep}</h2>${step1}${step2}${step3}${step4}${step5}${step6}</div>`;
 }
 
 function buildSubnormalSteps(value, mode, u32) {
@@ -1032,13 +1245,14 @@ function buildSubnormalSteps(value, mode, u32) {
   const signBit = negative ? 1 : 0;
 
   // Step 1: sign
+  const signWord = negative ? S().neg : S().pos;
+  const signCls  = negative ? 'code-red' : 'code-green';
   const step1 = `
 <div class="step">
   <div class="step-badge">1</div>
   <div class="step-body">
-    <div class="step-title">Sign Bit</div>
-    The number is <strong>${negative ? 'negative' : 'positive'}</strong> →
-    sign bit = <code class="${negative ? 'code-red' : 'code-green'}">${signBit}</code>
+    <div class="step-title">${S().tSign}</div>
+    ${S().signIs(signWord, signBit, signCls)}
   </div>
 </div>`;
 
@@ -1047,22 +1261,18 @@ function buildSubnormalSteps(value, mode, u32) {
 <div class="step">
   <div class="step-badge">2</div>
   <div class="step-body">
-    <div class="step-title">Recognize Subnormal (Denormalized)</div>
-    |value| = <code>${absVal.toExponential(6)}</code> is smaller than the minimum normal float<br>
-    <code>2<sup>−126</sup> ≈ 1.17549 × 10<sup>−38</sup></code>.<br><br>
-    Normalized form <code>1.xxx × 2<sup>n</sup></code> would need <code>n &lt; −126</code>, which the 8-bit biased exponent cannot encode.<br><br>
-    IEEE 754 uses the <strong>subnormal (denormalized) encoding</strong> instead:
+    <div class="step-title">${S().tSubRecog}</div>
+    ${S().subSmaller(absVal.toExponential(6))}<br>
+    ${S().subMinNorm}<br><br>
+    ${S().subCantNorm}
+    ${S().subUses}
     <ul style="margin:8px 0 0 20px; line-height:2.1;">
-      <li>Exponent field = <code class="code-blue">00000000</code> (all zeros — the subnormal signal)</li>
-      <li>The implicit leading bit is <strong>0</strong> instead of 1</li>
-      <li>Fixed effective exponent is always <strong>−126</strong></li>
-      <li>Value = <code>(−1)<sup>s</sup> × <span style="color:#86efac">0.mantissa</span> × 2<sup>−126</sup></code></li>
+      ${S().subFields.map(f => `<li>${f}</li>`).join('')}
     </ul>
   </div>
 </div>`;
 
   // Step 3: compute mantissa bits
-  // 0.mantissa = absVal × 2^126
   const mantFrac = absVal * Math.pow(2, 126);
   const { bits: fracBits, html: fracTableHtml, period: fracPd } = fracToBinTableHtml(mantFrac, 30);
 
@@ -1070,10 +1280,8 @@ function buildSubnormalSteps(value, mode, u32) {
 <div class="step">
   <div class="step-badge">3</div>
   <div class="step-body">
-    <div class="step-title">Compute the Mantissa Bits</div>
-    From the subnormal form: <code>0.mantissa × 2<sup>−126</sup> = ${absVal.toExponential(6)}</code><br>
-    Rearrange: <code>0.mantissa = ${absVal.toExponential(6)} × 2<sup>126</sup> ≈ ${mantFrac.toPrecision(6)}</code><br><br>
-    Convert this to binary using repeated doubling:<br>
+    <div class="step-title">${S().tSubComp}</div>
+    ${S().subMantFrom(absVal.toExponential(6), mantFrac.toPrecision(6))}
     ${fracTableHtml}
   </div>
 </div>`;
@@ -1086,35 +1294,25 @@ function buildSubnormalSteps(value, mode, u32) {
 <div class="step">
   <div class="step-badge">4</div>
   <div class="step-body">
-    <div class="step-title">Store 23 Mantissa Bits</div>`;
+    <div class="step-title">${S().tSubStore}</div>`;
 
   if (fracPd) {
     const ext26 = expandPeriod(fracBits, fracPd, 26);
     const guardBit = ext26[23];
-    step4 += `
-    The mantissa fraction repeats: <code>(${fracPd.period})</code>.<br><br>
-    Extend the repeating pattern to 26 bits:<br>
-    <code>${ext26.slice(0,23)} | ${ext26.slice(23)}</code><br>`;
-    if (mode === 'truncate') {
-      step4 += `<strong>Truncate:</strong> keep the first 23 bits, drop the rest.<br>`;
-    } else {
-      step4 += `<strong>Round (half-to-even):</strong> guard bit = <code>${guardBit}</code>${guardBit === '1' ? ' → round up' : ' → round down (keep bits 1–23)'}.<br>`;
-    }
+    step4 += S().subRepPeriod(fracPd.period);
+    step4 += `<code>${ext26.slice(0,23)} | ${ext26.slice(23)}</code><br>`;
+    step4 += mode === 'truncate' ? S().subTrunc : S().subRound(guardBit);
     if (roundNote) step4 += `<div class="rounding-note">${roundNote}</div>`;
-    step4 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step4 += `<br>${S().subFinal} <code class="code-green">${bits23}</code>`;
   } else if (raw23.length <= 23) {
-    step4 += `
-    Mantissa bits: <code>${raw23 || '(none)'}</code><br>
-    Fewer than 23 bits — pad with trailing zeros:<br>
-    Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step4 += S().subShort(raw23);
+    step4 += `${S().subFinal} <code class="code-green">${bits23}</code>`;
   } else {
-    step4 += `
-    Mantissa bits: <code>${raw23.slice(0,26)}…</code><br>
-    More than 23 bits — cut at position 23:<br>
-    <code>${raw23.slice(0,23)} | ${raw23.slice(23)}</code><br>
-    ${mode === 'round' ? '<strong>Round (half-to-even):</strong>' : ''}<br>`;
+    step4 += S().subLong(raw23.slice(0,26));
+    step4 += `<code>${raw23.slice(0,23)} | ${raw23.slice(23)}</code><br>`;
+    if (mode === 'round') step4 += S().subRoundHdr;
     if (roundNote) step4 += `<div class="rounding-note">${roundNote}</div>`;
-    step4 += `<br>Final 23-bit mantissa: <code class="code-green">${bits23}</code>`;
+    step4 += `<br>${S().subFinal} <code class="code-green">${bits23}</code>`;
   }
   step4 += `</div></div>`;
 
@@ -1123,19 +1321,19 @@ function buildSubnormalSteps(value, mode, u32) {
 <div class="step">
   <div class="step-badge">5</div>
   <div class="step-body">
-    <div class="step-title">Assemble the 32 Bits</div>
+    <div class="step-title">${S().tAssemble}</div>
     <div class="assemble-block">
-      <div class="assemble-row"><span class="assemble-lbl">Sign:</span>     <span class="assemble-val"><span class="s-bit">${verifySign}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Exponent:</span> <span class="assemble-val"><span class="e-bit">${verifyExp}</span> <span style="color:#666670; font-size:0.8rem;">(all zeros = subnormal)</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Mantissa:</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aSign}</span>     <span class="assemble-val"><span class="s-bit">${verifySign}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aExp}</span> <span class="assemble-val"><span class="e-bit">${verifyExp}</span> <span style="color:#666670; font-size:0.8rem;">${S().subExpNote}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aMan}</span> <span class="assemble-val"><span class="m-bit">${verifyMan}</span></span></div>
       <div style="border-top:1px solid #2e2e34; margin:6px 0;"></div>
-      <div class="assemble-row"><span class="assemble-lbl">Result:</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
-      <div class="assemble-row"><span class="assemble-lbl">Hex:</span>      <span class="assemble-hex">${u32ToHex(u32)}</span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aRes}</span>   <span class="assemble-val"><span class="s-bit">${verifySign}</span> <span class="e-bit">${verifyExp}</span> <span class="m-bit">${verifyMan}</span></span></div>
+      <div class="assemble-row"><span class="assemble-lbl">${S().aHex}</span>      <span class="assemble-hex">${u32ToHex(u32)}</span></div>
     </div>
   </div>
 </div>`;
 
-  return `<div class="steps-panel"><h2>Step-by-Step Conversion <span class="special-badge">Subnormal</span></h2>${step1}${step2}${step3}${step4}${step5}</div>`;
+  return `<div class="steps-panel"><h2>${S().stepByStep} <span class="special-badge">${S().subBadge}</span></h2>${step1}${step2}${step3}${step4}${step5}</div>`;
 }
 
 function buildSpecialSteps(label, bits) {
@@ -1144,16 +1342,16 @@ function buildSpecialSteps(label, bits) {
   const man  = bits.slice(9);
   let description = '';
   if (label === 'NaN') {
-    description = 'All exponent bits are <code>1</code> and the mantissa is <strong>non-zero</strong> → <strong>Not a Number (NaN)</strong>.';
+    description = S().nanDesc;
   } else if (label === '+Infinity' || label === '-Infinity') {
-    description = 'All exponent bits are <code>1</code> and the mantissa is all <code>0</code> → <strong>Infinity</strong>. Sign bit determines direction.';
+    description = S().infDesc;
   } else if (label === '+0' || label === '-0') {
-    description = 'All exponent bits are <code>0</code> and the mantissa is all <code>0</code> → <strong>Zero</strong>. IEEE 754 has both +0 and −0.';
+    description = S().zeroDesc;
   }
   return `<div class="decode-panel">
-    <h2>Special Value <span class="special-badge">${label}</span></h2>
+    <h2>${S().specialTitle} <span class="special-badge">${label}</span></h2>
     <div class="decode-row">
-      <span class="decode-lbl">Pattern</span>
+      <span class="decode-lbl">${S().specialPat}</span>
       <span class="decode-val">
         <span style="color:#fca5a5;">${sign}</span>
         <span style="color:#bfdbfe;"> ${exp}</span>
@@ -1161,7 +1359,7 @@ function buildSpecialSteps(label, bits) {
       </span>
     </div>
     <div class="decode-row">
-      <span class="decode-lbl">Explanation</span>
+      <span class="decode-lbl">${S().specialExpl}</span>
       <span class="decode-val">${description}</span>
     </div>
   </div>`;
@@ -1219,30 +1417,27 @@ function buildDecodePanel(u32) {
 
   if (isNaNVal) {
     specialNote = '<span class="special-badge">NaN</span>';
-    result = 'Not a Number. All exponent bits are 1 and mantissa is non-zero.';
+    result = S().dNaN;
   } else if (isInfVal) {
     specialNote = `<span class="special-badge">${signBit ? '−' : '+'}Infinity</span>`;
-    result = 'All exponent bits are 1 and mantissa is all 0 → Infinity.';
+    result = S().dInf;
   } else if (isZeroVal) {
     specialNote = `<span class="special-badge">${signBit ? '−0' : '+0'}</span>`;
-    result = 'All exponent and mantissa bits are 0 → Zero.';
+    result = S().dZero;
   } else if (isSubnormal) {
-    specialNote = '<span class="special-badge">Subnormal</span>';
-    const actualExp = -126; // fixed exponent for subnormals
-    const mantFrac = parseInt(manBits, 2) / Math.pow(2, 23);
-    result = `Subnormal (denormalized) number. Exponent = ${actualExp}, value = ±0.${manBits} × 2<sup>−126</sup> = ${value}`;
+    specialNote = `<span class="special-badge">${S().subBadge}</span>`;
+    result = S().dSubResult(value);
   } else {
     const actualExp = expVal - 127;
-    // mantissa fractional value
     const mantFrac = parseInt(manBits, 2) / Math.pow(2, 23);
     const significand = 1 + mantFrac;
     result = `${signBit ? '−' : '+'}${significand.toPrecision(8)} × 2<sup>${actualExp}</sup> = <strong>${value}</strong>`;
   }
 
-  let html = `<div class="decode-panel"><h2>Decode${specialNote}</h2>`;
+  let html = `<div class="decode-panel"><h2>${S().decodeTitle} ${specialNote}</h2>`;
 
   html += `<div class="decode-row">
-    <span class="decode-lbl">Bits</span>
+    <span class="decode-lbl">${S().dBits}</span>
     <span class="decode-val">
       <span style="color:#fca5a5;">${bits[0]}</span>
       <span style="color:#bfdbfe;"> ${expBits}</span>
@@ -1251,37 +1446,37 @@ function buildDecodePanel(u32) {
   </div>`;
 
   html += `<div class="decode-row">
-    <span class="decode-lbl">Sign bit</span>
-    <span class="decode-val"><code>${signBit}</code> → ${signBit ? 'negative' : 'positive'}</span>
+    <span class="decode-lbl">${S().dSign}</span>
+    <span class="decode-val"><code>${signBit}</code> → ${signBit ? S().dNeg : S().dPos}</span>
   </div>`;
 
   html += `<div class="decode-row">
-    <span class="decode-lbl">Exponent bits</span>
-    <span class="decode-val"><code>${expBits}</code> = ${expVal}${isSpecialExp ? ' (special — all 1s)' : isZeroExp ? ' (special — all 0s)' : ` → ${expVal} − 127 = <strong>${expVal - 127}</strong>`}</span>
+    <span class="decode-lbl">${S().dExp}</span>
+    <span class="decode-val"><code>${expBits}</code> = ${expVal}${isSpecialExp ? ` ${S().dAllOnes}` : isZeroExp ? ` ${S().dAllZeros}` : ` → ${expVal} − 127 = <strong>${expVal - 127}</strong>`}</span>
   </div>`;
 
   html += `<div class="decode-row">
-    <span class="decode-lbl">Mantissa bits</span>
-    <span class="decode-val"><code>${manBits}</code>${isSpecialExp || isZeroVal ? '' : ` → ${isSubnormal ? '0' : '1'}.${manBits} (binary fraction)`}</span>
+    <span class="decode-lbl">${S().dMan}</span>
+    <span class="decode-val"><code>${manBits}</code>${isSpecialExp || isZeroVal ? '' : ` → ${isSubnormal ? '0' : '1'}.${manBits} (${S().dBinFrac})`}</span>
   </div>`;
 
   if (!isNaNVal && !isInfVal && !isZeroVal) {
     if (isSubnormal) {
       html += `<div class="decode-row">
-        <span class="decode-lbl">Form</span>
-        <span class="decode-val">0.${manBits} × 2<sup>−126</sup> (subnormal: no implicit leading 1)</span>
+        <span class="decode-lbl">${S().dForm}</span>
+        <span class="decode-val">0.${manBits} × 2<sup>−126</sup> ${S().dSubForm}</span>
       </div>`;
     } else {
       const actualExp = expVal - 127;
       html += `<div class="decode-row">
-        <span class="decode-lbl">Form</span>
+        <span class="decode-lbl">${S().dForm}</span>
         <span class="decode-val">${signBit ? '−' : '+'}1.${manBits} × 2<sup>${actualExp}</sup></span>
       </div>`;
     }
   }
 
   html += `<div class="decode-row">
-    <span class="decode-lbl">Result</span>
+    <span class="decode-lbl">${S().dResult}</span>
     <span class="decode-val">${result}</span>
   </div>`;
 
@@ -1314,9 +1509,10 @@ document.getElementById('roundMode').addEventListener('change', () => {
 
 // ── Initial render ───────────────────────────────────────────────────────────
 buildBitRow();
-// Default: convert -16.75 on load
+// Init language, then default conversion
+setLang(lang);
 convertDecimal();
 </script>
-<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v2.0</div>
+<div style="text-align:center; color:#444450; font-size:0.75rem; padding:24px 0 16px; user-select:none;">v2.1</div>
 </body>
 </html>
