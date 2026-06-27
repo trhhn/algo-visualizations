@@ -288,11 +288,15 @@
   .tabs-row-right { display:flex; justify-content:flex-end; align-items:center; gap:6px; }
   .lang-label { font-size:0.82rem; color:#888888; }
   #langSelect { background:#383840; color:#cccccc; border:2px solid #505055; border-radius:8px; padding:4px 8px; font-size:0.82rem; cursor:pointer; }
+  a.back-link { display:inline-block; font-size:0.82rem; font-weight:600; color:#888890; text-decoration:none; margin-bottom:16px; padding:6px 12px; background:#252528; border:1px solid #383840; border-radius:8px; transition:color 0.15s,border-color 0.15s; }
+  a.back-link:hover { color:#22c55e; border-color:#22c55e; }
   /* iOS Safari zooms on focus when font-size < 16px */
   input, select { font-size: 16px !important; }
 </style>
 </head>
 <body>
+
+<a class="back-link" href="index.html">← Tools</a>
 
 <h1 id="pageTitle">Dijkstra's Algorithm</h1>
 <p class="subtitle" id="pageSubtitle">Draw a graph, then step through how the code finds shortest paths</p>
