@@ -213,7 +213,7 @@
 <div class="app">
 
   <div class="panel">
-    <div class="app-wordmark"><span id="appWordmark">Logic Circuit Simulator</span><span style="display:block;font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-top:2px;">v2.0</span></div>
+    <div class="app-wordmark"><span id="appWordmark">Logic Circuit Simulator</span><span style="display:block;font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-top:2px;">v2.1</span></div>
     <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
@@ -1487,21 +1487,26 @@ function fitToComponents() {
 }
 document.getElementById('btnZoomReset').addEventListener('click', fitToComponents);
 
-// Scroll wheel → zoom · trackpad two-finger swipe (deltaMode=0, no Ctrl) → pan
+// Track physical Ctrl key separately — trackpad pinch also fires ev.ctrlKey=true
+// synthetically, so we can't use ev.ctrlKey to distinguish user intent in wheel events.
+let ctrlKeyDown = false;
+
+// Scroll = zoom (always); Ctrl + scroll = pan
 document.getElementById('circuitSvg').addEventListener('wheel', (ev) => {
   ev.preventDefault();
-  if (ev.deltaMode === 0 && !ev.ctrlKey) {
-    // Trackpad two-finger pan
+  if (ctrlKeyDown) {
+    // Physical Ctrl held → pan
     const r = document.getElementById('circuitSvg').getBoundingClientRect();
-    vbX += ev.deltaX * (vbW / r.width);
-    vbY += ev.deltaY * (vbH / r.height);
+    const mult = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? 400 : 1;
+    vbX += ev.deltaX * mult * (vbW / r.width);
+    vbY += ev.deltaY * mult * (vbH / r.height);
     updateViewBox();
   } else {
-    // Mouse scroll wheel (deltaMode=1) or trackpad pinch (ctrlKey) → zoom
+    // No Ctrl → zoom centered on cursor (includes trackpad pinch via synthetic ctrlKey)
     const p = svgPoint(ev);
     const factor = ev.deltaMode === 1
-      ? Math.pow(1.15, ev.deltaY)    // one discrete step per wheel click
-      : Math.pow(1.002, ev.deltaY);  // pixel-smooth for trackpad pinch
+      ? Math.pow(1.15, ev.deltaY)    // mouse wheel: discrete 15% step per click
+      : Math.pow(1.002, ev.deltaY);  // trackpad: pixel-smooth
     zoomBy(factor, p.x, p.y);
   }
 }, { passive: false });
@@ -1567,12 +1572,16 @@ function onCtrlPanUp(ev) {
   window.removeEventListener('pointermove', onCtrlPanMove);
   window.removeEventListener('pointerup', onCtrlPanUp);
 }
-// Show grab cursor while Ctrl is held over the canvas
+// Ctrl key state + grab cursor hint while Ctrl is held
 window.addEventListener('keydown', ev => {
-  if (ev.key === 'Control') document.getElementById('circuitSvg').classList.add('pan-ready');
+  if (ev.key === 'Control') {
+    ctrlKeyDown = true;
+    document.getElementById('circuitSvg').classList.add('pan-ready');
+  }
 });
 window.addEventListener('keyup', ev => {
   if (ev.key === 'Control') {
+    ctrlKeyDown = false;
     document.getElementById('circuitSvg').classList.remove('pan-ready');
     document.getElementById('circuitSvg').classList.remove('pan-drag');
   }
