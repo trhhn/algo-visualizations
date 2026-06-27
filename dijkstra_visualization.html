@@ -922,9 +922,12 @@ function loadExample() {
   nextNodeNum = 0;
   nextEdgeId = 0;
 
+  // 5-node directed graph designed to show two relaxation updates:
+  // A→B initially 4, updated to 3 via A→C→B
+  // A→C→D initially 7, updated to 6 via A→C→B→D
   const layout = [
-    ['A', 110, 230], ['B', 280, 100], ['C', 280, 360],
-    ['D', 470, 360], ['E', 650, 230], ['F', 470, 100]
+    ['A', 100, 230], ['B', 310, 100], ['C', 310, 360],
+    ['D', 520, 230], ['E', 670, 230]
   ];
   const idOf = {};
   layout.forEach(([name, x, y]) => {
@@ -933,19 +936,15 @@ function loadExample() {
     nodes.push({ id, name, x, y });
   });
 
-  const addUndirected = (a, b, w) => {
+  const addDir = (a, b, w) =>
     edges.push({ id: 'e' + (nextEdgeId++), from: idOf[a], to: idOf[b], weight: w });
-    edges.push({ id: 'e' + (nextEdgeId++), from: idOf[b], to: idOf[a], weight: w });
-  };
-  addUndirected('A', 'B', 7);
-  addUndirected('A', 'C', 9);
-  addUndirected('A', 'F', 14);
-  addUndirected('B', 'C', 10);
-  addUndirected('B', 'D', 15);
-  addUndirected('C', 'D', 11);
-  addUndirected('C', 'F', 2);
-  addUndirected('D', 'E', 6);
-  addUndirected('E', 'F', 9);
+
+  addDir('A', 'B', 4);
+  addDir('A', 'C', 2);
+  addDir('C', 'B', 1);
+  addDir('C', 'D', 5);
+  addDir('B', 'D', 3);
+  addDir('D', 'E', 1);
 
   pendingEdgeSource = null;
   steps = [];
