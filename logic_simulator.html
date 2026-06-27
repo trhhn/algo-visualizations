@@ -205,7 +205,8 @@
   body.theme-light .palette-item:hover { border-color: #22c55e; }
   body.theme-light .palette-item.active { background: #edfff3; border-color: #22c55e; }
   body.theme-light .palette-item .lbl { color: #333333; }
-
+  /* iOS Safari zooms on focus when font-size < 16px */
+  input, select { font-size: 16px !important; }
 </style>
 </head>
 <body>

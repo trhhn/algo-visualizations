@@ -118,6 +118,8 @@
     .grid { grid-template-columns: 1fr; max-width: 480px; }
     body { padding: 40px 16px 60px; }
   }
+  /* iOS Safari zooms on focus when font-size < 16px */
+  input, select { font-size: 16px !important; }
 </style>
 </head>
 <body>

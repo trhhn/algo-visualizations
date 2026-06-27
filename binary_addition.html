@@ -359,6 +359,8 @@
     .lang-label { grid-column: 1; justify-content: flex-start; }
     .operand input { width: 140px; }
   }
+  /* iOS Safari zooms on focus when font-size < 16px */
+  input, select { font-size: 16px !important; }
 </style>
 </head>
 <body>

@@ -288,6 +288,8 @@
   .tabs-row-right { display:flex; justify-content:flex-end; align-items:center; gap:6px; }
   .lang-label { font-size:0.82rem; color:#888888; }
   #langSelect { background:#383840; color:#cccccc; border:2px solid #505055; border-radius:8px; padding:4px 8px; font-size:0.82rem; cursor:pointer; }
+  /* iOS Safari zooms on focus when font-size < 16px */
+  input, select { font-size: 16px !important; }
 </style>
 </head>
 <body>
