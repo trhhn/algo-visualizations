@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Addition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
+    background: #1e1e22;
+    color: #cccccc;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+
+  a.back-link {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #888890;
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 6px 12px;
+    background: #252528;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  a.back-link:hover { color: #22c55e; border-color: #22c55e; }
+
+  .page-header { text-align: center; margin-bottom: 24px; }
+  .page-header h1 { font-size: 1.6rem; font-weight: 700; color: #eeeeee; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .page-header .subtitle { color: #666670; font-size: 0.9rem; }
+
+  /* ── Tabs row (mode + lang) ── */
+  .tabs-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    max-width: 860px;
+    margin: 0 auto 24px;
+  }
+  .mode-tabs { display: flex; gap: 4px; justify-content: center; grid-column: 2; }
+  .tab-btn {
+    background: #252528;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    color: #888890;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: #cccccc; border-color: #505058; }
+  .tab-btn.active { background: #22c55e; color: #111; border-color: #22c55e; }
+
+  .lang-label { font-size: 0.78rem; color: #888888; display: flex; align-items: center; gap: 6px; justify-content: flex-end; grid-column: 3; }
+  #langSelect { background: #252528; color: #cccccc; border: 1px solid #3a3a42; border-radius: 6px; padding: 4px 8px; font-size: 0.78rem; cursor: pointer; }
+
+  /* ── Card ── */
+  .card {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+  }
+  .card h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+
+  /* ── Config row ── */
+  .config-strip {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2e2e34;
+  }
+  .config-strip label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+  }
+  .config-strip select {
+    background: #13131a;
+    color: #eeeeee;
+    border: 1px solid #383840;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 0.82rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    cursor: pointer;
+    outline: none;
+  }
+  .config-strip select:focus { border-color: #22c55e; }
+  #bitsGroup { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Operand row ── */
+  .operand-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .operand {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .operand label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+  }
+  .operand input {
+    background: #13131a;
+    color: #eeeeee;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    outline: none;
+    width: 170px;
+    transition: border-color 0.15s;
+  }
+  .operand input:focus { border-color: #22c55e; }
+  .operand .hint {
+    font-size: 0.72rem;
+    color: #505058;
+    font-family: 'Consolas', 'Courier New', monospace;
+    min-height: 1em;
+  }
+  .operand .hint.valid { color: #888890; }
+  .operand .hint.warn  { color: #f59e0b; }
+
+  .plus-sign {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #505058;
+  }
+
+  button.go-btn {
+    background: #383840;
+    color: #cccccc;
+    border: 1px solid #505055;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  button.go-btn:hover { background: #22c55e; color: #111; border-color: #22c55e; }
+
+  .error-msg { color: #fca5a5; font-size: 0.85rem; margin-top: 10px; display: none; }
+  .error-msg.visible { display: block; }
+
+  /* ── Result bar ── */
+  .result-bar {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    background: #13131a;
+    border-radius: 10px;
+    padding: 12px 20px;
+    display: none;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    border: 1px solid #2e2e34;
+  }
+  .result-bar.visible { display: flex; }
+  .result-item { display: flex; gap: 8px; align-items: baseline; }
+  .result-lbl { color: #666670; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .result-val { font-family: 'Consolas', 'Courier New', monospace; color: #eeeeee; font-weight: 600; font-size: 0.95rem; }
+  .result-val.green  { color: #86efac; }
+  .result-val.red    { color: #fca5a5; }
+  .result-val.orange { color: #f59e0b; }
+  .overflow-badge {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .overflow-badge.ok   { background: #0a2214; color: #86efac; border: 1px solid #22c55e; }
+  .overflow-badge.warn { background: #3b0a0a; color: #fca5a5; border: 1px solid #dc2626; }
+
+  /* ── Steps section ── */
+  .steps-section { max-width: 860px; margin: 0 auto; display: none; }
+  .steps-section.visible { display: block; }
+
+  .steps-panel {
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+    margin-bottom: 16px;
+  }
+  .steps-panel h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+  .step { display: flex; gap: 14px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #2e2e34; }
+  .step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .step-badge {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    background: #383840;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: #888890;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; min-width: 0; font-size: 0.93rem; line-height: 1.7; }
+  .step-body strong { color: #eeeeee; }
+  .step-body code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #13131a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: #86efac;
+  }
+  .step-title { font-weight: 700; color: #eeeeee; margin-bottom: 5px; }
+
+  /* ── Addition visual grid ── */
+  .add-grid {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  .grid-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .grid-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #505058;
+    width: 60px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .grid-cells { display: flex; gap: 3px; }
+  .grid-sep {
+    margin: 4px 0;
+    border-top: 2px solid #383840;
+    margin-left: 66px;
+  }
+
+  /* bit cells */
+  .bc {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700;
+    border-radius: 5px;
+    flex-shrink: 0;
+    transition: box-shadow 0.15s;
+  }
+  .bc.data1   { background: #15803d; color: #86efac; border: 1px solid #22c55e; }
+  .bc.data0   { background: #0a2214; color: #4a9a6a; border: 1px solid #1a4a2a; }
+  .bc.carry1  { background: #92400e; color: #fcd34d; border: 1px solid #f59e0b; }
+  .bc.carry0  { background: #1a1206; color: #6b5a30; border: 1px solid #3a3010; }
+  .bc.carry-empty { background: transparent; border: none; color: transparent; }
+  .bc.overflow1 { background: #9b1c1c; color: #fca5a5; border: 1px solid #dc2626; }
+  .bc.overflow0 { background: #0a1218; color: #4a7a9a; border: 1px solid #1a3a50; }
+  .bc.dim1    { background: #1a2a1a; color: #3a6a3a; border: 1px solid #2a4a2a; }
+  .bc.dim0    { background: #131318; color: #383840; border: 1px solid #252528; }
+
+  .grid-overflow-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #dc2626;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    margin-left: 4px;
+  }
+
+  /* column table in steps */
+  .col-table {
+    border-collapse: collapse;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    margin: 10px 0;
+  }
+  .col-table th {
+    color: #666670;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 14px 4px 0;
+    text-align: left;
+    border-bottom: 1px solid #383840;
+  }
+  .col-table td { padding: 3px 14px 3px 0; color: #cccccc; }
+  .col-table td.c-bit1 { color: #86efac; font-weight: 700; }
+  .col-table td.c-bit0 { color: #505058; }
+  .col-table td.c-carry{ color: #f59e0b; font-weight: 700; }
+  .col-table td.c-sum  { color: #eeeeee; font-weight: 700; }
+  .col-table tr.overflow-row td { color: #fca5a5; font-weight: 700; }
+
+  /* info notes */
+  .info-note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #86efac;
+    line-height: 1.6;
+  }
+  .info-note.orange { background: #1f1a0d; border-color: #4a3a10; color: #f59e0b; }
+  .info-note.red    { background: #1f0a0a; border-color: #6a1a1a; color: #fca5a5; }
+  .info-note.blue   { background: #0d1828; border-color: #1e3a6a; color: #bfdbfe; }
+
+  .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
+
+  @media (max-width: 640px) {
+    .mode-tabs { gap: 3px; }
+    .tab-btn { padding: 6px 9px; font-size: 0.75rem; }
+    .tabs-row { grid-template-columns: 1fr; gap: 10px; }
+    .mode-tabs { grid-column: 1; }
+    .lang-label { grid-column: 1; justify-content: flex-start; }
+    .operand input { width: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← GDI</a>
+
+<div class="page-header">
+  <h1 id="pageTitle">Binary Addition</h1>
+  <p class="subtitle" id="pageSubtitle">Mathematical · Unsigned · Two's Complement</p>
+</div>
+
+<div class="tabs-row">
+  <div></div>
+  <div class="mode-tabs">
+    <button class="tab-btn active" onclick="setMode('math', this)" id="tabMath">Mathematical</button>
+    <button class="tab-btn" onclick="setMode('unsigned', this)" id="tabUnsigned">Unsigned</button>
+    <button class="tab-btn" onclick="setMode('tc', this)" id="tabTc">Two's Complement</button>
+  </div>
+  <label class="lang-label"><span id="langLbl">Language:</span>
+    <select id="langSelect" onchange="setLang(this.value)">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+  </label>
+</div>
+
+<div class="card">
+  <h2 id="inputHdr">Input</h2>
+  <div class="config-strip" id="configStrip">
+    <div id="bitsGroup" style="display:none">
+      <label id="bitsLbl">Bits:</label>
+      <select id="bitsSelect" onchange="clearResult()">
+        <option value="4">4</option>
+        <option value="8">8</option>
+      </select>
+    </div>
+    <div id="inputFmtNote" style="font-size:0.78rem;color:#505058"></div>
+  </div>
+  <div class="operand-row">
+    <div class="operand">
+      <label id="lblA">A</label>
+      <input type="text" id="inputA" placeholder="e.g. 0101"
+        oninput="onInput('A')" onkeydown="if(event.key==='Enter')runAdd()">
+      <div class="hint" id="hintA"></div>
+    </div>
+    <div class="plus-sign">+</div>
+    <div class="operand">
+      <label id="lblB">B</label>
+      <input type="text" id="inputB" placeholder="e.g. 0011"
+        oninput="onInput('B')" onkeydown="if(event.key==='Enter')runAdd()">
+      <div class="hint" id="hintB"></div>
+    </div>
+    <button class="go-btn" onclick="runAdd()" id="btnAdd">=</button>
+  </div>
+  <div class="error-msg" id="addErr"></div>
+</div>
+
+<div class="result-bar" id="resultBar">
+  <div class="result-item">
+    <span class="result-lbl" id="resALbl">A</span>
+    <span class="result-val" id="resA"></span>
+  </div>
+  <div class="result-item">
+    <span class="result-lbl" style="color:#505058">+</span>
+    <span class="result-lbl" id="resBLbl">B</span>
+    <span class="result-val" id="resB"></span>
+  </div>
+  <div class="result-item">
+    <span class="result-lbl" style="color:#505058">=</span>
+    <span class="result-lbl" id="resSumLbl">Sum</span>
+    <span class="result-val green" id="resSum"></span>
+  </div>
+  <div class="result-item" id="resDecItem">
+    <span class="result-lbl" id="resDecLbl">Decimal</span>
+    <span class="result-val orange" id="resDec"></span>
+  </div>
+  <span class="overflow-badge ok" id="overflowBadge" style="display:none"></span>
+</div>
+
+<div class="steps-section" id="addSteps"></div>
+
+<div class="ver">v1.1</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  Strings
+// ─────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    pageTitle: 'Binary Addition',
+    pageSubtitle: "Mathematical · Unsigned · Two's Complement",
+    langLbl: 'Language:',
+    tabMath: 'Mathematical',
+    tabUnsigned: 'Unsigned',
+    tabTc: "Two's Complement",
+    inputHdr: 'Input',
+    bitsLbl: 'Bits:',
+    lblA: 'A (binary)',
+    lblB: 'B (binary)',
+    btnAdd: '=',
+    resALbl: 'A',
+    resBLbl: 'B',
+    resSumLbl: 'Sum',
+    resDecLbl: 'Decimal',
+    badgeOk: 'No Overflow',
+    badgeOverflow: 'OVERFLOW',
+    fmtMath: 'Enter binary numbers of any length.',
+    fmtUnsigned: (n) => `Enter ${n}-bit unsigned binary (0 – ${Math.pow(2,n)-1}).`,
+    fmtTc: (n) => `Enter ${n}-bit two's complement pattern (signed range: ${-Math.pow(2,n-1)} – ${Math.pow(2,n-1)-1}).`,
+    errBinary: 'Only 0 and 1 allowed.',
+    errTooLong: (n) => `At most ${n} bits allowed in this mode.`,
+    errTcRange: (min, max) => `Value out of range (${min} to ${max}).`,
+
+    // step headings
+    hdrGrid: 'Addition Grid',
+    hdrSetup: 'Setup',
+    hdrColumns: 'Column-by-Column (right to left)',
+    hdrResult: 'Result',
+    hdrOverflow: 'Overflow Analysis',
+
+    // step bodies (functions)
+    setupMath: (a, b, va, vb) =>
+      `A = <code>${a}</code> (= ${va} decimal)<br>B = <code>${b}</code> (= ${vb} decimal)<br>No bit-width limit — the result can use as many bits as needed.`,
+    setupUnsigned: (n, a, b, va, vb) =>
+      `${n}-bit unsigned addition. Valid range: 0 – ${Math.pow(2,n)-1}.<br>A = <code>${a}</code> (= ${va})<br>B = <code>${b}</code> (= ${vb})`,
+    setupTc: (n, a, b, va, vb) =>
+      `${n}-bit two's complement addition. Signed range: ${-Math.pow(2,n-1)} – ${Math.pow(2,n-1)-1}.<br>A = <code>${a}</code> (= ${va})<br>B = <code>${b}</code> (= ${vb})`,
+
+    colHdr: ['Position', '2ⁱ', 'A', 'B', '+Carry in', 'Sum', 'Bit', 'Carry out'],
+
+    resultMath: (bits, val) =>
+      `Binary: <code>${bits}</code><br>Decimal: <strong>${val}</strong>`,
+    resultUnsigned: (bits, val, overflow, nBits) => overflow
+      ? `The carry-out bit is <strong>1</strong> — the true sum ${val+Math.pow(2,nBits)} exceeds ${nBits} bits.<br>Stored result (truncated): <code>${bits}</code> = ${val}`
+      : `Binary: <code>${bits}</code><br>Decimal: <strong>${val}</strong> — fits in ${nBits} bits, no overflow.`,
+    resultTcOk: (bits, val, n) =>
+      `Binary: <code>${bits}</code><br>Signed value: <strong>${val}</strong> — fits in ${n}-bit two's complement.`,
+    resultTcOverflow: (bits, val, aVal, bVal) =>
+      `The true result (${aVal} + ${bVal} = ${aVal+bVal}) cannot be stored.<br>The bit pattern <code>${bits}</code> would decode to <strong>${val}</strong> — the wrong sign.<br><strong>This is illegal overflow.</strong>`,
+
+    overflowRule1: 'Rule 1 (hardware): carry INTO MSB ≠ carry OUT OF MSB',
+    overflowRule2: 'Rule 2 (signs): both inputs have the same sign, but the result has the opposite sign.',
+    overflowNote: (aSign, bSign, rSign) =>
+      `A sign = ${aSign}, B sign = ${bSign} → result sign = ${rSign} (flipped) → <strong>overflow</strong>.`,
+    noOverflowNote: (aSign, bSign) =>
+      `A sign = ${aSign}, B sign = ${bSign}. ${aSign !== bSign ? 'Different signs — overflow is impossible for mixed-sign addition.' : 'Same sign, result same sign — no overflow.'}`,
+    carryIntoMSB: (v) => `Carry into MSB: <strong>${v}</strong>`,
+    carryOutMSB: (v) => `Carry out of MSB: <strong>${v}</strong>`,
+  },
+
+  de: {
+    pageTitle: 'Binäre Addition',
+    pageSubtitle: 'Mathematisch · Vorzeichenlos · Zweierkomplement',
+    langLbl: 'Sprache:',
+    tabMath: 'Mathematisch',
+    tabUnsigned: 'Vorzeichenlos',
+    tabTc: 'Zweierkomplement',
+    inputHdr: 'Eingabe',
+    bitsLbl: 'Bits:',
+    lblA: 'A (binär)',
+    lblB: 'B (binär)',
+    btnAdd: '=',
+    resALbl: 'A',
+    resBLbl: 'B',
+    resSumLbl: 'Summe',
+    resDecLbl: 'Dezimal',
+    badgeOk: 'Kein Überlauf',
+    badgeOverflow: 'ÜBERLAUF',
+    fmtMath: 'Beliebige Binärzahlen eingeben.',
+    fmtUnsigned: (n) => `${n}-Bit vorzeichenlose Binärzahl (0 – ${Math.pow(2,n)-1}).`,
+    fmtTc: (n) => `${n}-Bit Zweierkomplement-Bitmuster (Wertebereich: ${-Math.pow(2,n-1)} – ${Math.pow(2,n-1)-1}).`,
+    errBinary: 'Nur 0 und 1 erlaubt.',
+    errTooLong: (n) => `Maximal ${n} Bits in diesem Modus erlaubt.`,
+    errTcRange: (min, max) => `Wert außerhalb des Bereichs (${min} bis ${max}).`,
+
+    hdrGrid: 'Additions-Schema',
+    hdrSetup: 'Vorbereitung',
+    hdrColumns: 'Spaltenweise (von rechts nach links)',
+    hdrResult: 'Ergebnis',
+    hdrOverflow: 'Überlaufanalyse',
+
+    setupMath: (a, b, va, vb) =>
+      `A = <code>${a}</code> (= ${va} dezimal)<br>B = <code>${b}</code> (= ${vb} dezimal)<br>Keine Bit-Breitenbegrenzung — das Ergebnis kann so viele Bits verwenden wie nötig.`,
+    setupUnsigned: (n, a, b, va, vb) =>
+      `${n}-Bit vorzeichenlose Addition. Wertebereich: 0 – ${Math.pow(2,n)-1}.<br>A = <code>${a}</code> (= ${va})<br>B = <code>${b}</code> (= ${vb})`,
+    setupTc: (n, a, b, va, vb) =>
+      `${n}-Bit Zweierkomplement-Addition. Wertebereich: ${-Math.pow(2,n-1)} – ${Math.pow(2,n-1)-1}.<br>A = <code>${a}</code> (= ${va})<br>B = <code>${b}</code> (= ${vb})`,
+
+    colHdr: ['Position', '2ⁱ', 'A', 'B', '+Übertrag ein', 'Summe', 'Bit', 'Übertrag aus'],
+
+    resultMath: (bits, val) =>
+      `Binär: <code>${bits}</code><br>Dezimal: <strong>${val}</strong>`,
+    resultUnsigned: (bits, val, overflow, nBits) => overflow
+      ? `Das Übertragsbit ist <strong>1</strong> — die echte Summe ${val+Math.pow(2,nBits)} passt nicht in ${nBits} Bits.<br>Gespeichertes Ergebnis (abgeschnitten): <code>${bits}</code> = ${val}`
+      : `Binär: <code>${bits}</code><br>Dezimal: <strong>${val}</strong> — passt in ${nBits} Bits, kein Überlauf.`,
+    resultTcOk: (bits, val, n) =>
+      `Binär: <code>${bits}</code><br>Vorzeichenbehafteter Wert: <strong>${val}</strong> — passt in ${n}-Bit-Zweierkomplement.`,
+    resultTcOverflow: (bits, val, aVal, bVal) =>
+      `Das korrekte Ergebnis (${aVal} + ${bVal} = ${aVal+bVal}) kann nicht gespeichert werden.<br>Das Bitmuster <code>${bits}</code> wird als <strong>${val}</strong> interpretiert — falsches Vorzeichen.<br><strong>Das ist ein illegaler Überlauf.</strong>`,
+
+    overflowRule1: 'Regel 1 (Hardware): Übertrag IN MSB ≠ Übertrag AUS MSB',
+    overflowRule2: 'Regel 2 (Vorzeichen): beide Eingaben haben dasselbe Vorzeichen, aber das Ergebnis hat das entgegengesetzte.',
+    overflowNote: (aSign, bSign, rSign) =>
+      `Vorzeichen A = ${aSign}, Vorzeichen B = ${bSign} → Vorzeichen Ergebnis = ${rSign} (umgekehrt) → <strong>Überlauf</strong>.`,
+    noOverflowNote: (aSign, bSign) =>
+      `Vorzeichen A = ${aSign}, Vorzeichen B = ${bSign}. ${aSign !== bSign ? 'Verschiedene Vorzeichen — bei gemischter Addition ist Überlauf unmöglich.' : 'Gleiches Vorzeichen, Ergebnis gleiches Vorzeichen — kein Überlauf.'}`,
+    carryIntoMSB: (v) => `Übertrag in MSB: <strong>${v}</strong>`,
+    carryOutMSB: (v) => `Übertrag aus MSB: <strong>${v}</strong>`,
+  },
+};
+
+let lang = localStorage.getItem('lang') || 'en';
+let mode = 'math'; // 'math' | 'unsigned' | 'tc'
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('langSelect').value = l;
+  applyStaticLang();
+}
+
+function applyStaticLang() {
+  const s = S();
+  const ids = ['pageTitle','pageSubtitle','langLbl','tabMath','tabUnsigned','tabTc',
+    'inputHdr','bitsLbl','lblA','lblB','btnAdd','resALbl','resBLbl','resSumLbl','resDecLbl'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && s[id] !== undefined) el.textContent = s[id];
+  });
+  updateFormatNote();
+  // Re-run hints
+  onInput('A'); onInput('B');
+}
+
+// ─────────────────────────────────────────────
+//  Mode management
+// ─────────────────────────────────────────────
+function setMode(m, btn) {
+  mode = m;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('bitsGroup').style.display = (m === 'math') ? 'none' : 'flex';
+  clearResult();
+  updateFormatNote();
+  onInput('A'); onInput('B');
+}
+
+function updateFormatNote() {
+  const s = S();
+  const n = parseInt(document.getElementById('bitsSelect').value);
+  const el = document.getElementById('inputFmtNote');
+  if (mode === 'math') el.textContent = s.fmtMath;
+  else if (mode === 'unsigned') el.textContent = s.fmtUnsigned(n);
+  else el.textContent = s.fmtTc(n);
+}
+
+// ─────────────────────────────────────────────
+//  Input hints
+// ─────────────────────────────────────────────
+function onInput(which) {
+  clearResult();
+  const id = 'input' + which;
+  const hintId = 'hint' + which;
+  const raw = document.getElementById(id).value.trim();
+  const hint = document.getElementById(hintId);
+  if (!raw) { hint.textContent = ''; hint.className = 'hint'; return; }
+  if (!/^[01]+$/.test(raw)) { hint.textContent = S().errBinary; hint.className = 'hint warn'; return; }
+  const unsignedVal = parseInt(raw, 2);
+  if (mode === 'tc') {
+    const n = parseInt(document.getElementById('bitsSelect').value);
+    if (raw.length === n) {
+      const signed = raw[0] === '1' ? unsignedVal - Math.pow(2, n) : unsignedVal;
+      hint.textContent = `= ${signed}`;
+    } else if (raw.length < n) {
+      hint.textContent = `= ${unsignedVal} (unsigned)`;
+    } else {
+      hint.textContent = `> ${n} bits`;
+    }
+  } else {
+    hint.textContent = `= ${unsignedVal}`;
+  }
+  hint.className = 'hint valid';
+}
+
+// ─────────────────────────────────────────────
+//  Core computation
+// ─────────────────────────────────────────────
+function computeAddition(aStr, bStr) {
+  const len = Math.max(aStr.length, bStr.length);
+  const a = aStr.padStart(len, '0'), b = bStr.padStart(len, '0');
+  const colsRTL = []; let carry = 0;
+  for (let i = len - 1; i >= 0; i--) {
+    const bA = parseInt(a[i]), bB = parseInt(b[i]), sum = bA + bB + carry;
+    colsRTL.push({ bitA: bA, bitB: bB, carryIn: carry, resultBit: sum & 1, carryOut: sum >> 1 });
+    carry = sum >> 1;
+  }
+  colsRTL.reverse(); // [0]=MSB
+  return {
+    cols: colsRTL,
+    finalCarry: carry,
+    len,
+    resultStr: colsRTL.map(c => c.resultBit).join(''),
+    fullResultStr: (carry ? '1' : '') + colsRTL.map(c => c.resultBit).join(''),
+  };
+}
+
+function tcDecode(bitStr) {
+  const n = bitStr.length, u = parseInt(bitStr, 2);
+  return bitStr[0] === '1' ? u - Math.pow(2, n) : u;
+}
+
+// ─────────────────────────────────────────────
+//  Main handler
+// ─────────────────────────────────────────────
+function clearResult() {
+  document.getElementById('resultBar').classList.remove('visible');
+  document.getElementById('addSteps').classList.remove('visible');
+  document.getElementById('addErr').classList.remove('visible');
+}
+
+function showErr(msg) {
+  const el = document.getElementById('addErr');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function runAdd() {
+  clearResult();
+  const s = S();
+  const n = parseInt(document.getElementById('bitsSelect').value);
+  let rawA = document.getElementById('inputA').value.trim();
+  let rawB = document.getElementById('inputB').value.trim();
+
+  if (!rawA) rawA = '0';
+  if (!rawB) rawB = '0';
+
+  if (!/^[01]+$/.test(rawA) || !/^[01]+$/.test(rawB)) { showErr(s.errBinary); return; }
+
+  if (mode !== 'math') {
+    if (rawA.length > n || rawB.length > n) { showErr(s.errTooLong(n)); return; }
+    rawA = rawA.padStart(n, '0');
+    rawB = rawB.padStart(n, '0');
+  }
+
+  const { cols, finalCarry, len, resultStr, fullResultStr } = computeAddition(rawA, rawB);
+
+  const valA = parseInt(rawA, 2);
+  const valB = parseInt(rawB, 2);
+  const valSum = parseInt(resultStr, 2);
+
+  // Interpret result
+  let overflow = false;
+  let displaySum, displayDec;
+
+  if (mode === 'math') {
+    displaySum = fullResultStr;
+    displayDec = parseInt(fullResultStr, 2).toString();
+    document.getElementById('resDecItem').style.display = '';
+  } else if (mode === 'unsigned') {
+    overflow = finalCarry === 1;
+    displaySum = (overflow ? '<span style="color:#dc2626">1</span>' : '') + resultStr;
+    displayDec = valSum.toString();
+    document.getElementById('resDecItem').style.display = '';
+  } else { // tc
+    overflow = (cols[0].carryIn ^ finalCarry) === 1;
+    displaySum = resultStr;
+    const signed = tcDecode(resultStr);
+    displayDec = signed.toString();
+    document.getElementById('resDecItem').style.display = '';
+  }
+
+  // Signed display values for TC
+  const displayValA = mode === 'tc' ? tcDecode(rawA).toString() : valA.toString();
+  const displayValB = mode === 'tc' ? tcDecode(rawB).toString() : valB.toString();
+
+  document.getElementById('resA').textContent = rawA + (mode !== 'math' ? ` (${displayValA})` : '');
+  document.getElementById('resB').textContent = rawB + (mode !== 'math' ? ` (${displayValB})` : '');
+  document.getElementById('resSum').innerHTML = displaySum;
+  document.getElementById('resDec').textContent = displayDec;
+
+  const badge = document.getElementById('overflowBadge');
+  if (mode !== 'math') {
+    badge.style.display = '';
+    badge.textContent = overflow ? s.badgeOverflow : s.badgeOk;
+    badge.className = 'overflow-badge ' + (overflow ? 'warn' : 'ok');
+  } else {
+    badge.style.display = 'none';
+  }
+
+  document.getElementById('resultBar').classList.add('visible');
+
+  // Build steps
+  document.getElementById('addSteps').innerHTML = buildSteps(rawA, rawB, cols, finalCarry, resultStr, fullResultStr, n, valA, valB, overflow);
+  document.getElementById('addSteps').classList.add('visible');
+}
+
+// ─────────────────────────────────────────────
+//  Steps builder
+// ─────────────────────────────────────────────
+function makeStep(n, titleHtml, bodyHtml) {
+  return `<div class="step">
+    <div class="step-badge">${n}</div>
+    <div class="step-body">
+      <div class="step-title">${titleHtml}</div>
+      ${bodyHtml}
+    </div>
+  </div>`;
+}
+
+function buildSteps(aStr, bStr, cols, finalCarry, resultStr, fullResultStr, nBits, valA, valB, overflow) {
+  const s = S();
+  const de = lang === 'de';
+
+  // Signed values for TC
+  const signedA = mode === 'tc' ? tcDecode(aStr) : valA;
+  const signedB = mode === 'tc' ? tcDecode(bStr) : valB;
+  const signedResult = mode === 'tc' ? tcDecode(resultStr) : parseInt(resultStr, 2);
+
+  let html = `<div class="steps-panel"><h2>${s.hdrGrid}</h2>`;
+  html += renderGrid(aStr, bStr, cols, finalCarry, resultStr);
+  html += `</div>`;
+
+  html += `<div class="steps-panel"><h2>${s.hdrSetup} &amp; ${s.hdrColumns}</h2>`;
+
+  // Setup step
+  let setupBody;
+  if (mode === 'math') setupBody = s.setupMath(aStr, bStr, valA, valB);
+  else if (mode === 'unsigned') setupBody = s.setupUnsigned(nBits, aStr, bStr, valA, valB);
+  else setupBody = s.setupTc(nBits, aStr, bStr, signedA, signedB);
+  html += makeStep(1, s.hdrSetup, setupBody);
+
+  // Column step (compact table)
+  const colTh = s.colHdr.map(h => `<th>${h}</th>`).join('');
+  const colRows = cols.map((c, idx) => {
+    const pos = cols.length - 1 - idx; // rightmost = 0
+    const isMSB = idx === 0;
+    const pv = Math.pow(2, pos);
+    const sumVal = c.bitA + c.bitB + c.carryIn;
+    const isTcMsbOverflow = mode === 'tc' && isMSB && overflow;
+    const rowClass = isTcMsbOverflow ? ' class="overflow-row"' : '';
+    return `<tr${rowClass}>
+      <td>${de ? 'Bit' : 'Bit'} ${pos}${isMSB ? ' (MSB)' : (pos===0?' (LSB)':'')}${isTcMsbOverflow?' ⚠':''}</td>
+      <td>${pv}</td>
+      <td class="${c.bitA ? 'c-bit1' : 'c-bit0'}">${c.bitA}</td>
+      <td class="${c.bitB ? 'c-bit1' : 'c-bit0'}">${c.bitB}</td>
+      <td class="${c.carryIn ? 'c-carry' : 'c-bit0'}">${c.carryIn}</td>
+      <td class="c-sum">${sumVal}</td>
+      <td class="${c.resultBit ? 'c-bit1' : 'c-bit0'}">${c.resultBit}</td>
+      <td class="${c.carryOut ? 'c-carry' : 'c-bit0'}">${c.carryOut}</td>
+    </tr>`;
+  }).join('');
+  const carryFooter = `<tr style="border-top:1px solid #383840">
+    <td colspan="6" style="color:#666670;font-size:0.78rem">${de ? 'Finaler Übertrag (aus MSB):' : 'Final carry-out (from MSB):'}</td>
+    <td colspan="2" class="${finalCarry ? 'c-carry' : 'c-bit0'}" style="font-weight:700">${finalCarry}</td>
+  </tr>`;
+  html += makeStep(2, s.hdrColumns,
+    `<div style="overflow-x:auto"><table class="col-table"><thead><tr>${colTh}</tr></thead><tbody>${colRows}${carryFooter}</tbody></table></div>`
+  );
+
+  html += `</div>`;
+
+  // Result + overflow analysis
+  html += `<div class="steps-panel"><h2>${s.hdrResult}</h2>`;
+
+  if (mode === 'math') {
+    html += makeStep(3, s.hdrResult,
+      s.resultMath(fullResultStr, parseInt(fullResultStr, 2))
+    );
+  } else if (mode === 'unsigned') {
+    const truncVal = parseInt(resultStr, 2);
+    html += makeStep(3, s.hdrResult,
+      s.resultUnsigned(resultStr, truncVal, overflow, nBits)
+    );
+    if (overflow) {
+      html += makeStep(4, s.hdrOverflow,
+        `<div class="info-note red">${de
+          ? `Das Ergebnis ${truncVal + Math.pow(2,nBits)} ist zu groß für ${nBits} Bits. Das Übertragsbit geht verloren. Das gespeicherte Ergebnis ist ${truncVal} — also um 2<sup>${nBits}</sup> = ${Math.pow(2,nBits)} zu klein.`
+          : `The result ${truncVal + Math.pow(2,nBits)} is too large for ${nBits} bits. The carry-out bit is lost. The stored result is ${truncVal} — exactly 2<sup>${nBits}</sup> = ${Math.pow(2,nBits)} too small.`
+        }</div>`
+      );
+    }
+  } else { // tc
+    if (!overflow) {
+      html += makeStep(3, s.hdrResult,
+        s.resultTcOk(resultStr, signedResult, nBits)
+      );
+    } else {
+      html += makeStep(3, s.hdrResult,
+        `<div class="info-note red">${s.resultTcOverflow(resultStr, signedResult, signedA, signedB)}</div>`
+      );
+    }
+
+    // Overflow analysis
+    const carryIntoMSB = cols[0].carryIn;
+    const carryOutMSB = finalCarry;
+    const aSign = aStr[0];
+    const bSign = bStr[0];
+    const rSign = resultStr[0];
+    const signWord = (b) => b === '0' ? (de ? 'positiv (0)' : 'positive (0)') : (de ? 'negativ (1)' : 'negative (1)');
+
+    html += makeStep(4, s.hdrOverflow,
+      `${s.carryIntoMSB(carryIntoMSB)}<br>
+       ${s.carryOutMSB(carryOutMSB)}<br>
+       <strong>${s.overflowRule1}:</strong> ${carryIntoMSB} ${carryIntoMSB !== carryOutMSB ? '≠' : '='} ${carryOutMSB} → ${overflow ? `<span style="color:#fca5a5">${de?'Überlauf!':'Overflow!'}</span>` : (de?'kein Überlauf':'no overflow')}<br><br>
+       <strong>${s.overflowRule2}</strong><br>
+       ${overflow ? s.overflowNote(signWord(aSign), signWord(bSign), signWord(rSign)) : s.noOverflowNote(signWord(aSign), signWord(bSign))}
+       ${overflow ? `<div class="info-note red" style="margin-top:10px">${de
+         ? `Merkhilfe: Wenn beide Summanden dasselbe Vorzeichen haben und das Ergebnis ein anderes Vorzeichen hat, ist ein Überlauf aufgetreten. Der Wert kann in diesem Format nicht dargestellt werden.`
+         : `Remember: if both operands share the same sign but the result has the opposite sign, an overflow has occurred. The value cannot be represented in this format.`
+       }</div>` : ''}`
+    );
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ─────────────────────────────────────────────
+//  Grid renderer
+// ─────────────────────────────────────────────
+function renderGrid(aStr, bStr, cols, finalCarry, resultStr) {
+  const de = lang === 'de';
+  const n = cols.length;
+  // For math mode with carry, we have an extra column on the left
+  const hasExtraCol = (mode === 'math' && finalCarry === 1) || (mode === 'unsigned' && finalCarry === 1);
+
+  function row(labelKey, cells, extraCell) {
+    const label = de
+      ? { carry: 'Übertrag:', a: 'A:', b: 'B:', result: 'Ergebnis:' }[labelKey]
+      : { carry: 'Carry:', a: 'A:', b: 'B:', result: 'Result:' }[labelKey];
+    const extra = extraCell !== undefined
+      ? `<div class="bc ${extraCell}">${extraCell.includes('overflow') ? '1' : (extraCell.includes('carry1') ? '1' : extraCell.includes('carry0') ? '' : '')}</div>`
+      : (hasExtraCol ? `<div class="bc carry-empty"> </div>` : '');
+
+    // For carry row extra: show the final carry
+    let extraHtml = '';
+    if (labelKey === 'carry') {
+      if (mode === 'math' && finalCarry === 1) {
+        extraHtml = `<div class="bc carry1">1</div>`;
+      } else if (mode === 'unsigned' && finalCarry === 1) {
+        extraHtml = `<div class="bc overflow1" title="${de?'Überlauf-Bit':'Overflow bit'}">1</div>`;
+      } else if (hasExtraCol) {
+        extraHtml = `<div class="bc carry-empty"> </div>`;
+      }
+    } else if (labelKey === 'result') {
+      if (mode === 'math' && finalCarry === 1) {
+        extraHtml = `<div class="bc data1">1</div>`;
+      } else if (mode === 'unsigned' && finalCarry === 1) {
+        extraHtml = `<div class="bc overflow1">1</div>`;
+      } else if (hasExtraCol) {
+        extraHtml = `<div class="bc dim0"> </div>`;
+      }
+    } else {
+      if (hasExtraCol) extraHtml = `<div class="bc dim0">0</div>`;
+    }
+
+    return `<div class="grid-row"><div class="grid-label">${label}</div><div class="grid-cells">${extraHtml}${cells}</div></div>`;
+  }
+
+  // Carry row: carryIn for each column
+  const carryHtml = cols.map(c =>
+    `<div class="bc ${c.carryIn ? 'carry1' : 'carry0'}">${c.carryIn}</div>`
+  ).join('');
+
+  // A row
+  const aHtml = aStr.split('').map(b =>
+    `<div class="bc ${b === '1' ? 'data1' : 'data0'}">${b}</div>`
+  ).join('');
+
+  // B row
+  const bHtml = bStr.split('').map(b =>
+    `<div class="bc ${b === '1' ? 'data1' : 'data0'}">${b}</div>`
+  ).join('');
+
+  // Result row
+  const rWidth = hasExtraCol ? n : n;
+  const rHtml = resultStr.split('').map((b, i) => {
+    const isOvf = mode === 'tc' && i === 0 && (cols[0].carryIn ^ finalCarry) === 1;
+    return `<div class="bc ${isOvf ? (b==='1'?'overflow1':'overflow0') : (b==='1'?'data1':'data0')}">${b}</div>`;
+  }).join('');
+
+  const sepStyle = hasExtraCol ? `margin-left: calc(66px + 3px + 30px)` : `margin-left: 66px`;
+  const tcOverflowNote = (mode === 'tc' && (cols[0].carryIn ^ finalCarry) === 1)
+    ? `<div style="margin-top:8px;font-size:0.78rem;color:#fca5a5">⚠ ${de ? 'Vorzeichenbit: Überlauf erkannt' : 'Sign bit: overflow detected'}</div>`
+    : '';
+
+  return `<div style="overflow-x:auto">
+    <div class="add-grid">
+      ${row('a', aHtml)}
+      ${row('b', bHtml)}
+      ${row('carry', carryHtml)}
+      <div class="grid-sep" style="${sepStyle}"></div>
+      ${row('result', rHtml)}
+    </div>
+    ${tcOverflowNote}
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+document.getElementById('langSelect').value = lang;
+applyStaticLang();
+// start in math mode
+document.getElementById('bitsGroup').style.display = 'none';
+</script>
+</body>
+</html>

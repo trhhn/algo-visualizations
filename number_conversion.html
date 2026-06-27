@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number Conversion</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
+    background: #1e1e22;
+    color: #cccccc;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+
+  a.back-link {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #888890;
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 6px 12px;
+    background: #252528;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  a.back-link:hover { color: #22c55e; border-color: #22c55e; }
+
+  /* ── Header ── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #eeeeee;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+  }
+  .page-header .subtitle { color: #666670; font-size: 0.9rem; }
+
+  /* ── Tabs ── */
+  .tabs-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    max-width: 900px;
+    margin: 0 auto 24px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    grid-column: 2;
+  }
+  .tab-btn {
+    background: #252528;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    color: #888890;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: #cccccc; border-color: #505058; }
+  .tab-btn.active { background: #22c55e; color: #111; border-color: #22c55e; }
+
+  .lang-label {
+    font-size: 0.78rem;
+    color: #888888;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    grid-column: 3;
+  }
+  #langSelect {
+    background: #252528;
+    color: #cccccc;
+    border: 1px solid #3a3a42;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  /* ── Card ── */
+  .card {
+    max-width: 900px;
+    margin: 0 auto 20px;
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+  }
+  .card h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+
+  /* ── Input row ── */
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .input-group label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+  }
+  .input-group input, .input-group select {
+    background: #13131a;
+    color: #eeeeee;
+    border: 1px solid #383840;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.92rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 140px;
+  }
+  .input-group input:focus, .input-group select:focus { border-color: #22c55e; }
+  .input-group select { cursor: pointer; background: #1a1a22; }
+
+  button.go-btn {
+    background: #383840;
+    color: #cccccc;
+    border: 1px solid #505055;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    align-self: flex-end;
+  }
+  button.go-btn:hover { background: #22c55e; color: #111; border-color: #22c55e; }
+
+  .error-msg {
+    color: #fca5a5;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    display: none;
+  }
+  .error-msg.visible { display: block; }
+
+  /* ── Result summary bar ── */
+  .result-bar {
+    max-width: 900px;
+    margin: 0 auto 20px;
+    background: #13131a;
+    border-radius: 10px;
+    padding: 12px 20px;
+    display: none;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    border: 1px solid #2e2e34;
+  }
+  .result-bar.visible { display: flex; }
+  .result-item { display: flex; gap: 8px; align-items: baseline; }
+  .result-lbl {
+    color: #666670;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .result-val {
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: #eeeeee;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .result-val.green  { color: #86efac; }
+  .result-val.blue   { color: #bfdbfe; }
+  .result-val.orange { color: #f59e0b; }
+  .result-val.red    { color: #fca5a5; }
+
+  /* ── Steps panel ── */
+  .steps-section {
+    max-width: 900px;
+    margin: 0 auto;
+    display: none;
+  }
+  .steps-section.visible { display: block; }
+
+  .steps-panel {
+    background: #252528;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #2e2e34;
+    margin-bottom: 16px;
+  }
+  .steps-panel h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-bottom: 18px;
+  }
+  .steps-panel h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #505058;
+    margin: 22px 0 14px;
+    border-top: 1px solid #2e2e34;
+    padding-top: 18px;
+  }
+  .steps-panel h3:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #2e2e34;
+  }
+  .step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .step-badge {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: #383840;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #888890;
+    margin-top: 2px;
+  }
+
+  .step-body {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.93rem;
+    line-height: 1.7;
+  }
+  .step-body strong { color: #eeeeee; }
+  .step-body code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #13131a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: #86efac;
+  }
+  .step-title {
+    font-weight: 700;
+    color: #eeeeee;
+    margin-bottom: 5px;
+  }
+
+  /* ── Division table ── */
+  .div-table {
+    border-collapse: collapse;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    margin: 10px 0;
+  }
+  .div-table th {
+    color: #666670;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 16px 4px 0;
+    text-align: left;
+    border-bottom: 1px solid #383840;
+  }
+  .div-table td {
+    padding: 3px 16px 3px 0;
+    color: #cccccc;
+  }
+  .div-table tr.final-row td { border-top: 1px solid #383840; color: #888890; font-size: 0.78rem; }
+  .div-table td.rem { color: #f59e0b; font-weight: 700; }
+  .div-table td.arrow { color: #505058; }
+
+  /* ── Place-value table (method 2 & decode) ── */
+  .pv-table {
+    border-collapse: collapse;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    margin: 10px 0;
+  }
+  .pv-table th {
+    color: #666670;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 12px 4px 0;
+    text-align: left;
+    border-bottom: 1px solid #383840;
+  }
+  .pv-table td {
+    padding: 3px 12px 3px 0;
+    color: #cccccc;
+  }
+  .pv-table td.bit-col { color: #f59e0b; font-weight: 700; text-align: center; }
+  .pv-table td.zero-col { color: #505058; text-align: center; }
+  .pv-table td.sum-col { color: #86efac; font-weight: 700; }
+
+  /* ── Bit strip (hex nibbles, two's comp) ── */
+  .bit-strip {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .bit-strip .nibble { display: flex; gap: 2px; margin-right: 6px; }
+  .bit-cell {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 4px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .bit-cell.b1 { background: #15803d; color: #86efac; border: 1px solid #22c55e; }
+  .bit-cell.b0 { background: #0a2214; color: #4a9a6a; border: 1px solid #1a4a2a; }
+  .bit-cell.neg { background: #9b1c1c; color: #fca5a5; border: 1px solid #dc2626; }
+  .bit-cell.hex-label {
+    width: auto;
+    padding: 0 8px;
+    background: #1d4ed8;
+    color: #bfdbfe;
+    border: 1px solid #3b82f6;
+  }
+
+  /* ── Two's complement circle ── */
+  .tc-circle-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 12px 0;
+  }
+
+  /* ── Fixed-point visual ── */
+  .fp-strip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .fp-strip .fp-bit {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .fp-strip .fp-bit.b1 { background: #15803d; color: #86efac; border: 1px solid #22c55e; }
+  .fp-strip .fp-bit.b0 { background: #0a2214; color: #4a9a6a; border: 1px solid #1a4a2a; }
+  .fp-strip .fp-point {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #f59e0b;
+    padding: 0 2px;
+    line-height: 1;
+  }
+
+  /* ── Info note ── */
+  .info-note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #86efac;
+    line-height: 1.6;
+  }
+  .info-note.orange { background: #1f1a0d; border-color: #4a3a10; color: #f59e0b; }
+  .info-note.blue   { background: #0d1828; border-color: #1e3a6a; color: #bfdbfe; }
+
+  /* ── Hidden tabs ── */
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── Two's complement config ── */
+  .config-strip {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2e2e34;
+  }
+  .config-strip label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666670;
+    margin-right: 4px;
+  }
+  .config-strip select {
+    background: #13131a;
+    color: #eeeeee;
+    border: 1px solid #383840;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 0.82rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    cursor: pointer;
+    outline: none;
+  }
+  .config-strip select:focus { border-color: #22c55e; }
+
+  /* ── Version ── */
+  .ver {
+    text-align: center;
+    color: #383840;
+    font-size: 0.72rem;
+    padding-top: 32px;
+  }
+
+  @media (max-width: 640px) {
+    .tabs { gap: 3px; }
+    .tab-btn { padding: 6px 10px; font-size: 0.75rem; }
+    .tabs-row { grid-template-columns: 1fr; gap: 10px; }
+    .tabs { grid-column: 1; }
+    .lang-label { grid-column: 1; justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← GDI</a>
+
+<div class="page-header">
+  <h1 id="pageTitle">Number Systems</h1>
+  <p class="subtitle" id="pageSubtitle">Binary · Hexadecimal · Two's Complement · Fixed-Point</p>
+</div>
+
+<div class="tabs-row">
+  <div></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('bin',this)" id="tabBin">Binary ↔ Decimal</button>
+    <button class="tab-btn" onclick="showTab('hex',this)" id="tabHex">Hexadecimal</button>
+    <button class="tab-btn" onclick="showTab('tc',this)" id="tabTc">Two's Complement</button>
+    <button class="tab-btn" onclick="showTab('fp',this)" id="tabFp">Fixed-Point</button>
+  </div>
+  <label class="lang-label"><span id="langLbl">Language:</span>
+    <select id="langSelect" onchange="setLang(this.value)">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+  </label>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB 1 – Binary ↔ Decimal
+═══════════════════════════════════════════ -->
+<div class="tab-pane active" id="pane-bin">
+
+  <div class="card">
+    <h2 id="binInputHdr">Input</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label id="binDecLbl">Decimal</label>
+        <input type="text" id="binDecIn" placeholder="e.g. 42" oninput="clearBinResult()" onkeydown="if(event.key==='Enter')runDec2Bin()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runDec2Bin()" id="btnDec2Bin">→ Binary</button>
+      <div style="width:1px;background:#383840;align-self:stretch;margin:0 6px;flex-shrink:0"></div>
+      <div class="input-group">
+        <label id="binBinLbl">Binary</label>
+        <input type="text" id="binBinIn" placeholder="e.g. 101010" oninput="clearBinResult()" onkeydown="if(event.key==='Enter')runBin2Dec()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runBin2Dec()" id="btnBin2Dec">→ Decimal</button>
+    </div>
+    <div class="error-msg" id="binErr"></div>
+  </div>
+
+  <div class="result-bar" id="binResultBar">
+    <div class="result-item"><span class="result-lbl" id="binResDecLbl">Decimal</span><span class="result-val" id="binResDec"></span></div>
+    <div class="result-item"><span class="result-lbl" id="binResBinLbl">Binary</span><span class="result-val green" id="binResBin"></span></div>
+  </div>
+
+  <div class="steps-section" id="binSteps">
+    <!-- filled by JS -->
+  </div>
+
+</div><!-- /pane-bin -->
+
+<!-- ═══════════════════════════════════════════
+     TAB 2 – Hexadecimal
+═══════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-hex">
+
+  <div class="card">
+    <h2 id="hexInputHdr">Input</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label id="hexDecLbl">Decimal</label>
+        <input type="text" id="hexDecIn" placeholder="e.g. 255" oninput="clearHexResult()" onkeydown="if(event.key==='Enter')runDec2Hex()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runDec2Hex()" id="btnDec2Hex">→ Hex</button>
+      <div style="width:1px;background:#383840;align-self:stretch;margin:0 6px;flex-shrink:0"></div>
+      <div class="input-group">
+        <label id="hexHexLbl">Hex (0x…)</label>
+        <input type="text" id="hexHexIn" placeholder="e.g. 0xFF" oninput="clearHexResult()" onkeydown="if(event.key==='Enter')runHex2Dec()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runHex2Dec()" id="btnHex2Dec">→ Decimal</button>
+    </div>
+    <div class="error-msg" id="hexErr"></div>
+  </div>
+
+  <div class="result-bar" id="hexResultBar">
+    <div class="result-item"><span class="result-lbl" id="hexResDecLbl">Decimal</span><span class="result-val" id="hexResDec"></span></div>
+    <div class="result-item"><span class="result-lbl" id="hexResHexLbl">Hex</span><span class="result-val orange" id="hexResHex"></span></div>
+    <div class="result-item"><span class="result-lbl" id="hexResBinLbl">Binary</span><span class="result-val green" id="hexResBin"></span></div>
+  </div>
+
+  <div class="steps-section" id="hexSteps"></div>
+
+</div><!-- /pane-hex -->
+
+<!-- ═══════════════════════════════════════════
+     TAB 3 – Two's Complement
+═══════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-tc">
+
+  <div class="card">
+    <h2 id="tcInputHdr">Input</h2>
+    <div class="config-strip">
+      <label id="tcBitsLbl">Bits:</label>
+      <select id="tcBitsSelect" onchange="clearTcResult()">
+        <option value="4" selected>4</option>
+        <option value="8">8</option>
+        <option value="16">16</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label id="tcDecLbl">Signed decimal</label>
+        <input type="text" id="tcDecIn" placeholder="e.g. -3" oninput="clearTcResult()" onkeydown="if(event.key==='Enter')runDec2Tc()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runDec2Tc()" id="btnDec2Tc">→ Two's Comp.</button>
+      <div style="width:1px;background:#383840;align-self:stretch;margin:0 6px;flex-shrink:0"></div>
+      <div class="input-group">
+        <label id="tcBinLbl">Binary (bit pattern)</label>
+        <input type="text" id="tcBinIn" placeholder="e.g. 1101" oninput="clearTcResult()" onkeydown="if(event.key==='Enter')runTcBin2Dec()" style="width:160px">
+      </div>
+      <button class="go-btn" onclick="runTcBin2Dec()" id="btnTcBin2Dec">→ Signed dec.</button>
+    </div>
+    <div class="error-msg" id="tcErr"></div>
+  </div>
+
+  <div class="result-bar" id="tcResultBar">
+    <div class="result-item"><span class="result-lbl" id="tcResSignedLbl">Signed</span><span class="result-val" id="tcResSigned"></span></div>
+    <div class="result-item"><span class="result-lbl" id="tcResUnsignedLbl">Unsigned</span><span class="result-val blue" id="tcResUnsigned"></span></div>
+    <div class="result-item"><span class="result-lbl" id="tcResBinLbl">Bit pattern</span><span class="result-val green" id="tcResBin"></span></div>
+  </div>
+
+  <div class="steps-section" id="tcSteps"></div>
+
+</div><!-- /pane-tc -->
+
+<!-- ═══════════════════════════════════════════
+     TAB 4 – Fixed-Point
+═══════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-fp">
+
+  <div class="card">
+    <h2 id="fpInputHdr">Input</h2>
+    <div class="config-strip">
+      <label id="fpIntBitsLbl">Integer bits:</label>
+      <select id="fpIntBits" onchange="clearFpResult()">
+        <option value="4" selected>4</option>
+        <option value="8">8</option>
+        <option value="16">16</option>
+      </select>
+      <label id="fpFracBitsLbl" style="margin-left:12px">Fractional bits:</label>
+      <select id="fpFracBits" onchange="clearFpResult()">
+        <option value="4" selected>4</option>
+        <option value="8">8</option>
+        <option value="16">16</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label id="fpDecLbl">Decimal (e.g. 3.625)</label>
+        <input type="text" id="fpDecIn" placeholder="e.g. 3.625" oninput="clearFpResult()" onkeydown="if(event.key==='Enter')runFp()" style="width:170px">
+      </div>
+      <button class="go-btn" onclick="runFp()" id="btnFp">→ Fixed-Point</button>
+      <div style="width:1px;background:#383840;align-self:stretch;margin:0 6px;flex-shrink:0"></div>
+      <div class="input-group">
+        <label id="fpBinLbl">Binary (e.g. 111.11)</label>
+        <input type="text" id="fpBinIn" placeholder="e.g. 111.11" oninput="clearFpResult()" onkeydown="if(event.key==='Enter')runFpBin2Dec()" style="width:170px">
+      </div>
+      <button class="go-btn" onclick="runFpBin2Dec()" id="btnFpBin2Dec">→ Decimal</button>
+    </div>
+    <div class="error-msg" id="fpErr"></div>
+  </div>
+
+  <div class="result-bar" id="fpResultBar">
+    <div class="result-item"><span class="result-lbl" id="fpResDecLbl">Decimal</span><span class="result-val" id="fpResDec"></span></div>
+    <div class="result-item"><span class="result-lbl" id="fpResBinLbl">Fixed-point bits</span><span class="result-val green" id="fpResBin"></span></div>
+    <div class="result-item" id="fpResApproxItem"><span class="result-lbl" id="fpResApproxLbl">Decoded value</span><span class="result-val orange" id="fpResApprox"></span></div>
+  </div>
+
+  <div class="steps-section" id="fpSteps"></div>
+
+</div><!-- /pane-fp -->
+
+<div class="ver">v1.5</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  Strings
+// ─────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    pageTitle: 'Number Systems',
+    pageSubtitle: 'Binary · Hexadecimal · Two\'s Complement · Fixed-Point',
+    langLbl: 'Language:',
+    tabBin: 'Binary ↔ Decimal',
+    tabHex: 'Hexadecimal',
+    tabTc: "Two's Complement",
+    tabFp: 'Fixed-Point',
+
+    // Tab 1
+    binInputHdr: 'Input',
+    binDecLbl: 'Decimal',
+    binBinLbl: 'Binary',
+    btnDec2Bin: '→ Binary',
+    btnBin2Dec: '→ Decimal',
+    binResDecLbl: 'Decimal',
+    binResBinLbl: 'Binary',
+
+    // Tab 2
+    hexInputHdr: 'Input',
+    hexDecLbl: 'Decimal',
+    hexHexLbl: 'Hex (0x…)',
+    btnDec2Hex: '→ Hex',
+    btnHex2Dec: '→ Decimal',
+    hexResDecLbl: 'Decimal',
+    hexResHexLbl: 'Hex',
+    hexResBinLbl: 'Binary',
+
+    // Tab 3
+    tcInputHdr: 'Input',
+    tcBitsLbl: 'Bits:',
+    tcDecLbl: 'Signed decimal',
+    tcBinLbl: 'Bit pattern',
+    btnDec2Tc: "→ Two's Comp.",
+    btnTcBin2Dec: '→ Signed dec.',
+    tcResSignedLbl: 'Signed',
+    tcResUnsignedLbl: 'Unsigned',
+    tcResBinLbl: 'Bit pattern',
+
+    // Tab 4
+    fpInputHdr: 'Input',
+    fpIntBitsLbl: 'Integer bits:',
+    fpFracBitsLbl: 'Fractional bits:',
+    fpDecLbl: 'Decimal (e.g. 3.625)',
+    fpBinLbl: 'Binary (e.g. 111.11)',
+    btnFp: '→ Fixed-Point',
+    btnFpBin2Dec: '→ Decimal',
+    fpResDecLbl: 'Decimal',
+    fpResBinLbl: 'Fixed-point bits',
+    fpResApproxLbl: 'Decoded value',
+
+    // Steps labels
+    stepsM1: 'Method 1: Repeated Division by 2',
+    stepsM2: 'Method 2: Subtract Place Values (left to right)',
+    stepsDec: 'Place-Value Decoding',
+    stepsHexConv: 'Decimal → Hexadecimal',
+    stepsHexDec: 'Hexadecimal → Decimal',
+    stepsNibbles: 'Binary ↔ Hex Nibbles',
+    stepsTc: "Two's Complement Encoding",
+    stepsTcDec: "Two's Complement Decoding",
+    stepsFp: 'Fixed-Point Encoding',
+    stepsFpDec: 'Fixed-Point Decoding',
+
+    // Error messages
+    errNotNatural: 'Enter a non-negative integer.',
+    errNotBinary: 'Enter a valid binary number (only 0 and 1).',
+    errNotHexDec: 'Enter a non-negative integer.',
+    errNotHex: 'Enter a valid hex number, e.g. 0xFF or FF.',
+    errTcRange: (min, max) => `Number must be between ${min} and ${max}.`,
+    errTcBin: (n) => `Bit pattern must be exactly ${n} bits (0 and 1 only).`,
+    errFpDecimal: 'Enter a non-negative decimal number (e.g. 3.625).',
+    errFpRange: (max) => `Number too large for the selected integer bits (max ≈ ${max}).`,
+    errFpBinFmt: 'Enter a binary fixed-point number with a dot, e.g. 111.11 or 0011.1010.',
+    errFpBinLen: (total) => `Without a dot, enter exactly ${total} bits.`,
+    errFpBinOverflow: (i, f) => `Integer part max ${i} bits, fractional part max ${f} bits.`,
+
+    // Step text builders — see buildSteps* functions
+  },
+  de: {
+    pageTitle: 'Zahlensysteme',
+    pageSubtitle: 'Binär · Hexadezimal · Zweierkomplement · Festkomma',
+    langLbl: 'Sprache:',
+    tabBin: 'Binär ↔ Dezimal',
+    tabHex: 'Hexadezimal',
+    tabTc: 'Zweierkomplement',
+    tabFp: 'Festkommazahlen',
+
+    binInputHdr: 'Eingabe',
+    binDecLbl: 'Dezimal',
+    binBinLbl: 'Binär',
+    btnDec2Bin: '→ Binär',
+    btnBin2Dec: '→ Dezimal',
+    binResDecLbl: 'Dezimal',
+    binResBinLbl: 'Binär',
+
+    hexInputHdr: 'Eingabe',
+    hexDecLbl: 'Dezimal',
+    hexHexLbl: 'Hex (0x…)',
+    btnDec2Hex: '→ Hex',
+    btnHex2Dec: '→ Dezimal',
+    hexResDecLbl: 'Dezimal',
+    hexResHexLbl: 'Hex',
+    hexResBinLbl: 'Binär',
+
+    tcInputHdr: 'Eingabe',
+    tcBitsLbl: 'Bits:',
+    tcDecLbl: 'Vorzeichenbehaftete Dezimalzahl',
+    tcBinLbl: 'Bitmuster',
+    btnDec2Tc: '→ 2K-Kodieren',
+    btnTcBin2Dec: '→ Dezimal',
+    tcResSignedLbl: 'Vorzeichenbeh.',
+    tcResUnsignedLbl: 'Vorzeichenlos',
+    tcResBinLbl: 'Bitmuster',
+
+    fpInputHdr: 'Eingabe',
+    fpIntBitsLbl: 'Ganzzahl-Bits:',
+    fpFracBitsLbl: 'Nachkomma-Bits:',
+    fpDecLbl: 'Dezimalzahl (z.B. 3.625)',
+    fpBinLbl: 'Binär (z.B. 111.11)',
+    btnFp: '→ Festkomma',
+    btnFpBin2Dec: '→ Dezimal',
+    fpResDecLbl: 'Dezimal',
+    fpResBinLbl: 'Festkomma-Bits',
+    fpResApproxLbl: 'Dekodierter Wert',
+
+    stepsM1: 'Methode 1: Wiederholte Division durch 2',
+    stepsM2: 'Methode 2: Stellenwerte abziehen (von links)',
+    stepsDec: 'Dekodierung über Stellenwerte',
+    stepsHexConv: 'Dezimal → Hexadezimal',
+    stepsHexDec: 'Hexadezimal → Dezimal',
+    stepsNibbles: 'Binär ↔ Hex-Nibbles',
+    stepsTc: 'Zweierkomplement-Kodierung',
+    stepsTcDec: 'Zweierkomplement-Dekodierung',
+    stepsFp: 'Festkomma-Kodierung',
+    stepsFpDec: 'Festkomma-Dekodierung',
+
+    errNotNatural: 'Bitte eine nicht-negative ganze Zahl eingeben.',
+    errNotBinary: 'Bitte nur 0 und 1 eingeben.',
+    errNotHexDec: 'Bitte eine nicht-negative ganze Zahl eingeben.',
+    errNotHex: 'Bitte eine gültige Hex-Zahl eingeben, z.B. 0xFF oder FF.',
+    errTcRange: (min, max) => `Zahl muss zwischen ${min} und ${max} liegen.`,
+    errTcBin: (n) => `Bitmuster muss genau ${n} Bits lang sein (nur 0 und 1).`,
+    errFpDecimal: 'Bitte eine nicht-negative Dezimalzahl eingeben (z.B. 3.625).',
+    errFpRange: (max) => `Zahl zu groß für die gewählten Ganzzahl-Bits (max ≈ ${max}).`,
+    errFpBinFmt: 'Bitte eine Festkomma-Binärzahl mit Punkt/Komma eingeben, z.B. 111.11 oder 0011.1010.',
+    errFpBinLen: (total) => `Ohne Punkt müssen genau ${total} Bits angegeben werden.`,
+    errFpBinOverflow: (i, f) => `Ganzzahlteil max. ${i} Bits, Nachkommateil max. ${f} Bits.`,
+  }
+};
+
+let lang = localStorage.getItem('lang') || 'en';
+
+function S() { return STRINGS[lang]; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('langSelect').value = l;
+  applyStaticLang();
+}
+
+function applyStaticLang() {
+  const s = S();
+  const ids = [
+    'pageTitle','pageSubtitle','langLbl',
+    'tabBin','tabHex','tabTc','tabFp',
+    'binInputHdr','binDecLbl','binBinLbl','btnDec2Bin','btnBin2Dec','binResDecLbl','binResBinLbl',
+    'hexInputHdr','hexDecLbl','hexHexLbl','btnDec2Hex','btnHex2Dec','hexResDecLbl','hexResHexLbl','hexResBinLbl',
+    'tcInputHdr','tcBitsLbl','tcDecLbl','tcBinLbl','btnDec2Tc','btnTcBin2Dec','tcResSignedLbl','tcResUnsignedLbl','tcResBinLbl',
+    'fpInputHdr','fpIntBitsLbl','fpFracBitsLbl','fpDecLbl','fpBinLbl','btnFp','btnFpBin2Dec','fpResDecLbl','fpResBinLbl','fpResApproxLbl',
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && s[id] !== undefined) el.textContent = s[id];
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Tab management
+// ─────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────
+function makeStep(n, titleHtml, bodyHtml) {
+  return `<div class="step">
+    <div class="step-badge">${n}</div>
+    <div class="step-body">
+      <div class="step-title">${titleHtml}</div>
+      ${bodyHtml}
+    </div>
+  </div>`;
+}
+
+function bitCell(b, cls) {
+  cls = cls || (b ? 'b1' : 'b0');
+  return `<div class="bit-cell ${cls}">${b}</div>`;
+}
+
+function bitStrip(bits) {
+  return `<div class="bit-strip">${bits.map(b => bitCell(b)).join('')}</div>`;
+}
+
+// ─────────────────────────────────────────────
+//  TAB 1: Binary ↔ Decimal
+// ─────────────────────────────────────────────
+function clearBinResult() {
+  document.getElementById('binResultBar').classList.remove('visible');
+  document.getElementById('binSteps').classList.remove('visible');
+  document.getElementById('binErr').classList.remove('visible');
+}
+
+function runDec2Bin() {
+  const raw = document.getElementById('binDecIn').value.trim();
+  const n = parseInt(raw, 10);
+  if (!/^\d+$/.test(raw) || isNaN(n) || n < 0) {
+    showErr('binErr', S().errNotNatural); return;
+  }
+  document.getElementById('binErr').classList.remove('visible');
+  const bits = n === 0 ? [0] : decToBitsArray(n);
+  const binStr = bits.join('');
+
+  document.getElementById('binResDec').textContent = n;
+  document.getElementById('binResBin').textContent = binStr;
+  document.getElementById('binResultBar').classList.add('visible');
+
+  document.getElementById('binSteps').innerHTML = buildDec2BinSteps(n, bits);
+  document.getElementById('binSteps').classList.add('visible');
+}
+
+function runBin2Dec() {
+  const raw = document.getElementById('binBinIn').value.trim().replace(/\s/g,'');
+  if (!/^[01]+$/.test(raw)) {
+    showErr('binErr', S().errNotBinary); return;
+  }
+  document.getElementById('binErr').classList.remove('visible');
+  const n = parseInt(raw, 2);
+  const bits = raw.split('').map(Number);
+
+  document.getElementById('binResDec').textContent = n;
+  document.getElementById('binResBin').textContent = raw;
+  document.getElementById('binResultBar').classList.add('visible');
+
+  document.getElementById('binSteps').innerHTML = buildBin2DecSteps(bits, n);
+  document.getElementById('binSteps').classList.add('visible');
+}
+
+function decToBitsArray(n) {
+  const bits = [];
+  let x = n;
+  while (x > 0) { bits.unshift(x & 1); x >>= 1; }
+  return bits.length ? bits : [0];
+}
+
+function buildDec2BinSteps(n, bits) {
+  const s = S();
+  const de = lang === 'de';
+  let html = '';
+
+  // Method 1: repeated division
+  html += `<div class="steps-panel"><h2>${s.stepsM1}</h2>`;
+
+  let divRows = '';
+  let x = n, steps = [];
+  if (n === 0) {
+    steps.push({ div: 0, q: 0, r: 0 });
+  } else {
+    while (x > 0) {
+      steps.push({ div: x, q: Math.floor(x/2), r: x % 2 });
+      x = Math.floor(x/2);
+    }
+  }
+  const divTh = de
+    ? '<th>Zahl</th><th>÷ 2</th><th>Quotient</th><th>Rest</th><th></th>'
+    : '<th>Number</th><th>÷ 2</th><th>Quotient</th><th>Remainder</th><th></th>';
+  divRows = steps.map((r, i) => {
+    const arrow = i === steps.length - 1
+      ? `<td class="arrow">← ${de ? 'MSB (oben beginnen)' : 'MSB (start here)'}</td>`
+      : `<td class="arrow">↓</td>`;
+    return `<tr><td>${r.div}</td><td>÷ 2</td><td>= ${r.q}</td><td class="rem">Rest ${r.r}</td>${arrow}</tr>`;
+  });
+  const finalRow = de
+    ? `<tr class="final-row"><td colspan="5">Reste von unten nach oben lesen: <strong>${bits.join('')}</strong></td></tr>`
+    : `<tr class="final-row"><td colspan="5">Read remainders bottom-up: <strong>${bits.join('')}</strong></td></tr>`;
+
+  html += makeStep(1,
+    de ? `Teile <strong>${n}</strong> wiederholt durch 2 und notiere die Reste`
+       : `Divide <strong>${n}</strong> repeatedly by 2, recording remainders`,
+    `<table class="div-table"><thead><tr>${divTh}</tr></thead><tbody>${divRows.join('')}${finalRow}</tbody></table>`
+  );
+  html += makeStep(2,
+    de ? `Lies die Reste <em>von unten nach oben</em>`
+       : `Read remainders <em>bottom-up</em>`,
+    de ? `Der unterste Rest ist das höchstwertige Bit (MSB), der oberste der niederwertigste (LSB).<br>
+          Ergebnis: <code>${bits.join('')}</code>`
+       : `The bottom-most remainder is the most significant bit (MSB), the top one is the least significant (LSB).<br>
+          Result: <code>${bits.join('')}</code>`
+  );
+  html += `</div>`;
+
+  // Method 2: subtract place values
+  html += `<div class="steps-panel"><h2>${s.stepsM2}</h2>`;
+  const pvSteps = buildMethod2Steps(n, bits);
+  pvSteps.forEach((step, i) => {
+    html += makeStep(i + 1, step.title, step.body);
+  });
+  html += `</div>`;
+
+  return html;
+}
+
+function buildMethod2Steps(n, bits) {
+  const de = lang === 'de';
+  const steps = [];
+  const len = bits.length;
+
+  // intro
+  steps.push({
+    title: de
+      ? `Bestimme die höchste Zweierpotenz ≤ <strong>${n}</strong>`
+      : `Find the highest power of 2 ≤ <strong>${n}</strong>`,
+    body: (() => {
+      const pow = Math.pow(2, len - 1);
+      const pvRow = bits.map((_, i) => {
+        const p = len - 1 - i;
+        return `<td>2<sup>${p}</sup>&nbsp;=&nbsp;${Math.pow(2,p)}</td>`;
+      });
+      return (de
+        ? `Wir brauchen <strong>${len}</strong> Bits (2<sup>${len-1}</sup> = ${pow} ≤ ${n} &lt; 2<sup>${len}</sup> = ${Math.pow(2,len)}).<br>`
+        : `We need <strong>${len}</strong> bits (2<sup>${len-1}</sup> = ${pow} ≤ ${n} &lt; 2<sup>${len}</sup> = ${Math.pow(2,len)}).<br>`) +
+        `<div style="overflow-x:auto"><table class="pv-table"><thead><tr><th>${
+          de?'Bit-Pos':'Position'}</th>${bits.map((_,i)=>`<th>Bit ${len-1-i}</th>`).join('')}</tr>
+        <tr><th>${de?'Stellenwert':'Place value'}</th>${pvRow.join('')}</tr></thead></table></div>`;
+    })()
+  });
+
+  // digit-by-digit
+  let remainder = n;
+  bits.forEach((b, i) => {
+    const pos = len - 1 - i;
+    const pv = Math.pow(2, pos);
+    const set = b === 1;
+    steps.push({
+      title: de
+        ? `Bit ${pos} (Stellenwert ${pv}): ${set ? 'setzen' : 'nicht setzen'}`
+        : `Bit ${pos} (place value ${pv}): ${set ? 'set' : 'skip'}`,
+      body: (() => {
+        const currentBits = bits.slice(0, i + 1).concat(Array(len - i - 1).fill('?'));
+        const stripHtml = currentBits.map((cb, ci) => {
+          if (ci < i) return bitCell(cb);
+          if (ci === i) return bitCell(cb, cb ? 'b1' : 'b0');
+          return `<div class="bit-cell" style="background:#252528;color:#505058;border:1px solid #383840">?</div>`;
+        }).join('');
+        if (set) {
+          return `${de?'Rest':'Remainder'} = <strong>${remainder}</strong> ≥ ${pv} → <strong>${de?'Bit setzen':'set bit'}</strong> (1)<br>
+            ${de?'Neuer Rest':'New remainder'}: ${remainder} − ${pv} = <strong>${remainder - pv}</strong>
+            <div class="bit-strip">${stripHtml}</div>`;
+        } else {
+          return `${de?'Rest':'Remainder'} = <strong>${remainder}</strong> &lt; ${pv} → <strong>${de?'Bit lassen':'skip'}</strong> (0)
+            <div class="bit-strip">${stripHtml}</div>`;
+        }
+      })()
+    });
+    if (set) remainder -= pv;
+  });
+
+  steps.push({
+    title: de ? 'Ergebnis' : 'Result',
+    body: `${de?'Alle Bits gesetzt:':'All bits determined:'} <code>${bits.join('')}</code>
+      ${bitStrip(bits)}`
+  });
+
+  return steps;
+}
+
+function buildBin2DecSteps(bits, n) {
+  const s = S();
+  const de = lang === 'de';
+  const len = bits.length;
+  let html = '';
+
+  html += `<div class="steps-panel"><h2>${s.stepsDec}</h2>`;
+
+  // place value table
+  const pvHeader = de
+    ? `<th>Bit</th><th>Position</th><th>Stellenwert</th><th>Bit × Stellenwert</th>`
+    : `<th>Bit</th><th>Position</th><th>Place value</th><th>Bit × value</th>`;
+  let sum = 0;
+  const rows = bits.map((b, i) => {
+    const pos = len - 1 - i;
+    const pv = Math.pow(2, pos);
+    const contrib = b * pv;
+    sum += contrib;
+    const contribStr = b ? `${b} × ${pv} = <span class="sum-col">${contrib}</span>` : `0 × ${pv} = <span style="color:#505058">0</span>`;
+    return `<tr><td class="${b?'bit-col':'zero-col'}">${b}</td><td>2<sup>${pos}</sup></td><td>${pv}</td><td>${contribStr}</td></tr>`;
+  });
+  const sumRow = `<tr style="border-top:1px solid #383840"><td colspan="3" style="color:#666670;font-size:0.78rem">${de?'Summe':'Sum'}</td><td class="sum-col" style="font-weight:700">${n}</td></tr>`;
+
+  html += makeStep(1,
+    de ? `Schreibe die Stellenwerte auf`
+       : `Write out the place values`,
+    `<div style="overflow-x:auto"><table class="pv-table"><thead><tr>${pvHeader}</tr></thead><tbody>${rows.join('')}${sumRow}</tbody></table></div>`
+  );
+
+  // sum formula
+  const formula = bits.map((b, i) => {
+    const pos = len - 1 - i;
+    return b ? `<span style="color:#86efac">${b}×2<sup>${pos}</sup></span>` : `<span style="color:#505058">0×2<sup>${pos}</sup></span>`;
+  }).join(' + ');
+
+  html += makeStep(2,
+    de ? `Addiere die Beiträge der gesetzten Bits`
+       : `Sum the contributions of set bits`,
+    `${formula} = <strong>${n}</strong>`
+  );
+
+  html += `</div>`;
+  return html;
+}
+
+// ─────────────────────────────────────────────
+//  TAB 2: Hexadecimal
+// ─────────────────────────────────────────────
+function clearHexResult() {
+  document.getElementById('hexResultBar').classList.remove('visible');
+  document.getElementById('hexSteps').classList.remove('visible');
+  document.getElementById('hexErr').classList.remove('visible');
+}
+
+function runDec2Hex() {
+  const raw = document.getElementById('hexDecIn').value.trim();
+  const n = parseInt(raw, 10);
+  if (!/^\d+$/.test(raw) || isNaN(n) || n < 0) {
+    showErr('hexErr', S().errNotHexDec); return;
+  }
+  document.getElementById('hexErr').classList.remove('visible');
+  const hexStr = '0x' + n.toString(16).toUpperCase();
+  const binStr = n === 0 ? '0000' : padToNibbles(n.toString(2));
+
+  document.getElementById('hexResDec').textContent = n;
+  document.getElementById('hexResHex').textContent = hexStr;
+  document.getElementById('hexResBin').textContent = binStr;
+  document.getElementById('hexResultBar').classList.add('visible');
+  document.getElementById('hexSteps').innerHTML = buildHexSteps(n, hexStr, binStr, 'dec2hex');
+  document.getElementById('hexSteps').classList.add('visible');
+}
+
+function runHex2Dec() {
+  let raw = document.getElementById('hexHexIn').value.trim();
+  if (/^0x/i.test(raw)) raw = raw.slice(2);
+  if (!/^[0-9a-fA-F]+$/.test(raw) || raw.length === 0) {
+    showErr('hexErr', S().errNotHex); return;
+  }
+  document.getElementById('hexErr').classList.remove('visible');
+  const n = parseInt(raw, 16);
+  const hexStr = '0x' + raw.toUpperCase();
+  const binStr = padToNibbles(n.toString(2));
+
+  document.getElementById('hexResDec').textContent = n;
+  document.getElementById('hexResHex').textContent = hexStr;
+  document.getElementById('hexResBin').textContent = binStr;
+  document.getElementById('hexResultBar').classList.add('visible');
+  document.getElementById('hexSteps').innerHTML = buildHexSteps(n, hexStr, binStr, 'hex2dec');
+  document.getElementById('hexSteps').classList.add('visible');
+}
+
+function padToNibbles(binStr) {
+  while (binStr.length % 4 !== 0) binStr = '0' + binStr;
+  return binStr;
+}
+
+function buildHexSteps(n, hexStr, binStr, dir) {
+  const s = S();
+  const de = lang === 'de';
+  let html = '';
+  const digits = '0123456789ABCDEF';
+  const hexDigits = hexStr.slice(2); // without 0x
+
+  if (dir === 'dec2hex') {
+    html += `<div class="steps-panel"><h2>${s.stepsHexConv}</h2>`;
+
+    // Division by 16
+    let divRows = '';
+    let x = n, steps = [];
+    if (n === 0) { steps.push({ div: 0, q: 0, r: 0 }); }
+    else { while (x > 0) { steps.push({ div: x, q: Math.floor(x/16), r: x % 16 }); x = Math.floor(x/16); } }
+    const divTh = de
+      ? '<th>Zahl</th><th>÷ 16</th><th>Quotient</th><th>Rest</th><th>Hex-Ziffer</th><th></th>'
+      : '<th>Number</th><th>÷ 16</th><th>Quotient</th><th>Remainder</th><th>Hex digit</th><th></th>';
+    divRows = steps.map((r, i) => {
+      const hd = digits[r.r];
+      const arrow = i === steps.length - 1
+        ? `<td class="arrow">← ${de?'MSD':'MSD'}</td>`
+        : `<td class="arrow">↓</td>`;
+      return `<tr><td>${r.div}</td><td>÷ 16</td><td>= ${r.q}</td><td class="rem">Rest ${r.r}</td><td style="color:#f59e0b;font-weight:700">${hd}</td>${arrow}</tr>`;
+    });
+    const finalRow = de
+      ? `<tr class="final-row"><td colspan="6">Reste von unten nach oben: <strong>${hexStr}</strong></td></tr>`
+      : `<tr class="final-row"><td colspan="6">Read remainders bottom-up: <strong>${hexStr}</strong></td></tr>`;
+
+    html += makeStep(1,
+      de ? `Teile <strong>${n}</strong> wiederholt durch 16`
+         : `Divide <strong>${n}</strong> repeatedly by 16`,
+      `<table class="div-table"><thead><tr>${divTh}</tr></thead><tbody>${divRows.join('')}${finalRow}</tbody></table>`
+    );
+
+    // Nibble grouping
+    html += makeStep(2,
+      de ? 'Prüfe: 4 Binärbits = 1 Hex-Ziffer (Nibble)'
+         : 'Verify: 4 binary bits = 1 hex digit (nibble)',
+      buildNibbleStrip(binStr, hexStr)
+    );
+
+    html += `</div>`;
+
+  } else {
+    // hex2dec
+    html += `<div class="steps-panel"><h2>${s.stepsHexDec}</h2>`;
+    const hLen = hexDigits.length;
+    const pvHeader = de
+      ? `<th>Hex-Ziffer</th><th>Dezimalwert</th><th>Position</th><th>Stellenwert (16<sup>i</sup>)</th><th>Beitrag</th>`
+      : `<th>Hex digit</th><th>Dec value</th><th>Position</th><th>Place value (16<sup>i</sup>)</th><th>Contribution</th>`;
+    let sum = 0;
+    const rows = hexDigits.split('').map((hd, i) => {
+      const pos = hLen - 1 - i;
+      const pv = Math.pow(16, pos);
+      const dv = parseInt(hd, 16);
+      const contrib = dv * pv;
+      sum += contrib;
+      return `<tr>
+        <td style="color:#f59e0b;font-weight:700">${hd}</td>
+        <td>${dv}</td>
+        <td>16<sup>${pos}</sup></td>
+        <td>${pv}</td>
+        <td class="sum-col">${contrib}</td>
+      </tr>`;
+    });
+    const sumRow = `<tr style="border-top:1px solid #383840"><td colspan="4" style="color:#666670;font-size:0.78rem">${de?'Summe':'Sum'}</td><td class="sum-col" style="font-weight:700">${n}</td></tr>`;
+
+    html += makeStep(1,
+      de ? `Multipliziere jede Hex-Ziffer mit ihrer Stellenpotenz (16<sup>i</sup>)`
+         : `Multiply each hex digit by its place value (16<sup>i</sup>)`,
+      `<div style="overflow-x:auto"><table class="pv-table"><thead><tr>${pvHeader}</tr></thead><tbody>${rows.join('')}${sumRow}</tbody></table></div>`
+    );
+
+    html += makeStep(2,
+      de ? 'Prüfe: 4 Binärbits = 1 Hex-Ziffer (Nibble)'
+         : 'Verify: 4 binary bits = 1 hex digit (nibble)',
+      buildNibbleStrip(binStr, hexStr)
+    );
+
+    html += `</div>`;
+  }
+
+  return html;
+}
+
+function buildNibbleStrip(binStr, hexStr) {
+  const de = lang === 'de';
+  const hexPure = hexStr.slice(2);
+  let nibbleHtml = '<div class="bit-strip" style="align-items:center;flex-wrap:wrap;gap:8px">';
+  for (let i = 0; i < hexPure.length; i++) {
+    const nibble = binStr.slice(i * 4, i * 4 + 4);
+    nibbleHtml += `<div style="display:flex;align-items:center;gap:2px">`;
+    for (const bit of nibble) {
+      nibbleHtml += bitCell(parseInt(bit));
+    }
+    nibbleHtml += `<div style="margin:0 4px;color:#505058">→</div>`;
+    nibbleHtml += `<div class="bit-cell hex-label">${hexPure[i]}</div>`;
+    nibbleHtml += `</div>`;
+  }
+  nibbleHtml += '</div>';
+  return (de
+    ? 'Je 4 Bits (Nibble) entsprechen genau einer Hex-Ziffer (0–F):<br>'
+    : 'Every group of 4 bits (nibble) maps to exactly one hex digit (0–F):<br>')
+    + nibbleHtml;
+}
+
+// ─────────────────────────────────────────────
+//  TAB 3: Two's Complement
+// ─────────────────────────────────────────────
+function clearTcResult() {
+  document.getElementById('tcResultBar').classList.remove('visible');
+  document.getElementById('tcSteps').classList.remove('visible');
+  document.getElementById('tcErr').classList.remove('visible');
+}
+
+function runDec2Tc() {
+  const nBits = parseInt(document.getElementById('tcBitsSelect').value);
+  const raw = document.getElementById('tcDecIn').value.trim();
+  const n = parseInt(raw, 10);
+  const min = -(Math.pow(2, nBits - 1));
+  const max = Math.pow(2, nBits - 1) - 1;
+  if (isNaN(n) || !/^-?\d+$/.test(raw)) {
+    showErr('tcErr', S().errNotNatural); return;
+  }
+  if (n < min || n > max) {
+    showErr('tcErr', S().errTcRange(min, max)); return;
+  }
+  document.getElementById('tcErr').classList.remove('visible');
+
+  const unsigned = ((n % (1 << nBits)) + (1 << nBits)) % (1 << nBits);
+  const bits = unsigned.toString(2).padStart(nBits, '0').split('').map(Number);
+
+  document.getElementById('tcResSigned').textContent = n;
+  document.getElementById('tcResUnsigned').textContent = unsigned;
+  document.getElementById('tcResBin').textContent = bits.join('');
+  document.getElementById('tcResultBar').classList.add('visible');
+  document.getElementById('tcSteps').innerHTML = buildTcEncSteps(n, nBits, bits, unsigned);
+  document.getElementById('tcSteps').classList.add('visible');
+}
+
+function runTcBin2Dec() {
+  const nBits = parseInt(document.getElementById('tcBitsSelect').value);
+  const raw = document.getElementById('tcBinIn').value.trim().replace(/\s/g,'');
+  if (!/^[01]+$/.test(raw) || raw.length !== nBits) {
+    showErr('tcErr', S().errTcBin(nBits)); return;
+  }
+  document.getElementById('tcErr').classList.remove('visible');
+  const bits = raw.split('').map(Number);
+  const unsigned = parseInt(raw, 2);
+  const n = bits[0] === 1 ? unsigned - Math.pow(2, nBits) : unsigned;
+
+  document.getElementById('tcResSigned').textContent = n;
+  document.getElementById('tcResUnsigned').textContent = unsigned;
+  document.getElementById('tcResBin').textContent = raw;
+  document.getElementById('tcResultBar').classList.add('visible');
+  document.getElementById('tcSteps').innerHTML = buildTcDecSteps(bits, n, nBits, unsigned);
+  document.getElementById('tcSteps').classList.add('visible');
+}
+
+function buildTcEncSteps(n, nBits, bits, unsigned) {
+  const s = S();
+  const de = lang === 'de';
+  let html = `<div class="steps-panel"><h2>${s.stepsTc}</h2>`;
+  const min = -(Math.pow(2, nBits - 1));
+  const max = Math.pow(2, nBits - 1) - 1;
+
+  html += makeStep(1,
+    de ? `Überprüfe den Wertebereich für ${nBits}-Bit-Zweierkomplement`
+       : `Check the range for ${nBits}-bit two's complement`,
+    de ? `Gültige vorzeichenbehaftete Werte: <strong>${min}</strong> bis <strong>${max}</strong><br>
+          Positive Zahlen werden direkt binär kodiert. Für negative: Zweierkomplement-Trick.`
+       : `Valid signed values: <strong>${min}</strong> to <strong>${max}</strong><br>
+          Positive numbers are encoded as normal binary. For negatives: apply the two's complement trick.`
+  );
+
+  if (n >= 0) {
+    html += makeStep(2,
+      de ? `<strong>${n}</strong> ist positiv → direkt als Binärzahl`
+         : `<strong>${n}</strong> is positive → encode as binary directly`,
+      `${de?'Binärdarstellung (mit führender 0):':'Binary (with leading 0 sign bit):'}<br>
+       ${bitStrip(bits)}
+       <div class="info-note">${de?'Das höchstwertige Bit (MSB) ist 0, was positiv anzeigt.':'The most significant bit (MSB) is 0, indicating positive.'}</div>`
+    );
+  } else {
+    const posMag = -n;
+    const magBits = posMag.toString(2).padStart(nBits, '0').split('').map(Number);
+    const flippedBits = magBits.map(b => 1 - b);
+    const flippedNum = parseInt(flippedBits.join(''), 2);
+
+    html += makeStep(2,
+      de ? `Starte mit dem Absolutbetrag: |${n}| = ${posMag}`
+         : `Start with the magnitude: |${n}| = ${posMag}`,
+      `${de?'Schreibe':'Write'} ${posMag} ${de?'als':'as'} ${nBits}-Bit-Binärzahl:<br>
+       ${bitStrip(magBits)}`
+    );
+
+    html += makeStep(3,
+      de ? `Bits invertieren (NOT / Einerkomplement)`
+         : `Flip all bits (NOT / one's complement)`,
+      `${bitStrip(magBits)}
+       <div style="color:#505058;font-size:0.8rem;margin:4px 0">${de?'wird zu:':'becomes:'}</div>
+       ${bitStrip(flippedBits)}
+       <div class="info-note blue">${de?'Jede 0 wird zur 1, jede 1 zur 0.':'Every 0 becomes 1, every 1 becomes 0.'}</div>`
+    );
+
+    html += makeStep(4,
+      de ? `1 addieren → Zweierkomplement`
+         : `Add 1 → two's complement`,
+      `${flippedNum} + 1 = <strong>${unsigned}</strong><br>
+       ${bitStrip(bits)}
+       <div class="info-note">${de
+         ? `Das MSB ist 1 → negative Zahl. Der dekodierte Wert: ${unsigned} − 2<sup>${nBits}</sup> = <strong>${n}</strong>`
+         : `MSB is 1 → negative. Decoded: ${unsigned} − 2<sup>${nBits}</sup> = <strong>${n}</strong>`
+       }</div>`
+    );
+  }
+
+  html += buildTcCircle(n, nBits);
+  html += `</div>`;
+  return html;
+}
+
+function buildTcDecSteps(bits, n, nBits, unsigned) {
+  const s = S();
+  const de = lang === 'de';
+  let html = `<div class="steps-panel"><h2>${s.stepsTcDec}</h2>`;
+  const msb = bits[0];
+
+  html += makeStep(1,
+    de ? `Lies das MSB (höchstwertiges Bit)`
+       : `Read the MSB (most significant bit)`,
+    `${bitStrip(bits)}
+     ${de?`MSB = <strong>${msb}</strong> → ${msb?'negative':'positive/null'} Zahl`
+        :`MSB = <strong>${msb}</strong> → ${msb?'negative':'positive or zero'} number`}`
+  );
+
+  if (msb === 0) {
+    html += makeStep(2,
+      de ? `MSB ist 0 → direkt als Binärzahl lesen`
+         : `MSB is 0 → read directly as unsigned binary`,
+      `${de?'Wert':'Value'} = ${unsigned} = <strong>${n}</strong>`
+    );
+  } else {
+    const flippedBits = bits.map(b => 1 - b);
+    const flippedNum = parseInt(flippedBits.join(''), 2);
+    const mag = flippedNum + 1;
+
+    html += makeStep(2,
+      de ? `MSB ist 1 → Zweierkomplement umkehren`
+         : `MSB is 1 → reverse the two's complement`,
+      de ? `<strong>Methode A:</strong> Berechne vorzeichenlosen Wert − 2<sup>${nBits}</sup>:<br>
+            ${unsigned} − ${Math.pow(2, nBits)} = <strong>${n}</strong><br><br>
+            <strong>Methode B (Bits flippen + 1):</strong><br>
+            Bits invertieren: ${bitStrip(flippedBits)}
+            1 addieren: ${flippedNum} + 1 = ${mag} → daher der Wert ist −${mag} = <strong>${n}</strong>`
+         : `<strong>Method A:</strong> Compute unsigned value − 2<sup>${nBits}</sup>:<br>
+            ${unsigned} − ${Math.pow(2, nBits)} = <strong>${n}</strong><br><br>
+            <strong>Method B (flip bits + add 1):</strong><br>
+            Flip bits: ${bitStrip(flippedBits)}
+            Add 1: ${flippedNum} + 1 = ${mag} → so the value is −${mag} = <strong>${n}</strong>`
+    );
+  }
+
+  html += buildTcCircle(n, nBits);
+  html += `</div>`;
+  return html;
+}
+
+function buildTcCircle(currentVal, nBits) {
+  const de = lang === 'de';
+  const count = Math.pow(2, nBits);
+  const radius = 120;
+  const cx = 160, cy = 160;
+  const r = radius;
+
+  // Only draw for 4-bit (manageable number of values)
+  if (nBits > 8) {
+    return `<div class="info-note blue" style="margin-top:16px">${
+      de ? `Kreisdiagramm wird nur bis 8 Bit dargestellt.`
+         : `Circle diagram only shown for up to 8 bits.`
+    }</div>`;
+  }
+
+  const items = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const signed = i >= count / 2 ? i - count : i;
+    const bits = i.toString(2).padStart(nBits, '0');
+    const isCurrent = signed === currentVal;
+    items.push({ x, y, signed, bits, isCurrent, unsigned: i });
+  }
+
+  const fontSize = nBits <= 4 ? 10 : 8;
+  const dotR = nBits <= 4 ? 14 : 8;
+
+  const dots = items.map(it => {
+    const fill = it.isCurrent ? '#22c55e' : (it.signed < 0 ? '#9b1c1c' : '#252535');
+    const stroke = it.isCurrent ? '#22c55e' : (it.signed < 0 ? '#dc2626' : '#505058');
+    const textCol = it.isCurrent ? '#111' : '#cccccc';
+    const labelX = cx + (r + dotR + 12) * Math.cos((it.unsigned / count) * 2 * Math.PI - Math.PI / 2);
+    const labelY = cy + (r + dotR + 12) * Math.sin((it.unsigned / count) * 2 * Math.PI - Math.PI / 2);
+    return `<circle cx="${it.x.toFixed(1)}" cy="${it.y.toFixed(1)}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <text x="${it.x.toFixed(1)}" y="${(it.y + fontSize*0.35).toFixed(1)}" text-anchor="middle" font-size="${fontSize}" font-family="Consolas,monospace" fill="${textCol}" font-weight="${it.isCurrent?700:400}">${it.signed}</text>
+      <text x="${labelX.toFixed(1)}" y="${(labelY + 3.5).toFixed(1)}" text-anchor="middle" font-size="${nBits<=4?8:6}" font-family="Consolas,monospace" fill="#505058">${it.bits}</text>`;
+  }).join('');
+
+  // divider line between positives and negatives
+  const dividerAngle = (count / 2 / count) * 2 * Math.PI - Math.PI / 2;
+  const lx1 = (cx + (r - dotR) * Math.cos(dividerAngle - Math.PI * 0.01)).toFixed(1);
+  const ly1 = (cy + (r - dotR) * Math.sin(dividerAngle - Math.PI * 0.01)).toFixed(1);
+  const lx2 = (cx + (r + dotR) * Math.cos(dividerAngle)).toFixed(1);
+  const ly2 = (cy + (r + dotR) * Math.sin(dividerAngle)).toFixed(1);
+
+  const svgW = cx * 2 + (dotR + 30) * 2;
+  const svgH = cy * 2 + (dotR + 30) * 2;
+  const offX = dotR + 30;
+  const offY = dotR + 30;
+
+  const dotsTranslated = items.map(it => {
+    const tx = it.x + offX, ty = it.y + offY;
+    const fill = it.isCurrent ? '#22c55e' : (it.signed < 0 ? '#9b1c1c' : '#252535');
+    const stroke = it.isCurrent ? '#22c55e' : (it.signed < 0 ? '#dc2626' : '#505058');
+    const textCol = it.isCurrent ? '#111' : '#cccccc';
+    const lx = (cx + offX) + (r + dotR + 14) * Math.cos((it.unsigned / count) * 2 * Math.PI - Math.PI / 2);
+    const ly = (cy + offY) + (r + dotR + 14) * Math.sin((it.unsigned / count) * 2 * Math.PI - Math.PI / 2);
+    return `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <text x="${tx.toFixed(1)}" y="${(ty + fontSize*0.36).toFixed(1)}" text-anchor="middle" font-size="${fontSize}" font-family="Consolas,monospace" fill="${textCol}" font-weight="${it.isCurrent?700:400}">${it.signed}</text>
+      <text x="${lx.toFixed(1)}" y="${(ly + 3.5).toFixed(1)}" text-anchor="middle" font-size="${nBits<=4?8:6}" font-family="Consolas,monospace" fill="#505058">${it.bits}</text>`;
+  }).join('');
+
+  const cxT = cx + offX, cyT = cy + offY;
+  const svg = `<svg viewBox="0 0 ${svgW} ${svgH}" width="${Math.min(svgW, 360)}" style="max-width:100%">
+    <circle cx="${cxT}" cy="${cyT}" r="${r}" fill="none" stroke="#383840" stroke-width="1" stroke-dasharray="3,3"/>
+    ${dotsTranslated}
+    <text x="${cxT}" y="${cyT - r - dotR - 22}" text-anchor="middle" font-size="9" font-family="Segoe UI,sans-serif" fill="#666670">${de?'Negativ':'Negative'}</text>
+    <text x="${cxT}" y="${cyT + r + dotR + 28}" text-anchor="middle" font-size="9" font-family="Segoe UI,sans-serif" fill="#666670">${de?'Positiv':'Positive'}</text>
+    <text x="${cxT + r + dotR + 10}" y="${cyT + 4}" text-anchor="start" font-size="9" font-family="Segoe UI,sans-serif" fill="#666670">0</text>
+  </svg>`;
+
+  return `<div style="margin-top:18px;padding-top:16px;border-top:1px solid #2e2e34">
+    <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#505058;margin-bottom:10px">${
+      de?`${nBits}-Bit-Kreisdiagramm`:`${nBits}-Bit Circle Diagram`
+    }</div>
+    <div class="tc-circle-wrap">${svg}</div>
+    <div class="info-note blue" style="margin-top:8px">${
+      de ? `Werte zählen von 0 bis ${count/2-1} (positiv) dann weiter als ${-count/2} bis −1 (negativ). Das Muster "rollt über" (overflow).`
+         : `Values count from 0 to ${count/2-1} (positive), then continue as ${-count/2} to −1 (negative). The pattern "wraps around" on overflow.`
+    }</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  TAB 4: Fixed-Point
+// ─────────────────────────────────────────────
+function clearFpResult() {
+  document.getElementById('fpResultBar').classList.remove('visible');
+  document.getElementById('fpSteps').classList.remove('visible');
+  document.getElementById('fpErr').classList.remove('visible');
+  document.getElementById('fpResApproxItem').style.display = '';
+}
+
+function runFp() {
+  const raw = document.getElementById('fpDecIn').value.trim().replace(',', '.');
+  const n = parseFloat(raw);
+  const iBits = parseInt(document.getElementById('fpIntBits').value);
+  const fBits = parseInt(document.getElementById('fpFracBits').value);
+
+  if (isNaN(n) || n < 0 || !/^[\d.,]+$/.test(raw)) {
+    showErr('fpErr', S().errFpDecimal); return;
+  }
+  const maxVal = Math.pow(2, iBits) - Math.pow(2, -fBits);
+  if (n > maxVal + 1e-9) {
+    showErr('fpErr', S().errFpRange(maxVal.toFixed(fBits))); return;
+  }
+  document.getElementById('fpErr').classList.remove('visible');
+
+  // Encode
+  const { bits, approx } = encodeFP(n, iBits, fBits);
+  const bitStr = bits.join('');
+
+  document.getElementById('fpResDec').textContent = n;
+  document.getElementById('fpResBin').textContent = bitStr.slice(0, iBits) + '.' + bitStr.slice(iBits);
+  document.getElementById('fpResApprox').textContent = approx;
+  document.getElementById('fpResultBar').classList.add('visible');
+  document.getElementById('fpSteps').innerHTML = buildFpSteps(n, iBits, fBits, bits, approx);
+  document.getElementById('fpSteps').classList.add('visible');
+}
+
+function encodeFP(n, iBits, fBits) {
+  const totalBits = iBits + fBits;
+  const scale = Math.pow(2, fBits);
+  const intRep = Math.round(n * scale);
+  const bits = [];
+  for (let i = totalBits - 1; i >= 0; i--) {
+    bits.push((intRep >> i) & 1);
+  }
+  // Compute actual decoded value
+  let approx = 0;
+  for (let i = 0; i < totalBits; i++) {
+    const pos = iBits - 1 - i; // positive for int part, negative for frac part
+    approx += bits[i] * Math.pow(2, pos);
+  }
+  return { bits, approx: parseFloat(approx.toFixed(fBits + 2)) };
+}
+
+function buildFpSteps(n, iBits, fBits, bits, approx) {
+  const s = S();
+  const de = lang === 'de';
+  let html = `<div class="steps-panel"><h2>${s.stepsFp}</h2>`;
+  const totalBits = iBits + fBits;
+
+  // Step 1: split int/frac
+  const intPart = Math.floor(n);
+  const fracPart = n - intPart;
+  const intBits = bits.slice(0, iBits);
+  const fracBits = bits.slice(iBits);
+
+  html += makeStep(1,
+    de ? `Trenne Ganzzahl- und Nachkommateil`
+       : `Separate integer and fractional parts`,
+    de ? `<strong>${n}</strong> = <strong>${intPart}</strong> (ganzzahlig) + <strong>${fracPart.toFixed(fBits+2)}</strong> (Nachkomma)<br>
+          Format: <strong>${iBits}</strong> Bits für Ganzzahl | <strong>${fBits}</strong> Bits für Nachkomma`
+       : `<strong>${n}</strong> = <strong>${intPart}</strong> (integer) + <strong>${fracPart.toFixed(fBits+2)}</strong> (fractional)<br>
+          Format: <strong>${iBits}</strong> bits for integer | <strong>${fBits}</strong> bits for fractional`
+  );
+
+  // Step 2: encode integer part
+  html += makeStep(2,
+    de ? `Kodiere den Ganzzahlteil (${iBits} Bits)`
+       : `Encode the integer part (${iBits} bits)`,
+    `${de?'Binärdarstellung von':'Binary of'} ${intPart}:
+     <div class="bit-strip" style="margin-top:6px">${intBits.map(b=>bitCell(b)).join('')}</div>`
+  );
+
+  // Step 3: encode fractional part via multiply-by-2
+  let fracStepHtml = '';
+  let frac = fracPart;
+  const fracRows = [];
+  for (let i = 0; i < fBits; i++) {
+    frac *= 2;
+    const bit = frac >= 1 ? 1 : 0;
+    fracRows.push({ frac: (frac / 2).toFixed(Math.max(6, fBits+2)), times2: frac.toFixed(Math.max(6, fBits+2)), bit });
+    if (bit) frac -= 1;
+  }
+  const fracTh = de
+    ? `<th>Wert</th><th>× 2</th><th>Ergebnis</th><th>Bit (ganzer Teil)</th>`
+    : `<th>Value</th><th>× 2</th><th>Result</th><th>Bit (integer part)</th>`;
+  const fracTableRows = fracRows.map(r =>
+    `<tr><td>${r.frac}</td><td>× 2</td><td>${r.times2}</td><td class="${r.bit?'bit-col':'zero-col'}">${r.bit}</td></tr>`
+  ).join('');
+  fracStepHtml = `<div style="overflow-x:auto"><table class="pv-table"><thead><tr>${fracTh}</tr></thead><tbody>${fracTableRows}</tbody></table></div>
+    ${de?'Von oben nach unten lesen:':'Read top-to-bottom:'}
+    <div class="bit-strip" style="margin-top:6px">${fracBits.map(b=>bitCell(b)).join('')}</div>`;
+
+  html += makeStep(3,
+    de ? `Kodiere den Nachkommateil (${fBits} Bits): wiederholt × 2`
+       : `Encode the fractional part (${fBits} bits): repeatedly × 2`,
+    (de ? 'Multipliziere den Nachkommaanteil mit 2. Der ganzzahlige Teil des Ergebnisses ist das nächste Bit (von MSB nach LSB):<br>'
+        : 'Multiply the fractional value by 2. The integer part of the result is the next bit (MSB to LSB):<br>')
+    + fracStepHtml
+  );
+
+  // Step 4: full bit strip with separator
+  const intCells = intBits.map(b => `<div class="fp-bit ${b?'b1':'b0'}">${b}</div>`).join('');
+  const fracCells = fracBits.map(b => `<div class="fp-bit ${b?'b1':'b0'}">${b}</div>`).join('');
+  html += makeStep(4,
+    de ? `Zusammengesetztes Festkomma-Bitmuster`
+       : `Final fixed-point bit pattern`,
+    `<div class="fp-strip">${intCells}<div class="fp-point">.</div>${fracCells}</div>
+     <div class="info-note ${approx !== n ? 'orange' : ''}">${
+       approx !== n
+         ? (de ? `⚠ ${n} kann mit ${iBits}+${fBits} Bits nicht exakt dargestellt werden. Nächster darstellbarer Wert: <strong>${approx}</strong>`
+                : `⚠ ${n} cannot be represented exactly with ${iBits}+${fBits} bits. Nearest representable value: <strong>${approx}</strong>`)
+         : (de ? `✓ ${n} wird mit diesem Format exakt dargestellt.`
+                : `✓ ${n} is represented exactly with this format.`)
+     }</div>`
+  );
+
+  html += `</div>`;
+  html += buildFpDecodePanel(bits, iBits, fBits, approx);
+  return html;
+}
+
+function buildFpDecodePanel(bits, iBits, fBits, value) {
+  const s = S();
+  const de = lang === 'de';
+  const intBits = bits.slice(0, iBits);
+  const fracBits = bits.slice(iBits);
+  let html = `<div class="steps-panel"><h2>${s.stepsFpDec}</h2>`;
+  const pvHeader = de
+    ? `<th>Bit</th><th>Position</th><th>Stellenwert</th><th>Beitrag</th>`
+    : `<th>Bit</th><th>Position</th><th>Place value</th><th>Contribution</th>`;
+  const decRows = bits.map((b, i) => {
+    const pos = iBits - 1 - i;
+    const pv = Math.pow(2, pos);
+    const contrib = b * pv;
+    const pvStr = pos >= 0 ? `2<sup>${pos}</sup> = ${pv}` : `2<sup>${pos}</sup> = 1/${Math.pow(2,-pos)}`;
+    return `<tr>
+      <td class="${b?'bit-col':'zero-col'}">${b}</td>
+      <td>${pvStr}</td>
+      <td>${pv}</td>
+      <td>${b ? `<span class="sum-col">${contrib}</span>` : `<span style="color:#505058">0</span>`}</td>
+    </tr>`;
+  });
+  const sumRow = `<tr style="border-top:1px solid #383840"><td colspan="3" style="color:#666670;font-size:0.78rem">${de?'Summe':'Sum'}</td><td class="sum-col" style="font-weight:700">${value}</td></tr>`;
+  html += makeStep(1,
+    de ? `Multipliziere jedes Bit mit seinem Stellenwert`
+       : `Multiply each bit by its place value`,
+    `<div class="fp-strip" style="margin-bottom:8px">${intBits.map(b=>`<div class="fp-bit ${b?'b1':'b0'}">${b}</div>`).join('')}<div class="fp-point">.</div>${fracBits.map(b=>`<div class="fp-bit ${b?'b1':'b0'}">${b}</div>`).join('')}</div>
+    <div style="overflow-x:auto"><table class="pv-table"><thead><tr>${pvHeader}</tr></thead><tbody>${decRows.join('')}${sumRow}</tbody></table></div>`
+  );
+  html += `</div>`;
+  return html;
+}
+
+function runFpBin2Dec() {
+  const de = lang === 'de';
+  let raw = document.getElementById('fpBinIn').value.trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^[01]*\.?[01]*$/.test(raw) || raw.replace('.','').length === 0) {
+    showErr('fpErr', S().errFpBinFmt); return;
+  }
+  if (!raw.includes('.')) {
+    showErr('fpErr', de
+      ? 'Bitte Punkt (oder Komma) als Binärkomma angeben, z.B. 111.11'
+      : 'Please include a dot (or comma) to mark the binary point, e.g. 111.11');
+    return;
+  }
+  const parts = raw.split('.');
+  const intStr = parts[0] || '0';
+  const fracStr = parts[1] || '0';
+  if (intStr.length === 0 && fracStr.length === 0) { showErr('fpErr', S().errFpBinFmt); return; }
+  document.getElementById('fpErr').classList.remove('visible');
+
+  const iBits = intStr.length;
+  const fBits = fracStr.length;
+  const bits = (intStr + fracStr).split('').map(Number);
+  let value = 0;
+  for (let i = 0; i < bits.length; i++) {
+    value += bits[i] * Math.pow(2, iBits - 1 - i);
+  }
+  value = parseFloat(value.toFixed(Math.max(fBits + 2, 10)));
+
+  document.getElementById('fpResDec').textContent = value;
+  document.getElementById('fpResBin').textContent = intStr + '.' + fracStr;
+  document.getElementById('fpResApproxItem').style.display = 'none';
+  document.getElementById('fpResultBar').classList.add('visible');
+  document.getElementById('fpSteps').innerHTML = buildFpDecodePanel(bits, iBits, fBits, value);
+  document.getElementById('fpSteps').classList.add('visible');
+}
+
+// ─────────────────────────────────────────────
+//  Shared helpers
+// ─────────────────────────────────────────────
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+document.getElementById('langSelect').value = lang;
+applyStaticLang();
+</script>
+</body>
+</html>

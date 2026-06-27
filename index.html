@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GDI</title>
+<title>GDI Tools</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -123,7 +123,7 @@
 <body>
 
 <div class="header-row">
-  <div class="wordmark">trhhn / algo-visualizations</div>
+  <div class="wordmark">GDI Tools</div>
   <label class="lang-label">Language:
     <select id="langSelect" onchange="setLang(this.value)">
       <option value="en">EN</option>
@@ -132,8 +132,8 @@
   </label>
 </div>
 
-<h1>GDI</h1>
-<p class="subtitle" id="pageSubtitle">Interactive tools for explaining algorithms and digital logic</p>
+<h1>GDI Tools</h1>
+<p class="subtitle" id="pageSubtitle">Interactive tools for explaining foundational CS concepts</p>
 
 <div class="grid">
 
@@ -192,29 +192,58 @@
     <div class="card-link" id="link4">Open</div>
   </a>
 
+  <a class="card" href="binary_addition.html">
+    <svg class="card-icon" viewBox="0 0 40 40" fill="none">
+      <text x="2"  y="14" font-size="10" fill="#4a9a6a" font-family="monospace" font-weight="700">0101</text>
+      <text x="2"  y="24" font-size="10" fill="#4a9a6a" font-family="monospace" font-weight="700">0011</text>
+      <line x1="2" y1="27" x2="38" y2="27" stroke="#383848" stroke-width="1.5"/>
+      <text x="2"  y="37" font-size="10" fill="#22c55e" font-family="monospace" font-weight="700">1000</text>
+    </svg>
+    <div class="card-title" id="title6">Binary Addition</div>
+    <div class="card-desc" id="desc6">Add two binary numbers step by step. Explore unsigned overflow and two's complement illegal overflow with carry-by-carry explanation.</div>
+    <div class="card-link" id="link6">Open</div>
+  </a>
+
+  <a class="card" href="number_conversion.html">
+    <svg class="card-icon" viewBox="0 0 40 40" fill="none">
+      <text x="2" y="16" font-size="11" fill="#4a9a6a" font-family="monospace" font-weight="700">101</text>
+      <text x="2" y="28" font-size="11" fill="#f59e0b" font-family="monospace" font-weight="700">0x1A</text>
+      <line x1="26" y1="12" x2="38" y2="20" stroke="#22c55e" stroke-width="1.5"/>
+      <line x1="26" y1="28" x2="38" y2="20" stroke="#22c55e" stroke-width="1.5"/>
+      <circle cx="38" cy="20" r="3" fill="#22c55e"/>
+    </svg>
+    <div class="card-title" id="title5">Number Systems</div>
+    <div class="card-desc" id="desc5">Convert between binary, decimal, and hex step by step. Explore two's complement and fixed-point representation.</div>
+    <div class="card-link" id="link5">Open</div>
+  </a>
+
 </div>
 
 <script>
 const STRINGS = {
   en: {
-    subtitle: 'Interactive tools for explaining algorithms and digital logic',
-    titles: ['Sorting Coins', "Dijkstra's Algorithm", 'Logic Circuit Simulator', 'IEEE 754 Float Converter'],
+    subtitle: 'Interactive tools for explaining foundational CS concepts',
+    titles: ['Sorting Coins', "Dijkstra's Algorithm", 'Logic Circuit Simulator', 'IEEE 754 Float Converter', 'Binary Addition', 'Number Systems'],
     descs: [
       'Step through Bubble Sort and Selection Sort one comparison at a time, with coin icons and a live code panel.',
       "Draw a weighted graph, then step through how Dijkstra's algorithm finds the shortest path from a source node.",
       'Place gates, switches, and bulbs, wire them up, and watch the signal propagate. Includes SR latches, adders, and more.',
       'Enter a decimal number and see it broken into sign, exponent, and mantissa bits with a full step-by-step walkthrough.',
+      'Add two binary numbers step by step. Explore unsigned overflow and two\'s complement illegal overflow with carry-by-carry explanation.',
+      'Convert between binary, decimal, and hex step by step. Explore two\'s complement and fixed-point representation.',
     ],
     open: 'Open',
   },
   de: {
-    subtitle: 'Interaktive Werkzeuge für Algorithmen und digitale Logik',
-    titles: ['Münzen sortieren', 'Dijkstras Algorithmus', 'Logikschaltkreis-Simulator', 'IEEE 754 Float-Konverter'],
+    subtitle: 'Interaktive Werkzeuge für grundlegende Informatikkonzepte',
+    titles: ['Münzen sortieren', 'Dijkstras Algorithmus', 'Logikschaltkreis-Simulator', 'IEEE 754 Float-Konverter', 'Binäre Addition', 'Zahlensysteme'],
     descs: [
       'Schritt für Schritt durch Bubble Sort und Selection Sort — ein Vergleich nach dem anderen, mit Münzsymbolen und Live-Code-Panel.',
       'Zeichne einen gewichteten Graphen und gehe schrittweise durch Dijkstras Algorithmus zur Kürzeste-Wege-Suche.',
       'Platziere Gatter, Schalter und Lampen, verdrahte sie und beobachte den Signalfluss. Mit SR-Flipflops, Addierern und mehr.',
       'Gib eine Dezimalzahl ein und sieh, wie sie in Vorzeichen-, Exponenten- und Mantissenbits aufgeteilt wird – mit Schritt-für-Schritt-Erklärung.',
+      'Addiere zwei Binärzahlen Schritt für Schritt. Mit Überlaufanalyse für vorzeichenlose und Zweierkomplement-Zahlen.',
+      'Konvertiere zwischen Binär, Dezimal und Hex – Schritt für Schritt. Mit Zweierkomplement und Festkommazahlen.',
     ],
     open: 'Öffnen',
   }
@@ -232,7 +261,7 @@ function setLang(l) {
 function applyLang() {
   const s = STRINGS[lang];
   document.getElementById('pageSubtitle').textContent = s.subtitle;
-  [1, 2, 3, 4].forEach((n, i) => {
+  [1, 2, 3, 4, 6, 5].forEach((n, i) => {
     document.getElementById('title' + n).textContent = s.titles[i];
     document.getElementById('desc'  + n).textContent = s.descs[i];
     document.getElementById('link'  + n).textContent = s.open;
