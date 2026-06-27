@@ -249,7 +249,8 @@ const STRINGS = {
   }
 };
 
-let lang = localStorage.getItem('lang') || 'en';
+const urlLang = new URLSearchParams(location.search).get('lang');
+let lang = urlLang || localStorage.getItem('lang') || 'en';
 
 function setLang(l) {
   lang = l;
