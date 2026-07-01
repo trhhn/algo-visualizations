@@ -194,7 +194,7 @@ const STRINGS = {
     tabArith: 'Arithmetic',
     tabBool: 'Boolean',
     phArith: 'e.g.  (5 + 3) * 2',
-    phBool:  'e.g.  (A + B) * !(A + C)',
+    phBool:  'e.g.  (A+B) * !(AB)',
     opsArith: ['+  add', '−  subtract', '*  multiply', '÷  divide', '^  power', 'n!  factorial'],
     opsBool:  ['+ = OR', '* = AND', '^ = XOR', '! = NOT'],
     result: (v) => `= ${v}`,
@@ -226,7 +226,7 @@ const STRINGS = {
     tabArith: 'Arithmetisch',
     tabBool: 'Boolesch',
     phArith: 'z.B.  (5 + 3) * 2',
-    phBool:  'z.B.  (A + B) * !(A + C)',
+    phBool:  'z.B.  (A+B) * !(AB)',
     opsArith: ['+  Addition', '−  Subtraktion', '*  Multiplikation', '÷  Division', '^  Potenz', 'n!  Fakultät'],
     opsBool:  ['+ = ODER', '* = UND', '^ = XOR', '! = NICHT'],
     result: (v) => `= ${v}`,
@@ -296,7 +296,7 @@ function applyStaticLang() {
 // ─── Mode switching ───────────────────────────────────────────────────────────
 const DEFAULTS = {
   arith: '(5 + 3) * 2',
-  bool:  '(A + B) * !(A + C)',
+  bool:  '(A+B) * !(AB)',
 };
 
 function switchMode(mode) {
@@ -337,6 +337,7 @@ function renderVarInputs(vars) {
     nm.textContent = v + ':';
     item.appendChild(nm);
     if (currentMode === 'bool') {
+      if (varValues[v] === undefined) varValues[v] = 0; // default false
       [0, 1].forEach(bit => {
         const btn = document.createElement('button');
         btn.className = 'var-toggle' + (varValues[v] === bit ? ' ev-active' : '');
