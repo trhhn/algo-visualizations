@@ -286,13 +286,30 @@ function tokenize(input, mode) {
 
     // Identifiers / keywords
     if (/[a-zA-Z]/.test(input[i])) {
-      let w = '';
-      while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) w += input[i++];
       if (mode === 'bool') {
-        const kw = { AND: '*', OR: '+', NOT: '!', XOR: '^' };
-        const mapped = kw[w.toUpperCase()];
-        tokens.push(mapped ? { type: 'op', value: mapped } : { type: 'ident', value: w });
+        // Try multi-char keywords first (longest first to avoid OR matching inside XOR etc.)
+        const kwMap = { AND: '*', OR: '+', NOT: '!', XOR: '^' };
+        let kwHit = null;
+        for (const kw of ['NOT', 'AND', 'XOR', 'OR']) {
+          const end = i + kw.length;
+          if (input.slice(i, end).toUpperCase() === kw &&
+              (end >= input.length || !/[a-zA-Z]/.test(input[end]))) {
+            kwHit = kw; break;
+          }
+        }
+        if (kwHit) {
+          tokens.push({ type: 'op', value: kwMap[kwHit] });
+          i += kwHit.length;
+        } else {
+          // Single-char variable; implicit AND before next letter or '('
+          tokens.push({ type: 'ident', value: input[i++] });
+          if (i < input.length && /[a-zA-Z(]/.test(input[i])) {
+            tokens.push({ type: 'op', value: '*' });
+          }
+        }
       } else {
+        let w = '';
+        while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) w += input[i++];
         tokens.push({ type: 'ident', value: w });
       }
       continue;
@@ -305,7 +322,14 @@ function tokenize(input, mode) {
 
     if ('+-*/^!'.includes(input[i])) { tokens.push({ type: 'op', value: input[i] }); i++; continue; }
     if (input[i] === '(') { tokens.push({ type: 'lparen', value: '(' }); i++; continue; }
-    if (input[i] === ')') { tokens.push({ type: 'rparen', value: ')' }); i++; continue; }
+    if (input[i] === ')') {
+      tokens.push({ type: 'rparen', value: ')' }); i++;
+      // Implicit AND in boolean mode: ) followed by letter or (
+      if (mode === 'bool' && i < input.length && /[a-zA-Z(]/.test(input[i])) {
+        tokens.push({ type: 'op', value: '*' });
+      }
+      continue;
+    }
 
     throw new Error(`Unexpected character: '${input[i]}'`);
   }
