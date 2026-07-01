@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expression Tree</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1e1e22; color: #cccccc; min-height: 100vh; padding: 16px; }
+  h1 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #eeeeee; }
+  .subtitle { text-align: center; color: #666670; margin-bottom: 20px; font-size: 0.88rem; }
+
+  .tabs-row {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    margin-bottom: 20px; max-width: 960px; margin-left: auto; margin-right: auto;
+  }
+  .tabs { display: flex; gap: 10px; justify-content: center; }
+  .tab {
+    padding: 9px 20px; border: 2px solid #505055; border-radius: 8px;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    background: #383840; color: #aaaaaa;
+  }
+  .tab:hover { border-color: #22c55e; }
+  .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+
+  .tabs-row-right { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+  .ctrl-lbl { font-size: 0.82rem; color: #888888; }
+  select { background: #383840; color: #cccccc; border: 2px solid #505055; border-radius: 8px; padding: 4px 8px; cursor: pointer; }
+  a.back-link {
+    display: inline-block; font-size: 0.82rem; font-weight: 600; color: #888890;
+    text-decoration: none; padding: 6px 12px; background: #252528;
+    border: 1px solid #383840; border-radius: 8px; transition: color 0.15s, border-color 0.15s;
+  }
+  a.back-link:hover { color: #22c55e; border-color: #22c55e; }
+
+  .stage {
+    background: #252528; border-radius: 12px; padding: 24px;
+    max-width: 960px; margin: 0 auto; box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+
+  .expr-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .expr-input {
+    flex: 1; background: #1e1e28; border: 2px solid #383840; border-radius: 8px;
+    color: #eeeeee; padding: 10px 14px; font-family: 'Courier New', monospace;
+    font-size: 1rem; transition: border-color 0.2s; min-width: 0;
+  }
+  .expr-input:focus { outline: none; border-color: #22c55e; }
+  .expr-input.inp-err { border-color: #b83030; }
+  .expr-status { min-height: 1.4em; font-size: 0.85rem; margin-bottom: 10px; font-family: monospace; color: #555560; }
+  .expr-status.result { color: #22c55e; font-weight: 700; }
+  .expr-status.err { color: #e05050; }
+
+  .ops-hint {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;
+    font-size: 0.78rem; color: #555560; font-family: monospace;
+  }
+  .ops-hint span {
+    background: #1e1e28; padding: 3px 9px; border-radius: 4px;
+    border: 1px solid #2a2a38;
+  }
+
+  .tree-wrap { overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+  #treeSvg { display: block; margin: 0 auto; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; font-size: 0.78rem; min-height: 22px; }
+  .leg-item { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; flex-shrink: 0; }
+
+  .explanation {
+    background: #2a2a32; border-radius: 8px; padding: 13px 16px;
+    font-size: 0.88rem; line-height: 1.65; border-left: 3px solid #22c55e;
+    color: #aaaaaa; min-height: 44px;
+  }
+
+  .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
+  input, select { font-size: 16px !important; }
+
+  /* Light theme */
+  body.theme-light { background: #f5f5f7; color: #1a1a1a; }
+  body.theme-light h1 { color: #111; }
+  body.theme-light .subtitle { color: #555; }
+  body.theme-light .stage { background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+  body.theme-light .tab { border-color: #ccc; background: #eee; color: #555; }
+  body.theme-light .tab:hover { border-color: #22c55e; }
+  body.theme-light .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  body.theme-light select { background: #fff; color: #111; border-color: #ccc; }
+  body.theme-light a.back-link { background: #eee; border-color: #ccc; color: #555; }
+  body.theme-light .ctrl-lbl { color: #555; }
+  body.theme-light .expr-input { background: #f8f8fa; border-color: #ccc; color: #111; }
+  body.theme-light .expr-input:focus { border-color: #22c55e; }
+  body.theme-light .expr-status { color: #888; }
+  body.theme-light .expr-status.result { color: #16a34a; }
+  body.theme-light .expr-status.err { color: #991b1b; }
+  body.theme-light .ops-hint { color: #888; }
+  body.theme-light .ops-hint span { background: #f0f0f4; border-color: #ddd; }
+  body.theme-light .explanation { background: #eeeef2; color: #2a2a2a; }
+</style>
+</head>
+<body>
+
+<h1 id="pageTitle">Expression Tree</h1>
+<p class="subtitle" id="pageSubtitle">Parse expressions into syntax trees</p>
+
+<div class="tabs-row">
+  <div><a class="back-link" href="index.html" id="backLbl">← Tools</a></div>
+  <div class="tabs">
+    <button class="tab active" id="tabArithBtn" onclick="switchMode('arith')">Arithmetic</button>
+    <button class="tab" id="tabBoolBtn" onclick="switchMode('bool')">Boolean</button>
+  </div>
+  <div class="tabs-row-right">
+    <span class="ctrl-lbl" id="themeLbl">Theme:</span>
+    <select id="themeSelect" onchange="setTheme(this.value)">
+      <option value="dark" id="themeOptDark">Dark</option>
+      <option value="light" id="themeOptLight">Light</option>
+    </select>
+    <span class="ctrl-lbl" id="langLbl">Language:</span>
+    <select id="langSelect" onchange="setLang(this.value)">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="expr-row">
+    <input type="text" class="expr-input" id="exprInput" placeholder="" oninput="compute()">
+  </div>
+  <div class="expr-status" id="exprStatus"></div>
+  <div class="ops-hint" id="opsHint"></div>
+  <div class="tree-wrap"><svg id="treeSvg"></svg></div>
+  <div class="legend" id="treeLegend"></div>
+  <div class="explanation" id="exprExpl"></div>
+</div>
+
+<div class="ver">v1.0</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let pageTheme = localStorage.getItem('theme') || 'dark';
+let lang = localStorage.getItem('lang') || 'en';
+let currentMode = 'arith';
+
+// ─── Language strings ─────────────────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    pageTitle: 'Expression Tree',
+    pageSubtitle: 'Parse expressions into syntax trees',
+    backLbl: '← Tools',
+    themeLbl: 'Theme:',
+    themeOptDark: 'Dark',
+    themeOptLight: 'Light',
+    langLbl: 'Language:',
+    tabArith: 'Arithmetic',
+    tabBool: 'Boolean',
+    phArith: 'e.g.  (15 + 2!) * 4 + 6 * (18 − 2)',
+    phBool:  'e.g.  (A + B) * !(A + C)',
+    opsArith: ['+  add', '−  subtract', '×  multiply', '÷  divide', '^  power', 'n!  factorial'],
+    opsBool:  ['+ = OR', '* = AND', '^ = XOR', '! = NOT'],
+    result: (v) => `= ${v}`,
+    legendNum: 'Number',
+    legendVar: 'Variable',
+    legendOps: {
+      '+': '+  (add)', '−': '−  (subtract)', '×': '×  (multiply)',
+      '÷': '÷  (divide)', '^': '^  (power)', '!': '!  (factorial)',
+      'OR':'OR  (+)', 'AND':'AND  (*)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
+    },
+    explNone: 'Enter an expression above to see its syntax tree.',
+    explArith: (expr, depth, nodes) =>
+      `Expression: <code>${expr}</code><br>Tree depth: ${depth} &nbsp;·&nbsp; Nodes: ${nodes}`,
+    explBool: (expr, depth, nodes) =>
+      `Expression: <code>${expr}</code><br>Tree depth: ${depth} &nbsp;·&nbsp; Nodes: ${nodes}
+       <br><span style="color:#666">Operators: + = OR,&nbsp; * = AND,&nbsp; ^ = XOR,&nbsp; ! = NOT</span>`,
+  },
+  de: {
+    pageTitle: 'Ausdrucksbaum',
+    pageSubtitle: 'Ausdrücke als Syntaxbäume darstellen',
+    backLbl: '← Werkzeuge',
+    themeLbl: 'Thema:',
+    themeOptDark: 'Dunkel',
+    themeOptLight: 'Hell',
+    langLbl: 'Sprache:',
+    tabArith: 'Arithmetisch',
+    tabBool: 'Boolesch',
+    phArith: 'z.B.  (15 + 2!) * 4 + 6 * (18 − 2)',
+    phBool:  'z.B.  (A + B) * !(A + C)',
+    opsArith: ['+  Addition', '−  Subtraktion', '×  Multiplikation', '÷  Division', '^  Potenz', 'n!  Fakultät'],
+    opsBool:  ['+ = ODER', '* = UND', '^ = XOR', '! = NICHT'],
+    result: (v) => `= ${v}`,
+    legendNum: 'Zahl',
+    legendVar: 'Variable',
+    legendOps: {
+      '+': '+  (Add.)', '−': '−  (Sub.)', '×': '×  (Mult.)',
+      '÷': '÷  (Div.)', '^': '^  (Potenz)', '!': '!  (Fakultät)',
+      'OR':'ODER  (+)', 'AND':'UND  (*)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
+    },
+    explNone: 'Gib oben einen Ausdruck ein, um seinen Syntaxbaum zu sehen.',
+    explArith: (expr, depth, nodes) =>
+      `Ausdruck: <code>${expr}</code><br>Baumtiefe: ${depth} &nbsp;·&nbsp; Knoten: ${nodes}`,
+    explBool: (expr, depth, nodes) =>
+      `Ausdruck: <code>${expr}</code><br>Baumtiefe: ${depth} &nbsp;·&nbsp; Knoten: ${nodes}
+       <br><span style="color:#666">Operatoren: + = ODER,&nbsp; * = UND,&nbsp; ^ = XOR,&nbsp; ! = NICHT</span>`,
+  }
+};
+
+function S(key) { return STRINGS[lang][key]; }
+function tc(dark, light) { return pageTheme === 'light' ? light : dark; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('langSelect').value = l;
+  applyStaticLang();
+  compute();
+}
+
+function setTheme(t) {
+  pageTheme = t;
+  localStorage.setItem('theme', t);
+  document.getElementById('themeSelect').value = t;
+  document.body.classList.toggle('theme-light', t === 'light');
+  compute();
+}
+
+function applyStaticLang() {
+  const s = STRINGS[lang];
+  document.getElementById('pageTitle').textContent   = s.pageTitle;
+  document.getElementById('pageSubtitle').textContent = s.pageSubtitle;
+  document.getElementById('backLbl').textContent     = s.backLbl;
+  document.getElementById('themeLbl').textContent    = s.themeLbl;
+  document.getElementById('themeOptDark').textContent  = s.themeOptDark;
+  document.getElementById('themeOptLight').textContent = s.themeOptLight;
+  document.getElementById('langLbl').textContent     = s.langLbl;
+  document.getElementById('tabArithBtn').textContent = s.tabArith;
+  document.getElementById('tabBoolBtn').textContent  = s.tabBool;
+
+  const exprInput = document.getElementById('exprInput');
+  exprInput.placeholder = currentMode === 'arith' ? s.phArith : s.phBool;
+
+  const ops = currentMode === 'arith' ? s.opsArith : s.opsBool;
+  const opsHint = document.getElementById('opsHint');
+  opsHint.innerHTML = ops.map(o => `<span>${o}</span>`).join('');
+
+  if (!exprInput.value.trim()) {
+    document.getElementById('exprExpl').innerHTML = s.explNone;
+  }
+}
+
+// ─── Mode switching ───────────────────────────────────────────────────────────
+const DEFAULTS = {
+  arith: '(15 + 2!) * 4 + 6 * (18 - 2)',
+  bool:  '(A + B) * !(A + C)',
+};
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('tabArithBtn').classList.toggle('active', mode === 'arith');
+  document.getElementById('tabBoolBtn').classList.toggle('active', mode === 'bool');
+  document.getElementById('exprInput').value = DEFAULTS[mode];
+  applyStaticLang();
+  compute();
+}
+
+// ─── Tokenizer ────────────────────────────────────────────────────────────────
+function tokenize(input, mode) {
+  const tokens = [];
+  let i = 0;
+  while (i < input.length) {
+    if (/\s/.test(input[i])) { i++; continue; }
+
+    // Numbers (integer or decimal)
+    if (/\d/.test(input[i])) {
+      let n = '';
+      while (i < input.length && /[\d.]/.test(input[i])) n += input[i++];
+      tokens.push({ type: 'num', value: n });
+      continue;
+    }
+
+    // Identifiers / keywords
+    if (/[a-zA-Z]/.test(input[i])) {
+      let w = '';
+      while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) w += input[i++];
+      if (mode === 'bool') {
+        const kw = { AND: '*', OR: '+', NOT: '!', XOR: '^' };
+        const mapped = kw[w.toUpperCase()];
+        tokens.push(mapped ? { type: 'op', value: mapped } : { type: 'ident', value: w });
+      } else {
+        tokens.push({ type: 'ident', value: w });
+      }
+      continue;
+    }
+
+    // Unicode minus/multiply/divide → normalize
+    if (input[i] === '−') { tokens.push({ type: 'op', value: '-' }); i++; continue; }
+    if (input[i] === '×') { tokens.push({ type: 'op', value: '*' }); i++; continue; }
+    if (input[i] === '÷') { tokens.push({ type: 'op', value: '/' }); i++; continue; }
+
+    if ('+-*/^!'.includes(input[i])) { tokens.push({ type: 'op', value: input[i] }); i++; continue; }
+    if (input[i] === '(') { tokens.push({ type: 'lparen', value: '(' }); i++; continue; }
+    if (input[i] === ')') { tokens.push({ type: 'rparen', value: ')' }); i++; continue; }
+
+    throw new Error(`Unexpected character: '${input[i]}'`);
+  }
+  return tokens;
+}
+
+// ─── Arithmetic Parser ────────────────────────────────────────────────────────
+// Grammar:
+//   expr         → additive
+//   additive     → multiplicative (('+' | '-') multiplicative)*
+//   multiplicative → power (('*' | '/') power)*
+//   power        → unary ('^' power)?             ← right-associative
+//   unary        → '-' unary | postfix
+//   postfix      → primary ('!')*
+//   primary      → NUMBER | IDENT | '(' expr ')'
+
+function parseArith(tokens) {
+  let pos = 0;
+  const peek  = () => tokens[pos];
+  const take  = () => tokens[pos++];
+  const isOp  = (v) => peek()?.type === 'op' && peek()?.value === v;
+
+  function needToken() {
+    if (!peek()) throw new Error('Unexpected end of expression');
+  }
+
+  function parseExpr() { return parseAdditive(); }
+
+  function parseAdditive() {
+    let node = parseMultiplicative();
+    while (isOp('+') || isOp('-')) {
+      const op = take().value;
+      node = { type: 'op', op, children: [node, parseMultiplicative()] };
+    }
+    return node;
+  }
+
+  function parseMultiplicative() {
+    let node = parsePower();
+    while (isOp('*') || isOp('/')) {
+      const op = take().value;
+      node = { type: 'op', op, children: [node, parsePower()] };
+    }
+    return node;
+  }
+
+  function parsePower() {
+    const base = parseUnary();
+    if (isOp('^')) {
+      take();
+      return { type: 'op', op: '^', children: [base, parsePower()] }; // right-assoc
+    }
+    return base;
+  }
+
+  function parseUnary() {
+    if (isOp('-')) {
+      take();
+      return { type: 'op', op: '-', unary: true, children: [parseUnary()] };
+    }
+    return parsePostfix();
+  }
+
+  function parsePostfix() {
+    let node = parsePrimary();
+    while (isOp('!')) {
+      take();
+      node = { type: 'op', op: '!', postfix: true, children: [node] };
+    }
+    return node;
+  }
+
+  function parsePrimary() {
+    needToken();
+    const t = peek();
+    if (t.type === 'num')    { take(); return { type: 'num', value: t.value }; }
+    if (t.type === 'ident')  { take(); return { type: 'var', value: t.value }; }
+    if (t.type === 'lparen') {
+      take();
+      const node = parseExpr();
+      if (!peek() || peek().type !== 'rparen') throw new Error('Missing closing )');
+      take();
+      return node;
+    }
+    throw new Error(`Unexpected token: '${t.value}'`);
+  }
+
+  const root = parseExpr();
+  if (pos < tokens.length) throw new Error(`Unexpected token: '${tokens[pos].value}'`);
+  return root;
+}
+
+// ─── Boolean Parser ───────────────────────────────────────────────────────────
+// Grammar:
+//   expr     → orExpr
+//   orExpr   → andExpr ('+' andExpr)*      ← + = OR
+//   andExpr  → xorExpr ('*' xorExpr)*      ← * = AND
+//   xorExpr  → notExpr ('^' notExpr)*      ← ^ = XOR
+//   notExpr  → '!' notExpr | primary       ← ! = NOT (prefix)
+//   primary  → IDENT | '(' expr ')'
+
+function parseBool(tokens) {
+  let pos = 0;
+  const peek  = () => tokens[pos];
+  const take  = () => tokens[pos++];
+  const isOp  = (v) => peek()?.type === 'op' && peek()?.value === v;
+
+  function needToken() {
+    if (!peek()) throw new Error('Unexpected end of expression');
+  }
+
+  function parseExpr() { return parseOrExpr(); }
+
+  function parseOrExpr() {
+    let node = parseAndExpr();
+    while (isOp('+')) {
+      take();
+      node = { type: 'op', op: '+', children: [node, parseAndExpr()] };
+    }
+    return node;
+  }
+
+  function parseAndExpr() {
+    let node = parseXorExpr();
+    while (isOp('*')) {
+      take();
+      node = { type: 'op', op: '*', children: [node, parseXorExpr()] };
+    }
+    return node;
+  }
+
+  function parseXorExpr() {
+    let node = parseNotExpr();
+    while (isOp('^')) {
+      take();
+      node = { type: 'op', op: '^', children: [node, parseNotExpr()] };
+    }
+    return node;
+  }
+
+  function parseNotExpr() {
+    if (isOp('!')) {
+      take();
+      return { type: 'op', op: '!', unary: true, children: [parseNotExpr()] };
+    }
+    return parsePrimary();
+  }
+
+  function parsePrimary() {
+    needToken();
+    const t = peek();
+    if (t.type === 'ident')  { take(); return { type: 'var', value: t.value }; }
+    if (t.type === 'lparen') {
+      take();
+      const node = parseExpr();
+      if (!peek() || peek().type !== 'rparen') throw new Error('Missing closing )');
+      take();
+      return node;
+    }
+    if (t.type === 'num') throw new Error('Numbers not allowed in boolean mode — use variables (A, B, …)');
+    throw new Error(`Unexpected token: '${t.value}'`);
+  }
+
+  const root = parseExpr();
+  if (pos < tokens.length) throw new Error(`Unexpected token: '${tokens[pos].value}'`);
+  return root;
+}
+
+// ─── Tree Layout ──────────────────────────────────────────────────────────────
+const H_SPACING = 72;
+const V_SPACING = 88;
+const PAD       = 52;
+
+function layoutTree(root) {
+  let leafIndex = 0;
+
+  function assignSlots(node, depth) {
+    node.depth = depth;
+    if (!node.children || !node.children.length) {
+      node.slot = leafIndex++;
+      return;
+    }
+    node.children.forEach(c => assignSlots(c, depth + 1));
+    node.slot = node.children.reduce((s, c) => s + c.slot, 0) / node.children.length;
+  }
+  assignSlots(root, 0);
+
+  const leafCount = leafIndex;
+  const maxDepth  = getMaxDepth(root);
+  const svgW = PAD * 2 + Math.max(0, leafCount - 1) * H_SPACING;
+  const svgH = PAD * 2 + maxDepth * V_SPACING;
+
+  function setPos(node) {
+    node.x = PAD + node.slot * H_SPACING;
+    node.y = PAD + node.depth * V_SPACING;
+    node.children?.forEach(setPos);
+  }
+  setPos(root);
+
+  return { svgW, svgH, leafCount, maxDepth };
+}
+
+function getMaxDepth(node) {
+  if (!node.children?.length) return 0;
+  return 1 + Math.max(...node.children.map(getMaxDepth));
+}
+
+function countNodes(node) {
+  return 1 + (node.children?.reduce((s, c) => s + countNodes(c), 0) || 0);
+}
+
+// ─── Node display helpers ─────────────────────────────────────────────────────
+function getLabel(node) {
+  if (node.type === 'num') return node.value;
+  if (node.type === 'var') return node.value;
+  if (currentMode === 'bool') {
+    const boolLabels = { '+': 'OR', '*': 'AND', '^': 'XOR', '!': 'NOT' };
+    return boolLabels[node.op] || node.op;
+  }
+  const arithLabels = { '-': '−', '*': '×', '/': '÷' };
+  return arithLabels[node.op] || node.op;
+}
+
+
+function getNodeColor(node) {
+  const d = pageTheme === 'dark';
+  if (node.type === 'num') return { fill: d?'#1e293b':'#e8f0fe', stroke: d?'#4a6080':'#6080c0' };
+  if (node.type === 'var') return { fill: d?'#0f2a1f':'#d1fae5', stroke: '#22c55e' };
+  const opColors = {
+    '+': { fill: d?'#1e3a5f':'#dbeafe', stroke: '#3b82f6' },
+    '-': { fill: d?'#3a2a0a':'#fef3c7', stroke: '#f59e0b' },
+    '*': { fill: d?'#2a1a4a':'#ede9fe', stroke: '#8b5cf6' },
+    '/': { fill: d?'#3a1a0a':'#ffedd5', stroke: '#f97316' },
+    '^': { fill: d?'#3a0a2a':'#fce7f3', stroke: '#ec4899' },
+    '!': { fill: d?'#0f2a1f':'#d1fae5', stroke: '#22c55e' },
+  };
+  return opColors[node.op] || { fill: d?'#383840':'#eeeeee', stroke: '#888888' };
+}
+
+function getNodeRadius(label) {
+  if (label.length <= 1) return 22;
+  if (label.length <= 2) return 26;
+  return 30;
+}
+
+// ─── SVG helpers ──────────────────────────────────────────────────────────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function clippedLine(x1, y1, x2, y2, r1, r2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const d = Math.sqrt(dx*dx + dy*dy) || 1;
+  const ux = dx/d, uy = dy/d;
+  return [x1 + ux*r1, y1 + uy*r1, x2 - ux*r2, y2 - uy*r2];
+}
+
+// ─── Rendering ────────────────────────────────────────────────────────────────
+function renderTree(root) {
+  const { svgW, svgH } = layoutTree(root);
+  const svg = document.getElementById('treeSvg');
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svg.style.width  = Math.min(svgW, 900) + 'px';
+  svg.style.height = 'auto';
+  svg.innerHTML    = '';
+
+  const gEdges = svgEl('g', {});
+  const gNodes = svgEl('g', {});
+  svg.appendChild(gEdges);
+  svg.appendChild(gNodes);
+
+  drawEdges(root, gEdges);
+  drawNodes(root, gNodes);
+}
+
+function drawEdges(node, g) {
+  if (!node.children?.length) return;
+  node.children.forEach(child => {
+    const parentLbl = getLabel(node);
+    const childLbl  = getLabel(child);
+    const pr = getNodeRadius(parentLbl);
+    const cr = getNodeRadius(childLbl);
+    const [x1, y1, x2, y2] = clippedLine(node.x, node.y, child.x, child.y, pr + 2, cr + 2);
+    g.appendChild(svgEl('line', {
+      x1, y1, x2, y2,
+      stroke: tc('#3a3a4a', '#b0b0c0'),
+      'stroke-width': 2,
+      'stroke-linecap': 'round',
+    }));
+    drawEdges(child, g);
+  });
+}
+
+function drawNodes(node, g) {
+  const lbl   = getLabel(node);
+  const color = getNodeColor(node);
+  const r     = getNodeRadius(lbl);
+  const fs    = lbl.length <= 1 ? 15 : lbl.length <= 2 ? 13 : 10;
+  const fw    = (node.type === 'op') ? 700 : 600;
+
+  g.appendChild(svgEl('circle', {
+    cx: node.x, cy: node.y, r,
+    fill: color.fill, stroke: color.stroke, 'stroke-width': 2.5,
+  }));
+
+  const t = svgEl('text', {
+    x: node.x, y: node.y,
+    'text-anchor': 'middle', 'dominant-baseline': 'central',
+    'font-size': fs, 'font-weight': fw,
+    fill: tc('#ffffff', '#111111'),
+    'font-family': 'system-ui, -apple-system, sans-serif',
+  });
+  t.textContent = lbl;
+  g.appendChild(t);
+
+  node.children?.forEach(c => drawNodes(c, g));
+}
+
+// ─── Legend ───────────────────────────────────────────────────────────────────
+function renderLegend(root) {
+  const legendEl = document.getElementById('treeLegend');
+  legendEl.innerHTML = '';
+
+  const seenOps  = new Set();
+  const hasNums  = { v: false };
+  const hasVars  = { v: false };
+
+  function collect(node) {
+    if (node.type === 'num') hasNums.v = true;
+    else if (node.type === 'var') hasVars.v = true;
+    else seenOps.add(node.op);
+    node.children?.forEach(collect);
+  }
+  collect(root);
+
+  const s = STRINGS[lang];
+
+  const addItem = (text, color) => {
+    const item = document.createElement('div');
+    item.className = 'leg-item';
+    const dot = document.createElement('div');
+    dot.className = 'leg-dot';
+    dot.style.background  = color.fill;
+    dot.style.borderColor = color.stroke;
+    const span = document.createElement('span');
+    span.textContent = text;
+    item.appendChild(dot);
+    item.appendChild(span);
+    legendEl.appendChild(item);
+  };
+
+  if (hasNums.v) addItem(s.legendNum, getNodeColor({ type: 'num' }));
+  if (hasVars.v) addItem(s.legendVar, getNodeColor({ type: 'var' }));
+
+  // Add legend items in operator precedence order
+  const opOrder = currentMode === 'bool'
+    ? ['+', '*', '^', '!']
+    : ['+', '-', '*', '/', '^', '!'];
+
+  for (const op of opOrder) {
+    if (!seenOps.has(op)) continue;
+    const fakeNode = { type: 'op', op };
+    const lbl = getLabel(fakeNode);
+    addItem(s.legendOps[lbl] || lbl, getNodeColor(fakeNode));
+  }
+}
+
+// ─── Arithmetic Evaluation ────────────────────────────────────────────────────
+function evaluate(node) {
+  if (node.type === 'num') return parseFloat(node.value);
+  if (node.type === 'var') return null;
+  const cv = node.children.map(evaluate);
+  if (cv.some(v => v === null)) return null;
+  switch (node.op) {
+    case '+': return cv[0] + cv[1];
+    case '-': return node.unary ? -cv[0] : cv[0] - cv[1];
+    case '*': return cv[0] * cv[1];
+    case '/': return cv[1] === 0 ? null : cv[0] / cv[1];
+    case '^': return Math.pow(cv[0], cv[1]);
+    case '!': {
+      const n = cv[0];
+      if (!Number.isInteger(n) || n < 0 || n > 20) return null;
+      let f = 1; for (let i = 2; i <= n; i++) f *= i; return f;
+    }
+  }
+  return null;
+}
+
+function fmtResult(v) {
+  if (v === null) return null;
+  if (!isFinite(v)) return null;
+  if (Number.isInteger(v)) return String(v);
+  return v.toPrecision(6).replace(/\.?0+$/, '');
+}
+
+// ─── Reconstruct (for explanation) ───────────────────────────────────────────
+function reconstruct(node) {
+  if (node.type === 'num') return node.value;
+  if (node.type === 'var') return node.value;
+  const ch = node.children;
+  if (node.op === '!' && node.postfix) return `(${reconstruct(ch[0])})!`;
+  if (node.unary) return `!${reconstruct(ch[0])}`;
+  const sym = { '+':'+', '-':'−', '*':'×', '/':'÷', '^':'^' }[node.op] || node.op;
+  return `(${reconstruct(ch[0])} ${sym} ${reconstruct(ch[1])})`;
+}
+
+// ─── Main compute ─────────────────────────────────────────────────────────────
+function compute() {
+  const inputEl  = document.getElementById('exprInput');
+  const statusEl = document.getElementById('exprStatus');
+  const explEl   = document.getElementById('exprExpl');
+  const svgEl_   = document.getElementById('treeSvg');
+  const raw = inputEl.value;
+
+  if (!raw.trim()) {
+    svgEl_.innerHTML = '';
+    document.getElementById('treeLegend').innerHTML = '';
+    statusEl.textContent = '';
+    statusEl.className   = 'expr-status';
+    inputEl.classList.remove('inp-err');
+    explEl.innerHTML = S('explNone');
+    return;
+  }
+
+  try {
+    const tokens = tokenize(raw, currentMode);
+    const root = currentMode === 'arith' ? parseArith(tokens) : parseBool(tokens);
+
+    renderTree(root);
+    renderLegend(root);
+
+    inputEl.classList.remove('inp-err');
+
+    // Evaluation result
+    let statusText = '';
+    let statusClass = 'expr-status';
+    if (currentMode === 'arith') {
+      const val = evaluate(root);
+      const fmt = fmtResult(val);
+      if (fmt !== null) {
+        statusText  = S('result')(fmt);
+        statusClass = 'expr-status result';
+      }
+    }
+    statusEl.textContent = statusText;
+    statusEl.className   = statusClass;
+
+    // Explanation
+    const maxDepth  = getMaxDepth(root);
+    const nodeCount = countNodes(root);
+    const s = STRINGS[lang];
+    const exprDisplay = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (currentMode === 'arith') {
+      explEl.innerHTML = s.explArith(exprDisplay, maxDepth, nodeCount);
+    } else {
+      explEl.innerHTML = s.explBool(exprDisplay, maxDepth, nodeCount);
+    }
+
+  } catch(e) {
+    svgEl_.innerHTML = '';
+    document.getElementById('treeLegend').innerHTML = '';
+    inputEl.classList.add('inp-err');
+    statusEl.textContent = e.message;
+    statusEl.className   = 'expr-status err';
+    explEl.innerHTML     = S('explNone');
+  }
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+document.body.classList.toggle('theme-light', pageTheme === 'light');
+document.getElementById('themeSelect').value = pageTheme;
+document.getElementById('langSelect').value  = lang;
+document.getElementById('exprInput').value   = DEFAULTS.arith;
+
+applyStaticLang();
+compute();
+</script>
+</body>
+</html>
