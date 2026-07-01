@@ -273,8 +273,8 @@
 
   <div class="bits-row">
     <span id="lblBits2">Bits:</span>
-    <button class="bits-btn active" id="btn4b" onclick="setBits(4)">4</button>
-    <button class="bits-btn" id="btn8b" onclick="setBits(8)">8</button>
+    <button class="bits-btn" id="btn4b" onclick="setBits(4)">4</button>
+    <button class="bits-btn active" id="btn8b" onclick="setBits(8)">8</button>
   </div>
 
   <div class="bit-grid-wrap">
@@ -290,7 +290,7 @@
 // ─── State ──────────────────────────────────────────────────────────────────
 let lang = 'en';
 let pageTheme = localStorage.getItem('theme') || 'dark';
-let bitWidth = 4;
+let logicBits = 4, shiftBits = 8, bitWidth = 4;
 let currentTab = 'logic';
 
 // ─── Strings ────────────────────────────────────────────────────────────────
@@ -427,6 +427,7 @@ function applyStaticLang() {
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
+  bitWidth = tab === 'logic' ? logicBits : shiftBits;
   document.getElementById('stageLogic').style.display = tab === 'logic' ? 'block' : 'none';
   document.getElementById('stageShift').style.display = tab === 'shift' ? 'block' : 'none';
   document.getElementById('tabLogicBtn').classList.toggle('active', tab === 'logic');
@@ -437,8 +438,15 @@ function switchTab(tab) {
 // ─── Bit width ───────────────────────────────────────────────────────────────
 function setBits(w) {
   bitWidth = w;
-  ['btn4a','btn4b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 4));
-  ['btn8a','btn8b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 8));
+  if (currentTab === 'logic') {
+    logicBits = w;
+    document.getElementById('btn4a').classList.toggle('active', w === 4);
+    document.getElementById('btn8a').classList.toggle('active', w === 8);
+  } else {
+    shiftBits = w;
+    document.getElementById('btn4b').classList.toggle('active', w === 4);
+    document.getElementById('btn8b').classList.toggle('active', w === 8);
+  }
   compute();
 }
 
