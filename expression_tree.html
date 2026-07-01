@@ -99,6 +99,13 @@
   }
   .var-num-input:focus { outline: none; border-color: #22c55e; }
 
+  @media (max-width: 600px) {
+    .tabs-row {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .tabs-row-right { justify-content: center; }
+  }
+
   .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
   input, select { font-size: 16px !important; }
 
@@ -205,7 +212,7 @@ const STRINGS = {
       '÷': '÷  (divide)', '^': '^  (power)', '!': '!  (factorial)',
     },
     legendOpsBool: {
-      'OR':'OR  (+)', '*':'*  (AND)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
+      'OR':'OR  (+)', 'AND':'AND  (*)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
     },
     evalBtn: 'Evaluate',
     explNone: 'Enter an expression above to see its syntax tree.',
@@ -237,7 +244,7 @@ const STRINGS = {
       '÷': '÷  (Div.)', '^': '^  (Potenz)', '!': '!  (Fak.)',
     },
     legendOpsBool: {
-      'OR':'ODER  (+)', '*':'*  (UND)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
+      'OR':'ODER  (+)', 'AND':'AND  (*)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
     },
     evalBtn: 'Auswerten',
     explNone: 'Gib oben einen Ausdruck ein, um seinen Syntaxbaum zu sehen.',
@@ -704,7 +711,7 @@ function getLabel(node) {
   if (node.type === 'num') return node.value;
   if (node.type === 'var') return node.value;
   if (currentMode === 'bool') {
-    const boolLabels = { '+': 'OR', '^': 'XOR', '!': 'NOT' }; // * stays as *
+    const boolLabels = { '+': 'OR', '*': 'AND', '^': 'XOR', '!': 'NOT' };
     return boolLabels[node.op] || node.op;
   }
   const arithLabels = { '-': '−', '/': '÷' }; // * stays as *
@@ -729,8 +736,8 @@ function getNodeColor(node) {
 
 function getNodeRadius(label) {
   if (label.length <= 1) return 22;
-  if (label.length <= 2) return 26;
-  return 30;
+  if (label.length <= 2) return 25;
+  return 27;
 }
 
 // ─── SVG helpers ──────────────────────────────────────────────────────────────
