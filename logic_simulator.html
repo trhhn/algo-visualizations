@@ -29,9 +29,10 @@
     border-bottom: 1px solid #38383e;
     flex-shrink: 0;
     display: flex;
-    align-items: baseline;
-    gap: 14px;
+    flex-direction: column;
+    gap: 5px;
   }
+  .wm-nav { display: flex; align-items: center; gap: 10px; }
   a.back-link-wm {
     font-size: 0.72rem;
     font-weight: 600;
@@ -47,7 +48,7 @@
     flex-shrink: 0;
   }
   a.back-link-wm:hover { color: #22c55e; border-color: #22c55e; }
-  #appWordmark { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.5px; }
+  #appWordmark { letter-spacing: 0.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .app {
     display: grid;
@@ -233,7 +234,13 @@
 <div class="app">
 
   <div class="panel">
-    <div class="app-wordmark"><a class="back-link-wm" href="index.html">← Tools</a><span id="appWordmark">Logic Circuit Simulator</span><span style="font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;margin-left:4px;">v2.1</span></div>
+    <div class="app-wordmark">
+      <div class="wm-nav">
+        <a class="back-link-wm" href="index.html">← Tools</a>
+        <span style="font-weight:400;color:#3d3d4e;text-transform:none;letter-spacing:0;font-size:0.65rem;">v2.1</span>
+      </div>
+      <span id="appWordmark">Logic Circuit Simulator</span>
+    </div>
     <div class="panel-title" id="titleInputs">Inputs</div>
     <div class="palette-grid" id="paletteInputs"></div>
 
