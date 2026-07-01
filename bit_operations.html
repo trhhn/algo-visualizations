@@ -238,8 +238,8 @@
 
   <div class="bits-row">
     <span id="lblBits1">Bits:</span>
-    <button class="bits-btn" id="btn4a" onclick="setBits(4)">4</button>
-    <button class="bits-btn active" id="btn8a" onclick="setBits(8)">8</button>
+    <button class="bits-btn active" id="btn4a" onclick="setBits(4)">4</button>
+    <button class="bits-btn" id="btn8a" onclick="setBits(8)">8</button>
   </div>
 
   <div class="bit-grid-wrap">
@@ -255,27 +255,13 @@
 
   <div class="input-row">
     <div class="inp-grp">
-      <label id="lblS">A</label>
-      <input type="text" id="inputShift" placeholder="e.g. 53" oninput="compute()">
-      <span class="inp-hint" id="hintShift"></span>
+      <label id="lblExpr">Expression</label>
+      <input type="text" id="inputExpr" placeholder="e.g. 6 &lt;&lt; 2" oninput="compute()">
+      <span class="inp-hint" id="hintExpr"></span>
     </div>
   </div>
 
   <div class="shift-ctrls">
-    <div class="sc">
-      <span class="sc-lbl" id="lblDir">Direction:</span>
-      <div class="radio-col">
-        <label><input type="radio" name="shiftDir" value="left" checked onchange="onDirChange();compute()"> <span id="rdL">&lt;&lt; Left shift</span></label>
-        <label><input type="radio" name="shiftDir" value="right" onchange="onDirChange();compute()"> <span id="rdR">&gt;&gt; Right shift</span></label>
-      </div>
-    </div>
-    <div class="sc">
-      <span class="sc-lbl" id="lblAmt">Shift by:</span>
-      <div class="slider-row">
-        <input type="range" id="shiftSlider" min="1" max="7" value="1" oninput="onSlider();compute()">
-        <span class="slider-val" id="shiftAmtLbl">1</span>
-      </div>
-    </div>
     <div class="sc" id="shiftTypeGroup">
       <span class="sc-lbl" id="lblType">Right shift type:</span>
       <div class="radio-col">
@@ -287,8 +273,8 @@
 
   <div class="bits-row">
     <span id="lblBits2">Bits:</span>
-    <button class="bits-btn" id="btn4b" onclick="setBits(4)">4</button>
-    <button class="bits-btn active" id="btn8b" onclick="setBits(8)">8</button>
+    <button class="bits-btn active" id="btn4b" onclick="setBits(4)">4</button>
+    <button class="bits-btn" id="btn8b" onclick="setBits(8)">8</button>
   </div>
 
   <div class="bit-grid-wrap">
@@ -304,7 +290,7 @@
 // ─── State ──────────────────────────────────────────────────────────────────
 let lang = 'en';
 let pageTheme = localStorage.getItem('theme') || 'dark';
-let bitWidth = 8;
+let bitWidth = 4;
 let currentTab = 'logic';
 
 // ─── Strings ────────────────────────────────────────────────────────────────
@@ -318,12 +304,8 @@ const STRINGS = {
     lblOp:    'Operation',
     lblA:     'A',
     lblB:     'B',
-    lblS:     'A',
-    lblDir:   'Direction:',
-    lblAmt:   'Shift by:',
+    lblExpr:  'Expression',
     lblType:  'Right shift type:',
-    rdL:      '<< Left shift',
-    rdR:      '>> Right shift',
     rdLog:    'Logical (fill 0)',
     rdArith:  'Arithmetic (fill sign bit)',
     resultLbl:'Result',
@@ -331,10 +313,12 @@ const STRINGS = {
     themeLbl: 'Theme:',
     themeD:   'Dark',
     themeL:   'Light',
-    phA:      'e.g. 53',
-    phB:      'e.g. 179',
-    phS:      'e.g. 53',
+    phA:      'e.g. 5',
+    phB:      'e.g. 12',
+    phExpr:   'e.g. 6 << 2',
     errRange: (n) => `Enter 0–${n} or binary`,
+    errExpr:  'Use format: value << n  or  value >> n',
+    errAmt:   (n) => `Shift amount must be 0–${n}`,
     hoverHint: 'Hover a column to inspect that bit position',
     colFmt:   (col, op, ab, a, b, r) => ab ? `Bit ${col}: ${a} ${op} ${b} = ${r}` : `Bit ${col}: NOT ${a} = ${r}`,
     explain: {
@@ -362,12 +346,8 @@ const STRINGS = {
     lblOp:    'Operation',
     lblA:     'A',
     lblB:     'B',
-    lblS:     'A',
-    lblDir:   'Richtung:',
-    lblAmt:   'Verschiebung:',
+    lblExpr:  'Ausdruck',
     lblType:  'Rechts-Shift-Typ:',
-    rdL:      '<< Links-Shift',
-    rdR:      '>> Rechts-Shift',
     rdLog:    'Logisch (mit 0 füllen)',
     rdArith:  'Arithmetisch (Vorzeichenbit)',
     resultLbl:'Ergebnis',
@@ -375,10 +355,12 @@ const STRINGS = {
     themeLbl: 'Design:',
     themeD:   'Dunkel',
     themeL:   'Hell',
-    phA:      'z.B. 53',
-    phB:      'z.B. 179',
-    phS:      'z.B. 53',
+    phA:      'z.B. 5',
+    phB:      'z.B. 12',
+    phExpr:   'z.B. 6 << 2',
     errRange: (n) => `Wert 0–${n} oder binär eingeben`,
+    errExpr:  'Format: Wert << n  oder  Wert >> n',
+    errAmt:   (n) => `Verschiebung muss 0–${n} sein`,
     hoverHint: 'Spalte anfahren, um diese Bitposition zu untersuchen',
     colFmt:   (col, op, ab, a, b, r) => ab ? `Bit ${col}: ${a} ${op} ${b} = ${r}` : `Bit ${col}: NOT ${a} = ${r}`,
     explain: {
@@ -430,19 +412,15 @@ function applyStaticLang() {
   document.getElementById('lblOp').textContent        = s.lblOp;
   document.getElementById('lblA').textContent         = s.lblA;
   document.getElementById('lblB').textContent         = s.lblB;
-  document.getElementById('lblS').textContent         = s.lblS;
+  document.getElementById('lblExpr').textContent      = s.lblExpr;
   document.getElementById('lblBits1').textContent     = s.lblBits;
   document.getElementById('lblBits2').textContent     = s.lblBits;
-  document.getElementById('lblDir').textContent       = s.lblDir;
-  document.getElementById('lblAmt').textContent       = s.lblAmt;
   document.getElementById('lblType').textContent      = s.lblType;
-  document.getElementById('rdL').textContent          = s.rdL;
-  document.getElementById('rdR').textContent          = s.rdR;
   document.getElementById('rdLog').textContent        = s.rdLog;
   document.getElementById('rdArith').textContent      = s.rdArith;
   document.getElementById('inputA').placeholder       = s.phA;
   document.getElementById('inputB').placeholder       = s.phB;
-  document.getElementById('inputShift').placeholder   = s.phS;
+  document.getElementById('inputExpr').placeholder    = s.phExpr;
   updateColTT('');
 }
 
@@ -461,22 +439,7 @@ function setBits(w) {
   bitWidth = w;
   ['btn4a','btn4b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 4));
   ['btn8a','btn8b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 8));
-  const sl = document.getElementById('shiftSlider');
-  sl.max = w - 1;
-  if (parseInt(sl.value) > w - 1) { sl.value = 1; document.getElementById('shiftAmtLbl').textContent = 1; }
   compute();
-}
-
-// ─── Shift helpers ───────────────────────────────────────────────────────────
-function onSlider() {
-  document.getElementById('shiftAmtLbl').textContent = document.getElementById('shiftSlider').value;
-}
-
-function onDirChange() {
-  const isRight = document.querySelector('input[name=shiftDir]:checked').value === 'right';
-  const tg = document.getElementById('shiftTypeGroup');
-  tg.style.opacity = isRight ? '1' : '0.4';
-  tg.style.pointerEvents = isRight ? 'auto' : 'none';
 }
 
 // ─── Parsing ─────────────────────────────────────────────────────────────────
@@ -605,36 +568,80 @@ function renderLogicGrid(a, b, op, result, bitsA, bitsB, bitsR, needsB) {
 }
 
 // ─── Shift tab ───────────────────────────────────────────────────────────────
+function parseShiftExpr(raw) {
+  // Accept: <value> << <n>  or  <value> >> <n>
+  // value: decimal digits or 0b... prefix
+  const m = /^(0b[01]+|\d+)\s*(<<|>>)\s*(\d+)$/i.exec(raw.trim());
+  if (!m) return null;
+  const val = /^0b/i.test(m[1]) ? parseInt(m[1].slice(2), 2) : parseInt(m[1], 10);
+  if (isNaN(val)) return null;
+  return { val, dir: m[2] === '<<' ? 'left' : 'right', amt: parseInt(m[3], 10) };
+}
+
 function computeShift() {
   const s = S();
   const m = msk();
-  const errMsg = s.errRange(m);
+  const raw = document.getElementById('inputExpr').value;
+  const el = document.getElementById('inputExpr');
+  const hint = document.getElementById('hintExpr');
+  const tg = document.getElementById('shiftTypeGroup');
 
-  const nRaw = document.getElementById('inputShift').value;
-  const nVal = parseInput(nRaw);
-  const nOk = nVal !== null && nVal >= 0 && nVal <= m;
+  // Default: dim the type group until we know direction
+  tg.style.opacity = '0.4';
+  tg.style.pointerEvents = 'none';
 
-  const nEl = document.getElementById('inputShift');
-  nEl.classList.toggle('inp-err', nRaw.trim() !== '' && !nOk);
-  document.getElementById('hintShift').textContent = nRaw.trim() ? (nOk ? fmtHint(nVal & m) : errMsg) : '';
-
-  if (!nOk) {
+  if (!raw.trim()) {
+    el.classList.remove('inp-err');
+    hint.textContent = '';
     document.getElementById('shiftGrid').innerHTML = '';
     document.getElementById('shiftExpl').textContent = '';
     return;
   }
 
-  const n = nVal & m;
-  const amt = parseInt(document.getElementById('shiftSlider').value);
-  const dir = document.querySelector('input[name=shiftDir]:checked').value;
+  const parsed = parseShiftExpr(raw);
+  if (!parsed) {
+    el.classList.add('inp-err');
+    hint.textContent = s.errExpr;
+    document.getElementById('shiftGrid').innerHTML = '';
+    document.getElementById('shiftExpl').textContent = '';
+    return;
+  }
+
+  const { val, dir, amt } = parsed;
+
+  if (val < 0 || val > m) {
+    el.classList.add('inp-err');
+    hint.textContent = s.errRange(m);
+    document.getElementById('shiftGrid').innerHTML = '';
+    document.getElementById('shiftExpl').textContent = '';
+    return;
+  }
+
+  if (amt < 0 || amt > bitWidth) {
+    el.classList.add('inp-err');
+    hint.textContent = s.errAmt(bitWidth);
+    document.getElementById('shiftGrid').innerHTML = '';
+    document.getElementById('shiftExpl').textContent = '';
+    return;
+  }
+
+  el.classList.remove('inp-err');
+  hint.textContent = fmtHint(val);
+
+  // Show type group only for >>
+  if (dir === 'right') {
+    tg.style.opacity = '1';
+    tg.style.pointerEvents = 'auto';
+  }
+
+  const n = val & m;
   const type = document.querySelector('input[name=shiftType]:checked').value;
   const bitsN = toBits(n);
-
   const bw = bitWidth;
   const bN = `0b${n.toString(2).padStart(bw,'0')}`;
 
   if (amt === 0) {
-    renderShiftGrid(bitsN, bitsN, amt, dir, 0);
+    renderShiftGrid(bitsN, bitsN, 0, dir, 0);
     document.getElementById('shiftExpl').textContent = s.shiftExplain.zero(n, bN);
     return;
   }
@@ -649,19 +656,14 @@ function computeShift() {
 
   const result = bitsR.reduce((acc, b) => (acc << 1) | b, 0) & m;
   const bR = `0b${result.toString(2).padStart(bw,'0')}`;
-
   renderShiftGrid(bitsN, bitsR, amt, dir, fillBit);
 
   const ex = s.shiftExplain;
   const pow = Math.pow(2, amt);
   let txt;
-  if (dir === 'left') {
-    txt = ex.left(n, bN, amt, result, bR, pow);
-  } else if (type === 'logical') {
-    txt = ex.logical(n, bN, amt, result, bR);
-  } else {
-    txt = ex.arith(n, bN, amt, result, bR, fillBit);
-  }
+  if (dir === 'left') txt = ex.left(n, bN, amt, result, bR, pow);
+  else if (type === 'logical') txt = ex.logical(n, bN, amt, result, bR);
+  else txt = ex.arith(n, bN, amt, result, bR, fillBit);
   document.getElementById('shiftExpl').textContent = txt;
 }
 
@@ -766,10 +768,9 @@ const _sl = localStorage.getItem('lang');
 if (_sl === 'de') { lang = 'de'; document.getElementById('langSelect').value = 'de'; }
 applyStaticLang();
 
-onDirChange();
-document.getElementById('inputA').value = '53';
-document.getElementById('inputB').value = '179';
-document.getElementById('inputShift').value = '53';
+document.getElementById('inputA').value = '5';
+document.getElementById('inputB').value = '12';
+document.getElementById('inputExpr').value = '6 << 2';
 compute();
 </script>
 </body>
