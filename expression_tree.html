@@ -73,6 +73,32 @@
     color: #aaaaaa; min-height: 44px;
   }
 
+  /* Evaluate section */
+  .eval-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .eval-btn {
+    padding: 7px 16px; border: 2px solid #505055; border-radius: 8px;
+    background: #383840; color: #aaaaaa; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; white-space: nowrap;
+  }
+  .eval-btn:hover { border-color: #22c55e; }
+  .eval-btn.ev-active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  .var-inputs { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .var-item { display: flex; align-items: center; gap: 4px; }
+  .var-name { color: #22c55e; font-weight: 700; font-family: 'Courier New', monospace; font-size: 0.92rem; }
+  .var-toggle {
+    width: 30px; height: 26px; border: 1.5px solid #505055; border-radius: 5px;
+    background: #383840; color: #888888; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .var-toggle:hover { border-color: #22c55e; }
+  .var-toggle.ev-active { border-color: #22c55e; background: rgba(34,197,94,0.15); color: #22c55e; }
+  .var-num-input {
+    width: 68px; background: #1e1e28; border: 1.5px solid #383840; border-radius: 6px;
+    color: #eeeeee; padding: 4px 8px; font-size: 0.88rem; text-align: center;
+    font-family: monospace; transition: border-color 0.2s;
+  }
+  .var-num-input:focus { outline: none; border-color: #22c55e; }
+
   .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
   input, select { font-size: 16px !important; }
 
@@ -95,6 +121,11 @@
   body.theme-light .ops-hint { color: #888; }
   body.theme-light .ops-hint span { background: #f0f0f4; border-color: #ddd; }
   body.theme-light .explanation { background: #eeeef2; color: #2a2a2a; }
+  body.theme-light .eval-btn { background: #eee; border-color: #ccc; color: #555; }
+  body.theme-light .eval-btn.ev-active { background: rgba(34,197,94,0.1); border-color: #22c55e; color: #22c55e; }
+  body.theme-light .var-toggle { background: #eee; border-color: #ccc; color: #666; }
+  body.theme-light .var-toggle.ev-active { background: rgba(34,197,94,0.1); border-color: #22c55e; color: #22c55e; }
+  body.theme-light .var-num-input { background: #f8f8fa; border-color: #ccc; color: #111; }
 </style>
 </head>
 <body>
@@ -128,6 +159,12 @@
   </div>
   <div class="expr-status" id="exprStatus"></div>
   <div class="ops-hint" id="opsHint"></div>
+  <div id="evalSection" style="display:none">
+    <div class="eval-row">
+      <button class="eval-btn" id="evalBtn" onclick="toggleEval()">Evaluate</button>
+      <div class="var-inputs" id="varInputs"></div>
+    </div>
+  </div>
   <div class="tree-wrap"><svg id="treeSvg"></svg></div>
   <div class="legend" id="treeLegend"></div>
   <div class="explanation" id="exprExpl"></div>
@@ -140,6 +177,9 @@
 let pageTheme = localStorage.getItem('theme') || 'dark';
 let lang = localStorage.getItem('lang') || 'en';
 let currentMode = 'arith';
+let evalActive = false;
+let varValues  = {};   // { varName: number (arith) | 0|1 (bool) }
+let lastRoot   = null; // last successfully parsed AST
 
 // ─── Language strings ─────────────────────────────────────────────────────────
 const STRINGS = {
@@ -167,6 +207,7 @@ const STRINGS = {
     legendOpsBool: {
       'OR':'OR  (+)', '*':'*  (AND)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
     },
+    evalBtn: 'Evaluate',
     explNone: 'Enter an expression above to see its syntax tree.',
     explArith: (expr, depth, nodes) =>
       `Expression: <code>${expr}</code><br>Tree depth: ${depth} &nbsp;·&nbsp; Nodes: ${nodes}`,
@@ -198,6 +239,7 @@ const STRINGS = {
     legendOpsBool: {
       'OR':'ODER  (+)', '*':'*  (UND)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
     },
+    evalBtn: 'Auswerten',
     explNone: 'Gib oben einen Ausdruck ein, um seinen Syntaxbaum zu sehen.',
     explArith: (expr, depth, nodes) =>
       `Ausdruck: <code>${expr}</code><br>Baumtiefe: ${depth} &nbsp;·&nbsp; Knoten: ${nodes}`,
@@ -237,6 +279,7 @@ function applyStaticLang() {
   document.getElementById('langLbl').textContent     = s.langLbl;
   document.getElementById('tabArithBtn').textContent = s.tabArith;
   document.getElementById('tabBoolBtn').textContent  = s.tabBool;
+  document.getElementById('evalBtn').textContent     = s.evalBtn;
 
   const exprInput = document.getElementById('exprInput');
   exprInput.placeholder = currentMode === 'arith' ? s.phArith : s.phBool;
@@ -258,11 +301,125 @@ const DEFAULTS = {
 
 function switchMode(mode) {
   currentMode = mode;
+  evalActive  = false;
+  varValues   = {};
   document.getElementById('tabArithBtn').classList.toggle('active', mode === 'arith');
   document.getElementById('tabBoolBtn').classList.toggle('active', mode === 'bool');
+  document.getElementById('evalBtn').classList.remove('ev-active');
   document.getElementById('exprInput').value = DEFAULTS[mode];
   applyStaticLang();
   compute();
+}
+
+// ─── Evaluate helpers ─────────────────────────────────────────────────────────
+function collectVars(node, set = new Set()) {
+  if (node.type === 'var') set.add(node.value);
+  node.children?.forEach(c => collectVars(c, set));
+  return [...set].sort();
+}
+
+function toggleEval() {
+  evalActive = !evalActive;
+  if (!evalActive) varValues = {};
+  document.getElementById('evalBtn').classList.toggle('ev-active', evalActive);
+  compute();
+}
+
+function renderVarInputs(vars) {
+  const panel = document.getElementById('varInputs');
+  panel.innerHTML = '';
+  if (!evalActive || !vars.length) return;
+  for (const v of vars) {
+    const item = document.createElement('div');
+    item.className = 'var-item';
+    const nm = document.createElement('span');
+    nm.className = 'var-name';
+    nm.textContent = v + ':';
+    item.appendChild(nm);
+    if (currentMode === 'bool') {
+      [0, 1].forEach(bit => {
+        const btn = document.createElement('button');
+        btn.className = 'var-toggle' + (varValues[v] === bit ? ' ev-active' : '');
+        btn.textContent = bit;
+        btn.onclick = () => { varValues[v] = bit; redrawBadges(); renderVarInputs(vars); };
+        item.appendChild(btn);
+      });
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'var-num-input';
+      if (varValues[v] !== undefined) inp.value = varValues[v];
+      inp.placeholder = '?';
+      inp.oninput = () => {
+        const n = parseFloat(inp.value);
+        varValues[v] = isNaN(n) ? undefined : n;
+        redrawBadges();
+      };
+      item.appendChild(inp);
+    }
+    panel.appendChild(item);
+  }
+}
+
+// Re-render only the badge layer; called when var values change (preserves DOM inputs)
+function redrawBadges() {
+  const old = document.getElementById('evalBadges');
+  if (old) old.remove();
+  if (!lastRoot || !evalActive) return;
+  const svg = document.getElementById('treeSvg');
+  const g = svgEl('g', { id: 'evalBadges' });
+  svg.appendChild(g);
+  drawEvalBadges(lastRoot, g);
+  // Update status line for arithmetic
+  if (currentMode === 'arith') {
+    const val = evaluate(lastRoot, varValues);
+    const fmt = fmtResult(val);
+    const statusEl = document.getElementById('exprStatus');
+    statusEl.textContent = fmt !== null ? S('result')(fmt) : '';
+    statusEl.className   = fmt !== null ? 'expr-status result' : 'expr-status';
+  }
+}
+
+function drawEvalBadges(node, g) {
+  const val = currentMode === 'bool'
+    ? evaluateBool(node, varValues)
+    : evaluate(node, varValues);
+  const lbl = getLabel(node);
+  const r   = getNodeRadius(lbl);
+  const d   = pageTheme === 'dark';
+  const by  = node.y + r + 5;
+  const bh  = 18;
+
+  let valStr, fill, stroke;
+  if (val === null) {
+    valStr = '?';
+    fill   = d ? '#222228' : '#e4e4ec';
+    stroke = d ? '#404050' : '#aaaaaa';
+  } else if (currentMode === 'bool') {
+    valStr = String(val);
+    fill   = val ? (d ? '#0f2a1f' : '#d1fae5') : (d ? '#2a1a1a' : '#fee2e2');
+    stroke = val ? '#22c55e' : '#f87171';
+  } else {
+    valStr = fmtResult(val) ?? '?';
+    fill   = d ? '#1e293b' : '#e8f0fe';
+    stroke = d ? '#4a6080' : '#6080c0';
+  }
+
+  const bw = Math.max(26, valStr.length * 8 + 12);
+  g.appendChild(svgEl('rect', {
+    x: node.x - bw / 2, y: by, width: bw, height: bh, rx: 5,
+    fill, stroke, 'stroke-width': 1.5,
+  }));
+  const t = svgEl('text', {
+    x: node.x, y: by + bh / 2,
+    'text-anchor': 'middle', 'dominant-baseline': 'central',
+    'font-size': 11, 'font-weight': 700,
+    fill: tc('#dddddd', '#111111'),
+    'font-family': 'monospace',
+  });
+  t.textContent = valStr;
+  g.appendChild(t);
+  node.children?.forEach(c => drawEvalBadges(c, g));
 }
 
 // ─── Tokenizer ────────────────────────────────────────────────────────────────
@@ -500,10 +657,10 @@ function parseBool(tokens) {
 
 // ─── Tree Layout ──────────────────────────────────────────────────────────────
 const H_SPACING = 72;
-const V_SPACING = 88;
 const PAD       = 52;
 
 function layoutTree(root) {
+  const VS = evalActive ? 108 : 88; // extra vertical space for eval badges
   let leafIndex = 0;
 
   function assignSlots(node, depth) {
@@ -520,11 +677,11 @@ function layoutTree(root) {
   const leafCount = leafIndex;
   const maxDepth  = getMaxDepth(root);
   const svgW = PAD * 2 + Math.max(0, leafCount - 1) * H_SPACING;
-  const svgH = PAD * 2 + maxDepth * V_SPACING;
+  const svgH = PAD * 2 + maxDepth * VS;
 
   function setPos(node) {
     node.x = PAD + node.slot * H_SPACING;
-    node.y = PAD + node.depth * V_SPACING;
+    node.y = PAD + node.depth * VS;
     node.children?.forEach(setPos);
   }
   setPos(root);
@@ -606,6 +763,12 @@ function renderTree(root) {
 
   drawEdges(root, gEdges);
   drawNodes(root, gNodes);
+
+  if (evalActive) {
+    const gBadges = svgEl('g', { id: 'evalBadges' });
+    svg.appendChild(gBadges);
+    drawEvalBadges(root, gBadges);
+  }
 }
 
 function drawEdges(node, g) {
@@ -701,12 +864,15 @@ function renderLegend(root) {
   }
 }
 
-// ─── Arithmetic Evaluation ────────────────────────────────────────────────────
-function evaluate(node) {
+// ─── Evaluation ───────────────────────────────────────────────────────────────
+function evaluate(node, vals = {}) {
   if (node.type === 'num') return parseFloat(node.value);
-  if (node.type === 'var') return null;
-  const cv = node.children.map(evaluate);
-  if (cv.some(v => v === null)) return null;
+  if (node.type === 'var') {
+    const v = vals[node.value];
+    return (v !== undefined) ? parseFloat(v) : null;
+  }
+  const cv = node.children.map(c => evaluate(c, vals));
+  if (cv.some(v => v === null || isNaN(v))) return null;
   switch (node.op) {
     case '+': return cv[0] + cv[1];
     case '-': return node.unary ? -cv[0] : cv[0] - cv[1];
@@ -718,6 +884,22 @@ function evaluate(node) {
       if (!Number.isInteger(n) || n < 0 || n > 20) return null;
       let f = 1; for (let i = 2; i <= n; i++) f *= i; return f;
     }
+  }
+  return null;
+}
+
+function evaluateBool(node, vals = {}) {
+  if (node.type === 'var') {
+    const v = vals[node.value];
+    return v !== undefined ? v : null;
+  }
+  const cv = node.children.map(c => evaluateBool(c, vals));
+  if (cv.some(v => v === null)) return null;
+  switch (node.op) {
+    case '+': return (cv[0] || cv[1]) ? 1 : 0;   // OR
+    case '*': return (cv[0] && cv[1]) ? 1 : 0;   // AND
+    case '^': return cv[0] !== cv[1] ? 1 : 0;    // XOR
+    case '!': return cv[0] ? 0 : 1;              // NOT
   }
   return null;
 }
@@ -749,8 +931,11 @@ function compute() {
   const raw = inputEl.value;
 
   if (!raw.trim()) {
+    lastRoot = null;
     svgEl_.innerHTML = '';
     document.getElementById('treeLegend').innerHTML = '';
+    document.getElementById('evalSection').style.display = 'none';
+    document.getElementById('varInputs').innerHTML = '';
     statusEl.textContent = '';
     statusEl.className   = 'expr-status';
     inputEl.classList.remove('inp-err');
@@ -761,22 +946,25 @@ function compute() {
   try {
     const tokens = tokenize(raw, currentMode);
     const root = currentMode === 'arith' ? parseArith(tokens) : parseBool(tokens);
+    lastRoot = root;
 
     renderTree(root);
     renderLegend(root);
 
+    // Show evaluate section
+    document.getElementById('evalSection').style.display = '';
+    const vars = collectVars(root);
+    renderVarInputs(vars);
+
     inputEl.classList.remove('inp-err');
 
-    // Evaluation result
+    // Arithmetic result in status line
     let statusText = '';
     let statusClass = 'expr-status';
     if (currentMode === 'arith') {
-      const val = evaluate(root);
+      const val = evaluate(root, varValues);
       const fmt = fmtResult(val);
-      if (fmt !== null) {
-        statusText  = S('result')(fmt);
-        statusClass = 'expr-status result';
-      }
+      if (fmt !== null) { statusText = S('result')(fmt); statusClass = 'expr-status result'; }
     }
     statusEl.textContent = statusText;
     statusEl.className   = statusClass;
@@ -786,15 +974,16 @@ function compute() {
     const nodeCount = countNodes(root);
     const s = STRINGS[lang];
     const exprDisplay = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    if (currentMode === 'arith') {
-      explEl.innerHTML = s.explArith(exprDisplay, maxDepth, nodeCount);
-    } else {
-      explEl.innerHTML = s.explBool(exprDisplay, maxDepth, nodeCount);
-    }
+    explEl.innerHTML = currentMode === 'arith'
+      ? s.explArith(exprDisplay, maxDepth, nodeCount)
+      : s.explBool(exprDisplay, maxDepth, nodeCount);
 
   } catch(e) {
+    lastRoot = null;
     svgEl_.innerHTML = '';
     document.getElementById('treeLegend').innerHTML = '';
+    document.getElementById('evalSection').style.display = 'none';
+    document.getElementById('varInputs').innerHTML = '';
     inputEl.classList.add('inp-err');
     statusEl.textContent = e.message;
     statusEl.className   = 'expr-status err';
