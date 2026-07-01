@@ -155,15 +155,17 @@ const STRINGS = {
     tabBool: 'Boolean',
     phArith: 'e.g.  (5 + 3) * 2',
     phBool:  'e.g.  (A + B) * !(A + C)',
-    opsArith: ['+  add', '−  subtract', '×  multiply', '÷  divide', '^  power', 'n!  factorial'],
+    opsArith: ['+  add', '−  subtract', '*  multiply', '÷  divide', '^  power', 'n!  factorial'],
     opsBool:  ['+ = OR', '* = AND', '^ = XOR', '! = NOT'],
     result: (v) => `= ${v}`,
     legendNum: 'Number',
     legendVar: 'Variable',
-    legendOps: {
-      '+': '+  (add)', '−': '−  (subtract)', '×': '×  (multiply)',
+    legendOpsArith: {
+      '+': '+  (add)', '−': '−  (subtract)', '*': '*  (multiply)',
       '÷': '÷  (divide)', '^': '^  (power)', '!': '!  (factorial)',
-      'OR':'OR  (+)', 'AND':'AND  (*)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
+    },
+    legendOpsBool: {
+      'OR':'OR  (+)', '*':'*  (AND)', 'XOR':'XOR  (^)', 'NOT':'NOT  (!)',
     },
     explNone: 'Enter an expression above to see its syntax tree.',
     explArith: (expr, depth, nodes) =>
@@ -184,15 +186,17 @@ const STRINGS = {
     tabBool: 'Boolesch',
     phArith: 'z.B.  (5 + 3) * 2',
     phBool:  'z.B.  (A + B) * !(A + C)',
-    opsArith: ['+  Addition', '−  Subtraktion', '×  Multiplikation', '÷  Division', '^  Potenz', 'n!  Fakultät'],
+    opsArith: ['+  Addition', '−  Subtraktion', '*  Multiplikation', '÷  Division', '^  Potenz', 'n!  Fakultät'],
     opsBool:  ['+ = ODER', '* = UND', '^ = XOR', '! = NICHT'],
     result: (v) => `= ${v}`,
     legendNum: 'Zahl',
     legendVar: 'Variable',
-    legendOps: {
-      '+': '+  (Add.)', '−': '−  (Sub.)', '×': '×  (Mult.)',
-      '÷': '÷  (Div.)', '^': '^  (Potenz)', '!': '!  (Fakultät)',
-      'OR':'ODER  (+)', 'AND':'UND  (*)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
+    legendOpsArith: {
+      '+': '+  (Add.)', '−': '−  (Sub.)', '*': '*  (Mult.)',
+      '÷': '÷  (Div.)', '^': '^  (Potenz)', '!': '!  (Fak.)',
+    },
+    legendOpsBool: {
+      'OR':'ODER  (+)', '*':'*  (UND)', 'XOR':'XOR  (^)', 'NOT':'NICHT  (!)',
     },
     explNone: 'Gib oben einen Ausdruck ein, um seinen Syntaxbaum zu sehen.',
     explArith: (expr, depth, nodes) =>
@@ -273,6 +277,10 @@ function tokenize(input, mode) {
       let n = '';
       while (i < input.length && /[\d.]/.test(input[i])) n += input[i++];
       tokens.push({ type: 'num', value: n });
+      // Implicit multiplication: 3x → 3 * x
+      if (i < input.length && /[a-zA-Z]/.test(input[i])) {
+        tokens.push({ type: 'op', value: '*' });
+      }
       continue;
     }
 
@@ -514,10 +522,10 @@ function getLabel(node) {
   if (node.type === 'num') return node.value;
   if (node.type === 'var') return node.value;
   if (currentMode === 'bool') {
-    const boolLabels = { '+': 'OR', '*': 'AND', '^': 'XOR', '!': 'NOT' };
+    const boolLabels = { '+': 'OR', '^': 'XOR', '!': 'NOT' }; // * stays as *
     return boolLabels[node.op] || node.op;
   }
-  const arithLabels = { '-': '−', '*': '×', '/': '÷' };
+  const arithLabels = { '-': '−', '/': '÷' }; // * stays as *
   return arithLabels[node.op] || node.op;
 }
 
@@ -660,11 +668,12 @@ function renderLegend(root) {
     ? ['+', '*', '^', '!']
     : ['+', '-', '*', '/', '^', '!'];
 
+  const legTable = currentMode === 'bool' ? s.legendOpsBool : s.legendOpsArith;
   for (const op of opOrder) {
     if (!seenOps.has(op)) continue;
     const fakeNode = { type: 'op', op };
     const lbl = getLabel(fakeNode);
-    addItem(s.legendOps[lbl] || lbl, getNodeColor(fakeNode));
+    addItem(legTable[lbl] || lbl, getNodeColor(fakeNode));
   }
 }
 
@@ -703,7 +712,7 @@ function reconstruct(node) {
   const ch = node.children;
   if (node.op === '!' && node.postfix) return `(${reconstruct(ch[0])})!`;
   if (node.unary) return `!${reconstruct(ch[0])}`;
-  const sym = { '+':'+', '-':'−', '*':'×', '/':'÷', '^':'^' }[node.op] || node.op;
+  const sym = { '+':'+', '-':'−', '*':'*', '/':'÷', '^':'^' }[node.op] || node.op;
   return `(${reconstruct(ch[0])} ${sym} ${reconstruct(ch[1])})`;
 }
 
