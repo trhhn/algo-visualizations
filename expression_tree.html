@@ -100,10 +100,8 @@
   .var-num-input:focus { outline: none; border-color: #22c55e; }
 
   @media (max-width: 600px) {
-    .tabs-row {
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
-    }
-    .tabs-row-right { justify-content: center; }
+    .tabs-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+    .tabs-row-right { flex: 0 0 100%; justify-content: center; }
   }
 
   .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
