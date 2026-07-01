@@ -221,13 +221,27 @@
     <div class="card-link" id="link6">Open</div>
   </a>
 
+  <!-- Row 4: Bit Operations -->
+  <a class="card" href="bit_operations.html">
+    <svg class="card-icon" viewBox="0 0 40 40" fill="none">
+      <text x="2" y="13" font-size="10" fill="#4a9a6a" font-family="monospace" font-weight="700">1011</text>
+      <text x="2" y="25" font-size="10" fill="#4a9a6a" font-family="monospace" font-weight="700">1100</text>
+      <text x="28" y="25" font-size="12" fill="#22c55e" font-family="monospace" font-weight="700">&amp;</text>
+      <line x1="2" y1="28" x2="38" y2="28" stroke="#383848" stroke-width="1.5"/>
+      <text x="2" y="38" font-size="10" fill="#22c55e" font-family="monospace" font-weight="700">1000</text>
+    </svg>
+    <div class="card-title" id="title7">Bit Operations</div>
+    <div class="card-desc" id="desc7">Apply bitwise AND, OR, XOR, NOT and more to two values. Explore left and right bit shifts with logical and arithmetic modes.</div>
+    <div class="card-link" id="link7">Open</div>
+  </a>
+
 </div>
 
 <script>
 const STRINGS = {
   en: {
     subtitle: 'Interactive tools for explaining foundational CS concepts',
-    titles: ['Number Systems', 'Binary Addition', 'IEEE 754 Float Converter', 'Logic Circuit Simulator', 'Sorting Coins', "Dijkstra's Algorithm"],
+    titles: ['Number Systems', 'Binary Addition', 'IEEE 754 Float Converter', 'Logic Circuit Simulator', 'Sorting Coins', "Dijkstra's Algorithm", 'Bit Operations'],
     descs: [
       'Convert between binary, decimal, and hex step by step. Explore two\'s complement and fixed-point representation.',
       'Add two binary numbers step by step. Explore unsigned overflow and two\'s complement illegal overflow with carry-by-carry explanation.',
@@ -235,12 +249,13 @@ const STRINGS = {
       'Place gates, switches, and bulbs, wire them up, and watch the signal propagate. Includes SR latches, adders, and more.',
       'Step through Bubble Sort and Selection Sort one comparison at a time, with coin icons and a live code panel.',
       "Draw a weighted graph, then step through how Dijkstra's algorithm finds the shortest path from a source node.",
+      'Apply bitwise AND, OR, XOR, NOT and more to two values. Explore left and right bit shifts with logical and arithmetic modes.',
     ],
     open: 'Open',
   },
   de: {
     subtitle: 'Interaktive Werkzeuge für grundlegende Informatikkonzepte',
-    titles: ['Zahlensysteme', 'Binäre Addition', 'IEEE 754 Float-Konverter', 'Logikschaltkreis-Simulator', 'Münzen sortieren', 'Dijkstras Algorithmus'],
+    titles: ['Zahlensysteme', 'Binäre Addition', 'IEEE 754 Float-Konverter', 'Logikschaltkreis-Simulator', 'Münzen sortieren', 'Dijkstras Algorithmus', 'Bit-Operationen'],
     descs: [
       'Konvertiere zwischen Binär, Dezimal und Hex – Schritt für Schritt. Mit Zweierkomplement und Festkommazahlen.',
       'Addiere zwei Binärzahlen Schritt für Schritt. Mit Überlaufanalyse für vorzeichenlose und Zweierkomplement-Zahlen.',
@@ -248,6 +263,7 @@ const STRINGS = {
       'Platziere Gatter, Schalter und Lampen, verdrahte sie und beobachte den Signalfluss. Mit SR-Flipflops, Addierern und mehr.',
       'Schritt für Schritt durch Bubble Sort und Selection Sort — ein Vergleich nach dem anderen, mit Münzsymbolen und Live-Code-Panel.',
       'Zeichne einen gewichteten Graphen und gehe schrittweise durch Dijkstras Algorithmus zur Kürzeste-Wege-Suche.',
+      'Wende AND, OR, XOR, NOT und mehr auf zwei Werte an. Erkunde Links- und Rechts-Shifts im logischen und arithmetischen Modus.',
     ],
     open: 'Öffnen',
   }
@@ -266,7 +282,7 @@ function setLang(l) {
 function applyLang() {
   const s = STRINGS[lang];
   document.getElementById('pageSubtitle').textContent = s.subtitle;
-  [1, 2, 3, 4, 5, 6].forEach((n, i) => {
+  [1, 2, 3, 4, 5, 6, 7].forEach((n, i) => {
     document.getElementById('title' + n).textContent = s.titles[i];
     document.getElementById('desc'  + n).textContent = s.descs[i];
     document.getElementById('link'  + n).textContent = s.open;

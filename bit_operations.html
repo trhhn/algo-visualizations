@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bit Operations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1e1e22; color: #cccccc; min-height: 100vh; padding: 16px; }
+  h1 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #eeeeee; }
+  .subtitle { text-align: center; color: #666670; margin-bottom: 20px; font-size: 0.88rem; }
+
+  .tabs-row {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    margin-bottom: 20px; max-width: 860px; margin-left: auto; margin-right: auto;
+  }
+  .tabs { display: flex; gap: 10px; }
+  .tab {
+    padding: 10px 22px; border: 2px solid #505055; border-radius: 8px;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    background: #383840; color: #aaaaaa;
+  }
+  .tab:hover { border-color: #22c55e; }
+  .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+
+  .tabs-row-right { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+  .ctrl-lbl { font-size: 0.82rem; color: #888888; }
+  select {
+    background: #383840; color: #cccccc; border: 2px solid #505055;
+    border-radius: 8px; padding: 4px 8px; cursor: pointer;
+  }
+  a.back-link {
+    display: inline-block; font-size: 0.82rem; font-weight: 600; color: #888890;
+    text-decoration: none; padding: 6px 12px; background: #252528;
+    border: 1px solid #383840; border-radius: 8px; transition: color 0.15s, border-color 0.15s;
+  }
+  a.back-link:hover { color: #22c55e; border-color: #22c55e; }
+
+  .stage {
+    background: #252528; border-radius: 12px; padding: 24px;
+    max-width: 860px; margin: 0 auto; box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+
+  /* ── Input row ── */
+  .input-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+  .inp-grp { display: flex; flex-direction: column; gap: 4px; }
+  .inp-grp > label { font-size: 0.82rem; color: #888890; font-weight: 600; }
+  .inp-grp input[type=text] {
+    background: #1e1e28; border: 2px solid #383840; border-radius: 8px;
+    color: #eeeeee; padding: 8px 12px; font-family: 'Courier New', monospace;
+    width: 196px; transition: border-color 0.2s;
+  }
+  .inp-grp input[type=text]:focus { outline: none; border-color: #22c55e; }
+  .inp-grp input.inp-err { border-color: #b83030; }
+  .inp-hint { font-size: 0.74rem; color: #555560; min-height: 1.1em; font-family: monospace; }
+  .op-grp { display: flex; flex-direction: column; gap: 4px; }
+  .op-grp > label { font-size: 0.82rem; color: #888890; font-weight: 600; }
+  .op-sel {
+    background: #1e1e28; color: #22c55e; border: 2px solid rgba(34,197,94,0.35);
+    border-radius: 8px; padding: 8px 14px; font-weight: 700; min-width: 90px; cursor: pointer;
+  }
+
+  /* ── Bits toggle ── */
+  .bits-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #888890; margin-bottom: 20px; }
+  .bits-btn {
+    padding: 4px 12px; border: 1px solid #505055; border-radius: 6px;
+    background: #383840; color: #aaaaaa; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+  }
+  .bits-btn:hover { border-color: #22c55e; }
+  .bits-btn.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+
+  /* ── Bit grid ── */
+  .bit-grid-wrap { overflow-x: auto; margin-bottom: 10px; }
+  .bit-grid { display: flex; flex-direction: column; gap: 4px; min-width: fit-content; padding-bottom: 2px; }
+  .bit-row { display: flex; align-items: center; }
+  .bit-row-lbl {
+    width: 72px; font-size: 0.8rem; font-weight: 600; color: #888890;
+    flex-shrink: 0; text-align: right; padding-right: 10px; font-family: monospace;
+  }
+  .bc {
+    width: 44px; height: 42px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 700;
+    border: 1px solid #2a2a34; margin: 1px; border-radius: 6px;
+    transition: background 0.12s, border-color 0.12s; cursor: default; user-select: none;
+  }
+  .bc.idx { height: 20px; font-size: 0.65rem; font-weight: 400; color: #404050; border: none; background: none; border-radius: 0; }
+  .bc.v0  { color: #505060; background: #1e1e28; }
+  .bc.v1  { color: #22c55e; background: rgba(34,197,94,0.1); }
+  .bc.r0  { color: #666676; background: #222230; border-color: #323242; }
+  .bc.r1  { color: #22c55e; background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.28); }
+  .bc.lost { color: #e05050; background: rgba(224,80,80,0.1); border-color: rgba(224,80,80,0.3); }
+  .bc.fill { color: #4a9aff; background: rgba(74,154,255,0.1); border-color: rgba(74,154,255,0.3); }
+  .bc.col-hl { border-color: rgba(34,197,94,0.55) !important; background: rgba(34,197,94,0.08) !important; }
+  .bc.v1.col-hl { background: rgba(34,197,94,0.22) !important; }
+  .bc.r1.col-hl { background: rgba(34,197,94,0.28) !important; }
+
+  .sep-row { height: 2px; margin: 3px 0 3px 73px; background: #38383e; border-radius: 1px; }
+
+  /* ── Column tooltip ── */
+  .col-tt {
+    min-height: 34px; padding: 7px 14px; margin-bottom: 12px;
+    background: #1e1e28; border: 1px solid #2a2a38; border-radius: 8px;
+    font-family: monospace; font-size: 0.85rem; color: #aaaaaa;
+  }
+  .col-tt.empty { color: #3a3a48; }
+
+  /* ── Explanation ── */
+  .explanation {
+    background: #2a2a32; border-radius: 8px; padding: 14px 18px;
+    font-size: 0.9rem; line-height: 1.6; border-left: 3px solid #22c55e;
+    color: #cccccc; min-height: 52px;
+  }
+
+  /* ── Decimal summary ── */
+  .dec-row {
+    display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.84rem;
+    color: #55555e; font-family: monospace; margin-top: 6px; padding-left: 73px;
+  }
+  .dec-row .dv { color: #aaaaaa; font-weight: 600; }
+
+  /* ── Shift controls ── */
+  .shift-ctrls { display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 18px; align-items: flex-start; }
+  .sc { display: flex; flex-direction: column; gap: 6px; }
+  .sc-lbl { font-size: 0.82rem; color: #888890; font-weight: 600; }
+  .radio-col { display: flex; flex-direction: column; gap: 6px; }
+  .radio-col label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #aaaaaa; cursor: pointer; }
+  .radio-col input[type=radio] { accent-color: #22c55e; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row input[type=range] { accent-color: #22c55e; width: 100px; }
+  .slider-val { font-family: monospace; font-size: 1rem; font-weight: 700; color: #22c55e; min-width: 18px; }
+
+  .arrow-row { padding: 3px 0; padding-left: 73px; font-size: 0.8rem; color: #555560; font-family: monospace; }
+
+  .ver { text-align: center; color: #383840; font-size: 0.72rem; padding-top: 32px; }
+  input, select { font-size: 16px !important; }
+
+  @media (max-width: 580px) {
+    .stage { padding: 14px; }
+    .bc { width: 36px; height: 36px; font-size: 0.95rem; }
+    .bit-row-lbl { width: 58px; font-size: 0.75rem; }
+    .sep-row { margin-left: 59px; }
+    .dec-row { padding-left: 58px; }
+    .arrow-row { padding-left: 58px; }
+    .inp-grp input[type=text] { width: 150px; }
+  }
+
+  /* ── Light theme ── */
+  body.theme-light { background: #f5f5f7; color: #1a1a1a; }
+  body.theme-light h1 { color: #111; }
+  body.theme-light .subtitle { color: #555; }
+  body.theme-light .stage { background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+  body.theme-light .tab { border-color: #ccc; background: #eee; color: #555; }
+  body.theme-light .tab:hover { border-color: #22c55e; }
+  body.theme-light .tab.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  body.theme-light select { background: #fff; color: #111; border-color: #ccc; }
+  body.theme-light a.back-link { background: #eee; border-color: #ccc; color: #555; }
+  body.theme-light .ctrl-lbl { color: #555; }
+  body.theme-light .inp-grp > label { color: #555; }
+  body.theme-light .inp-grp input[type=text] { background: #f8f8fa; border-color: #ccc; color: #111; }
+  body.theme-light .inp-grp input[type=text]:focus { border-color: #22c55e; }
+  body.theme-light .inp-hint { color: #777; }
+  body.theme-light .op-grp > label { color: #555; }
+  body.theme-light .op-sel { background: #f8f8fa; border-color: rgba(34,197,94,0.5); }
+  body.theme-light .bits-row { color: #555; }
+  body.theme-light .bits-btn { background: #eee; border-color: #ccc; color: #555; }
+  body.theme-light .bits-btn.active { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  body.theme-light .bit-row-lbl { color: #555; }
+  body.theme-light .bc.v0  { color: #aaa; background: #eee; border-color: #ddd; }
+  body.theme-light .bc.v1  { color: #15803d; background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); }
+  body.theme-light .bc.r0  { color: #888; background: #f0f0f4; border-color: #ddd; }
+  body.theme-light .bc.r1  { color: #15803d; background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.4); }
+  body.theme-light .bc.lost { color: #991b1b; background: rgba(153,27,27,0.08); border-color: rgba(153,27,27,0.3); }
+  body.theme-light .bc.fill { color: #1d4ed8; background: rgba(29,78,216,0.08); border-color: rgba(29,78,216,0.3); }
+  body.theme-light .sep-row { background: #ccc; }
+  body.theme-light .col-tt { background: #f0f0f4; border-color: #ccc; color: #333; }
+  body.theme-light .col-tt.empty { color: #aaa; }
+  body.theme-light .explanation { background: #eeeef2; color: #1a1a1a; }
+  body.theme-light .dec-row { color: #999; }
+  body.theme-light .dec-row .dv { color: #333; }
+  body.theme-light .sc-lbl { color: #555; }
+  body.theme-light .radio-col label { color: #444; }
+  body.theme-light .arrow-row { color: #888; }
+</style>
+</head>
+<body>
+
+<h1 id="pageTitle">Bit Operations</h1>
+<p class="subtitle" id="pageSubtitle">Explore bitwise logic and shift operations on binary numbers</p>
+
+<div class="tabs-row">
+  <div><a class="back-link" href="index.html">← Tools</a></div>
+  <div class="tabs">
+    <button class="tab active" id="tabLogicBtn" onclick="switchTab('logic')">Logical Ops</button>
+    <button class="tab" id="tabShiftBtn" onclick="switchTab('shift')">Bit Shift</button>
+  </div>
+  <div class="tabs-row-right">
+    <span class="ctrl-lbl" id="themeLbl">Theme:</span>
+    <select id="themeSelect" onchange="setTheme(this.value)">
+      <option value="dark" id="themeOptDark">Dark</option>
+      <option value="light" id="themeOptLight">Light</option>
+    </select>
+    <span class="ctrl-lbl">Language:</span>
+    <select id="langSelect" onchange="setLang(this.value)">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+  </div>
+</div>
+
+<!-- ── Tab: Logical Operations ── -->
+<div class="stage" id="stageLogic">
+
+  <div class="input-row">
+    <div class="inp-grp">
+      <label id="lblA">A</label>
+      <input type="text" id="inputA" placeholder="e.g. 53" oninput="compute()">
+      <span class="inp-hint" id="hintA"></span>
+    </div>
+    <div class="op-grp">
+      <label id="lblOp">Operation</label>
+      <select class="op-sel" id="opSelect" onchange="compute()">
+        <option value="AND">AND</option>
+        <option value="OR">OR</option>
+        <option value="XOR">XOR</option>
+        <option value="NOT">NOT</option>
+        <option value="NAND">NAND</option>
+        <option value="NOR">NOR</option>
+        <option value="XNOR">XNOR</option>
+      </select>
+    </div>
+    <div class="inp-grp" id="inputBGroup">
+      <label id="lblB">B</label>
+      <input type="text" id="inputB" placeholder="e.g. 179" oninput="compute()">
+      <span class="inp-hint" id="hintB"></span>
+    </div>
+  </div>
+
+  <div class="bits-row">
+    <span id="lblBits1">Bits:</span>
+    <button class="bits-btn" id="btn4a" onclick="setBits(4)">4</button>
+    <button class="bits-btn active" id="btn8a" onclick="setBits(8)">8</button>
+  </div>
+
+  <div class="bit-grid-wrap">
+    <div class="bit-grid" id="logicGrid"></div>
+  </div>
+  <div class="col-tt empty" id="colTT"></div>
+  <div class="explanation" id="logicExpl"></div>
+
+</div>
+
+<!-- ── Tab: Bit Shift ── -->
+<div class="stage" id="stageShift" style="display:none">
+
+  <div class="input-row">
+    <div class="inp-grp">
+      <label id="lblS">A</label>
+      <input type="text" id="inputShift" placeholder="e.g. 53" oninput="compute()">
+      <span class="inp-hint" id="hintShift"></span>
+    </div>
+  </div>
+
+  <div class="shift-ctrls">
+    <div class="sc">
+      <span class="sc-lbl" id="lblDir">Direction:</span>
+      <div class="radio-col">
+        <label><input type="radio" name="shiftDir" value="left" checked onchange="onDirChange();compute()"> <span id="rdL">&lt;&lt; Left shift</span></label>
+        <label><input type="radio" name="shiftDir" value="right" onchange="onDirChange();compute()"> <span id="rdR">&gt;&gt; Right shift</span></label>
+      </div>
+    </div>
+    <div class="sc">
+      <span class="sc-lbl" id="lblAmt">Shift by:</span>
+      <div class="slider-row">
+        <input type="range" id="shiftSlider" min="1" max="7" value="1" oninput="onSlider();compute()">
+        <span class="slider-val" id="shiftAmtLbl">1</span>
+      </div>
+    </div>
+    <div class="sc" id="shiftTypeGroup">
+      <span class="sc-lbl" id="lblType">Right shift type:</span>
+      <div class="radio-col">
+        <label><input type="radio" name="shiftType" value="logical" checked onchange="compute()"> <span id="rdLog">Logical (fill 0)</span></label>
+        <label><input type="radio" name="shiftType" value="arith" onchange="compute()"> <span id="rdArith">Arithmetic (fill sign bit)</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="bits-row">
+    <span id="lblBits2">Bits:</span>
+    <button class="bits-btn" id="btn4b" onclick="setBits(4)">4</button>
+    <button class="bits-btn active" id="btn8b" onclick="setBits(8)">8</button>
+  </div>
+
+  <div class="bit-grid-wrap">
+    <div class="bit-grid" id="shiftGrid"></div>
+  </div>
+  <div class="explanation" id="shiftExpl"></div>
+
+</div>
+
+<div class="ver">v1.0</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+let lang = 'en';
+let pageTheme = localStorage.getItem('theme') || 'dark';
+let bitWidth = 8;
+let currentTab = 'logic';
+
+// ─── Strings ────────────────────────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    title:    'Bit Operations',
+    subtitle: 'Explore bitwise logic and shift operations on binary numbers',
+    tabLogic: 'Logical Ops',
+    tabShift: 'Bit Shift',
+    lblBits:  'Bits:',
+    lblOp:    'Operation',
+    lblA:     'A',
+    lblB:     'B',
+    lblS:     'A',
+    lblDir:   'Direction:',
+    lblAmt:   'Shift by:',
+    lblType:  'Right shift type:',
+    rdL:      '<< Left shift',
+    rdR:      '>> Right shift',
+    rdLog:    'Logical (fill 0)',
+    rdArith:  'Arithmetic (fill sign bit)',
+    resultLbl:'Result',
+    beforeLbl:'Before',
+    themeLbl: 'Theme:',
+    themeD:   'Dark',
+    themeL:   'Light',
+    phA:      'e.g. 53',
+    phB:      'e.g. 179',
+    phS:      'e.g. 53',
+    errRange: (n) => `Enter 0–${n} or binary`,
+    hoverHint: 'Hover a column to inspect that bit position',
+    colFmt:   (col, op, ab, a, b, r) => ab ? `Bit ${col}: ${a} ${op} ${b} = ${r}` : `Bit ${col}: NOT ${a} = ${r}`,
+    explain: {
+      AND:  (fA,fB,fR) => `${fA} AND ${fB} = ${fR}  —  a result bit is 1 only when BOTH input bits are 1.`,
+      OR:   (fA,fB,fR) => `${fA} OR ${fB} = ${fR}  —  a result bit is 1 when AT LEAST ONE input bit is 1.`,
+      XOR:  (fA,fB,fR) => `${fA} XOR ${fB} = ${fR}  —  a result bit is 1 when the two input bits DIFFER.`,
+      NOT:  (fA,_,fR)  => `NOT ${fA} = ${fR}  —  every bit is flipped: 0 → 1 and 1 → 0.`,
+      NAND: (fA,fB,fR) => `${fA} NAND ${fB} = ${fR}  —  inverse of AND: 0 only when both bits are 1.`,
+      NOR:  (fA,fB,fR) => `${fA} NOR ${fB} = ${fR}  —  inverse of OR: 1 only when both bits are 0.`,
+      XNOR: (fA,fB,fR) => `${fA} XNOR ${fB} = ${fR}  —  inverse of XOR: 1 when both bits are EQUAL.`,
+    },
+    shiftExplain: {
+      left:    (n,bN,amt,r,bR,pow) => `${n} (${bN}) << ${amt} = ${r} (${bR})  —  bits move left by ${amt}. The top ${amt} bit${amt===1?'':'s'} are lost (red). ${amt} zero${amt===1?'':'s'} fill from the right (blue). Equivalent to ×${pow} (if no overflow).`,
+      logical: (n,bN,amt,r,bR)    => `${n} (${bN}) >> ${amt} = ${r} (${bR})  —  bits move right by ${amt}. The bottom ${amt} bit${amt===1?'':'s'} are discarded (red). ${amt} zero${amt===1?'':'s'} fill from the left (blue). Used for unsigned numbers.`,
+      arith:   (n,bN,amt,r,bR,sg) => `${n} (${bN}) >> ${amt} = ${r} (${bR})  —  bits move right by ${amt}. The bottom ${amt} bit${amt===1?'':'s'} are discarded (red). The sign bit (${sg}) is copied in from the left (blue). Preserves the sign for two's complement numbers.`,
+      zero:    (n,bN)              => `Shift by 0: ${n} (${bN}) is unchanged.`,
+    },
+  },
+  de: {
+    title:    'Bit-Operationen',
+    subtitle: 'Bitweise Logik- und Schiebeoperationen auf Binärzahlen erkunden',
+    tabLogic: 'Logische Ops',
+    tabShift: 'Bit-Shift',
+    lblBits:  'Bits:',
+    lblOp:    'Operation',
+    lblA:     'A',
+    lblB:     'B',
+    lblS:     'A',
+    lblDir:   'Richtung:',
+    lblAmt:   'Verschiebung:',
+    lblType:  'Rechts-Shift-Typ:',
+    rdL:      '<< Links-Shift',
+    rdR:      '>> Rechts-Shift',
+    rdLog:    'Logisch (mit 0 füllen)',
+    rdArith:  'Arithmetisch (Vorzeichenbit)',
+    resultLbl:'Ergebnis',
+    beforeLbl:'Vorher',
+    themeLbl: 'Design:',
+    themeD:   'Dunkel',
+    themeL:   'Hell',
+    phA:      'z.B. 53',
+    phB:      'z.B. 179',
+    phS:      'z.B. 53',
+    errRange: (n) => `Wert 0–${n} oder binär eingeben`,
+    hoverHint: 'Spalte anfahren, um diese Bitposition zu untersuchen',
+    colFmt:   (col, op, ab, a, b, r) => ab ? `Bit ${col}: ${a} ${op} ${b} = ${r}` : `Bit ${col}: NOT ${a} = ${r}`,
+    explain: {
+      AND:  (fA,fB,fR) => `${fA} AND ${fB} = ${fR}  —  ein Ergebnis-Bit ist 1, nur wenn BEIDE Eingabe-Bits 1 sind.`,
+      OR:   (fA,fB,fR) => `${fA} OR ${fB} = ${fR}  —  ein Ergebnis-Bit ist 1, wenn MINDESTENS EINES der Eingabe-Bits 1 ist.`,
+      XOR:  (fA,fB,fR) => `${fA} XOR ${fB} = ${fR}  —  ein Ergebnis-Bit ist 1, wenn die Eingabe-Bits VERSCHIEDEN sind.`,
+      NOT:  (fA,_,fR)  => `NOT ${fA} = ${fR}  —  jedes Bit wird umgekehrt: 0 → 1 und 1 → 0.`,
+      NAND: (fA,fB,fR) => `${fA} NAND ${fB} = ${fR}  —  Gegenteil von AND: 0 nur wenn beide Bits 1 sind.`,
+      NOR:  (fA,fB,fR) => `${fA} NOR ${fB} = ${fR}  —  Gegenteil von OR: 1 nur wenn beide Bits 0 sind.`,
+      XNOR: (fA,fB,fR) => `${fA} XNOR ${fB} = ${fR}  —  Gegenteil von XOR: 1 wenn beide Bits GLEICH sind.`,
+    },
+    shiftExplain: {
+      left:    (n,bN,amt,r,bR,pow) => `${n} (${bN}) << ${amt} = ${r} (${bR})  —  Bits werden um ${amt} nach links verschoben. Die obersten ${amt} Bit${amt===1?'':'s'} gehen verloren (rot). ${amt} Null${amt===1?'':'en'} füllen von rechts (blau). Entspricht ×${pow} (bei keinem Überlauf).`,
+      logical: (n,bN,amt,r,bR)    => `${n} (${bN}) >> ${amt} = ${r} (${bR})  —  Bits werden um ${amt} nach rechts verschoben. Die untersten ${amt} Bit${amt===1?'':'s'} gehen verloren (rot). ${amt} Null${amt===1?'':'en'} füllen von links (blau). Wird für vorzeichenlose Zahlen verwendet.`,
+      arith:   (n,bN,amt,r,bR,sg) => `${n} (${bN}) >> ${amt} = ${r} (${bR})  —  Bits werden um ${amt} nach rechts verschoben. Die untersten ${amt} Bit${amt===1?'':'s'} gehen verloren (rot). Das Vorzeichenbit (${sg}) wird von links hineinkopiert (blau). Erhält das Vorzeichen bei Zweierkomplement-Zahlen.`,
+      zero:    (n,bN)              => `Verschiebung um 0: ${n} (${bN}) bleibt unverändert.`,
+    },
+  },
+};
+
+function S() { return STRINGS[lang]; }
+
+// ─── Theme ──────────────────────────────────────────────────────────────────
+function setTheme(t) {
+  pageTheme = t;
+  localStorage.setItem('theme', t);
+  document.getElementById('themeSelect').value = t;
+  document.body.classList.toggle('theme-light', t === 'light');
+}
+
+// ─── Language ────────────────────────────────────────────────────────────────
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('langSelect').value = l;
+  applyStaticLang();
+  compute();
+}
+
+function applyStaticLang() {
+  const s = S();
+  document.getElementById('pageTitle').textContent    = s.title;
+  document.getElementById('pageSubtitle').textContent = s.subtitle;
+  document.getElementById('tabLogicBtn').textContent  = s.tabLogic;
+  document.getElementById('tabShiftBtn').textContent  = s.tabShift;
+  document.getElementById('themeLbl').textContent     = s.themeLbl;
+  document.getElementById('themeOptDark').textContent = s.themeD;
+  document.getElementById('themeOptLight').textContent= s.themeL;
+  document.getElementById('lblOp').textContent        = s.lblOp;
+  document.getElementById('lblA').textContent         = s.lblA;
+  document.getElementById('lblB').textContent         = s.lblB;
+  document.getElementById('lblS').textContent         = s.lblS;
+  document.getElementById('lblBits1').textContent     = s.lblBits;
+  document.getElementById('lblBits2').textContent     = s.lblBits;
+  document.getElementById('lblDir').textContent       = s.lblDir;
+  document.getElementById('lblAmt').textContent       = s.lblAmt;
+  document.getElementById('lblType').textContent      = s.lblType;
+  document.getElementById('rdL').textContent          = s.rdL;
+  document.getElementById('rdR').textContent          = s.rdR;
+  document.getElementById('rdLog').textContent        = s.rdLog;
+  document.getElementById('rdArith').textContent      = s.rdArith;
+  document.getElementById('inputA').placeholder       = s.phA;
+  document.getElementById('inputB').placeholder       = s.phB;
+  document.getElementById('inputShift').placeholder   = s.phS;
+  updateColTT('');
+}
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('stageLogic').style.display = tab === 'logic' ? 'block' : 'none';
+  document.getElementById('stageShift').style.display = tab === 'shift' ? 'block' : 'none';
+  document.getElementById('tabLogicBtn').classList.toggle('active', tab === 'logic');
+  document.getElementById('tabShiftBtn').classList.toggle('active', tab === 'shift');
+  compute();
+}
+
+// ─── Bit width ───────────────────────────────────────────────────────────────
+function setBits(w) {
+  bitWidth = w;
+  ['btn4a','btn4b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 4));
+  ['btn8a','btn8b'].forEach(id => document.getElementById(id).classList.toggle('active', w === 8));
+  const sl = document.getElementById('shiftSlider');
+  sl.max = w - 1;
+  if (parseInt(sl.value) > w - 1) { sl.value = 1; document.getElementById('shiftAmtLbl').textContent = 1; }
+  compute();
+}
+
+// ─── Shift helpers ───────────────────────────────────────────────────────────
+function onSlider() {
+  document.getElementById('shiftAmtLbl').textContent = document.getElementById('shiftSlider').value;
+}
+
+function onDirChange() {
+  const isRight = document.querySelector('input[name=shiftDir]:checked').value === 'right';
+  const tg = document.getElementById('shiftTypeGroup');
+  tg.style.opacity = isRight ? '1' : '0.4';
+  tg.style.pointerEvents = isRight ? 'auto' : 'none';
+}
+
+// ─── Parsing ─────────────────────────────────────────────────────────────────
+function parseInput(val) {
+  val = val.trim();
+  if (!val) return null;
+  if (/^0b/i.test(val)) { const n = parseInt(val.slice(2), 2); return isNaN(n) ? null : n; }
+  if (/^[01]+$/.test(val)) return parseInt(val, 2);
+  if (/^\d+$/.test(val)) return parseInt(val, 10);
+  return null;
+}
+
+function fmtHint(n) {
+  return `= ${n}  |  0b${n.toString(2).padStart(bitWidth,'0')}  |  0x${n.toString(16).toUpperCase().padStart(bitWidth/4,'0')}`;
+}
+
+function msk() { return bitWidth === 4 ? 0xF : 0xFF; }
+
+function toBits(n) {
+  const m = msk(); n = n & m;
+  return Array.from({length: bitWidth}, (_, i) => (n >> (bitWidth - 1 - i)) & 1);
+}
+
+// ─── Compute dispatch ────────────────────────────────────────────────────────
+function compute() {
+  if (currentTab === 'logic') computeLogic();
+  else computeShift();
+}
+
+// ─── Logic tab ───────────────────────────────────────────────────────────────
+function computeLogic() {
+  const s = S();
+  const op = document.getElementById('opSelect').value;
+  const needsB = op !== 'NOT';
+  const m = msk();
+  const errMsg = s.errRange(m);
+
+  document.getElementById('inputBGroup').style.opacity = needsB ? '1' : '0.35';
+  document.getElementById('inputBGroup').style.pointerEvents = needsB ? 'auto' : 'none';
+
+  const aRaw = document.getElementById('inputA').value;
+  const bRaw = document.getElementById('inputB').value;
+  const aVal = parseInput(aRaw);
+  const bVal = needsB ? parseInput(bRaw) : 0;
+
+  const aOk = aVal !== null && aVal >= 0 && aVal <= m;
+  const bOk = !needsB || (bVal !== null && bVal >= 0 && bVal <= m);
+
+  const aEl = document.getElementById('inputA');
+  const bEl = document.getElementById('inputB');
+  aEl.classList.toggle('inp-err', aRaw.trim() !== '' && !aOk);
+  bEl.classList.toggle('inp-err', needsB && bRaw.trim() !== '' && !bOk);
+  document.getElementById('hintA').textContent = aRaw.trim() ? (aOk ? fmtHint(aVal & m) : errMsg) : '';
+  document.getElementById('hintB').textContent = needsB && bRaw.trim() ? (bOk ? fmtHint(bVal & m) : errMsg) : '';
+
+  if (!aOk || !bOk) {
+    document.getElementById('logicGrid').innerHTML = '';
+    document.getElementById('logicExpl').textContent = '';
+    updateColTT('');
+    return;
+  }
+
+  const a = aVal & m, b = (bVal ?? 0) & m;
+  let result;
+  switch(op) {
+    case 'AND':  result = a & b; break;
+    case 'OR':   result = a | b; break;
+    case 'XOR':  result = a ^ b; break;
+    case 'NOT':  result = (~a) & m; break;
+    case 'NAND': result = (~(a & b)) & m; break;
+    case 'NOR':  result = (~(a | b)) & m; break;
+    case 'XNOR': result = (~(a ^ b)) & m; break;
+  }
+
+  const bitsA = toBits(a), bitsB = needsB ? toBits(b) : null, bitsR = toBits(result);
+  renderLogicGrid(a, b, op, result, bitsA, bitsB, bitsR, needsB);
+
+  const bw = bitWidth;
+  const fA = `${a} (0b${a.toString(2).padStart(bw,'0')})`;
+  const fB = `${b} (0b${b.toString(2).padStart(bw,'0')})`;
+  const fR = `${result} (0b${result.toString(2).padStart(bw,'0')})`;
+  document.getElementById('logicExpl').textContent = s.explain[op](fA, fB, fR);
+  updateColTT(s.hoverHint);
+}
+
+function renderLogicGrid(a, b, op, result, bitsA, bitsB, bitsR, needsB) {
+  const grid = document.getElementById('logicGrid');
+  grid.innerHTML = '';
+
+  // Index row
+  const idxRow = document.createElement('div'); idxRow.className = 'bit-row';
+  idxRow.appendChild(lbl(''));
+  for (let i = bitWidth - 1; i >= 0; i--) {
+    const c = cell('idx'); c.textContent = i; idxRow.appendChild(c);
+  }
+  grid.appendChild(idxRow);
+
+  // A row
+  grid.appendChild(buildBitRow('A', bitsA, (v) => v ? 'v1' : 'v0', bitsA, bitsB, bitsR, op, true));
+
+  // B row
+  if (needsB) {
+    grid.appendChild(buildBitRow('B', bitsB, (v) => v ? 'v1' : 'v0', bitsA, bitsB, bitsR, op, true));
+  }
+
+  // Separator
+  const sep = document.createElement('div');
+  sep.className = 'sep-row';
+  sep.style.width = `${72 + bitWidth * 46 + 4}px`;
+  grid.appendChild(sep);
+
+  // Result row
+  const rrow = buildBitRow(op, bitsR, (v) => v ? 'r1' : 'r0', bitsA, bitsB, bitsR, op, true);
+  const rlbl = rrow.querySelector('.bit-row-lbl');
+  rlbl.style.color = '#22c55e';
+  rlbl.style.fontSize = '0.72rem';
+  grid.appendChild(rrow);
+
+  // Decimal summary
+  const dr = document.createElement('div'); dr.className = 'dec-row';
+  let h = `A = <span class="dv">${a}</span>`;
+  if (needsB) h += `  B = <span class="dv">${b}</span>`;
+  h += `  ${op} = <span class="dv">${result}</span>`;
+  dr.innerHTML = h;
+  grid.appendChild(dr);
+}
+
+// ─── Shift tab ───────────────────────────────────────────────────────────────
+function computeShift() {
+  const s = S();
+  const m = msk();
+  const errMsg = s.errRange(m);
+
+  const nRaw = document.getElementById('inputShift').value;
+  const nVal = parseInput(nRaw);
+  const nOk = nVal !== null && nVal >= 0 && nVal <= m;
+
+  const nEl = document.getElementById('inputShift');
+  nEl.classList.toggle('inp-err', nRaw.trim() !== '' && !nOk);
+  document.getElementById('hintShift').textContent = nRaw.trim() ? (nOk ? fmtHint(nVal & m) : errMsg) : '';
+
+  if (!nOk) {
+    document.getElementById('shiftGrid').innerHTML = '';
+    document.getElementById('shiftExpl').textContent = '';
+    return;
+  }
+
+  const n = nVal & m;
+  const amt = parseInt(document.getElementById('shiftSlider').value);
+  const dir = document.querySelector('input[name=shiftDir]:checked').value;
+  const type = document.querySelector('input[name=shiftType]:checked').value;
+  const bitsN = toBits(n);
+
+  const bw = bitWidth;
+  const bN = `0b${n.toString(2).padStart(bw,'0')}`;
+
+  if (amt === 0) {
+    renderShiftGrid(bitsN, bitsN, amt, dir, 0);
+    document.getElementById('shiftExpl').textContent = s.shiftExplain.zero(n, bN);
+    return;
+  }
+
+  let bitsR, fillBit = 0;
+  if (dir === 'left') {
+    bitsR = bitsN.slice(amt).concat(Array(amt).fill(0));
+  } else {
+    fillBit = type === 'arith' ? bitsN[0] : 0;
+    bitsR = Array(amt).fill(fillBit).concat(bitsN.slice(0, bw - amt));
+  }
+
+  const result = bitsR.reduce((acc, b) => (acc << 1) | b, 0) & m;
+  const bR = `0b${result.toString(2).padStart(bw,'0')}`;
+
+  renderShiftGrid(bitsN, bitsR, amt, dir, fillBit);
+
+  const ex = s.shiftExplain;
+  const pow = Math.pow(2, amt);
+  let txt;
+  if (dir === 'left') {
+    txt = ex.left(n, bN, amt, result, bR, pow);
+  } else if (type === 'logical') {
+    txt = ex.logical(n, bN, amt, result, bR);
+  } else {
+    txt = ex.arith(n, bN, amt, result, bR, fillBit);
+  }
+  document.getElementById('shiftExpl').textContent = txt;
+}
+
+function renderShiftGrid(bitsN, bitsR, amt, dir, fillBit) {
+  const grid = document.getElementById('shiftGrid');
+  grid.innerHTML = '';
+  const s = S();
+  const result = bitsR.reduce((acc, b) => (acc << 1) | b, 0) & msk();
+
+  // Index row
+  const idxRow = document.createElement('div'); idxRow.className = 'bit-row';
+  idxRow.appendChild(lbl(''));
+  for (let i = bitWidth - 1; i >= 0; i--) {
+    const c = cell('idx'); c.textContent = i; idxRow.appendChild(c);
+  }
+  grid.appendChild(idxRow);
+
+  // Before row — mark overflow bits as 'lost'
+  grid.appendChild(buildBitRow(s.beforeLbl, bitsN, (v, i) => {
+    const isLost = dir === 'left' ? i < amt : i >= bitWidth - amt;
+    return isLost ? 'lost' : (v ? 'v1' : 'v0');
+  }));
+
+  // Arrow row
+  const ar = document.createElement('div'); ar.className = 'arrow-row';
+  ar.textContent = dir === 'left' ? `<< ${amt}` : `>> ${amt}`;
+  grid.appendChild(ar);
+
+  // After row — mark fill bits as 'fill'
+  grid.appendChild(buildBitRow(s.resultLbl, bitsR, (v, i) => {
+    const isFill = dir === 'left' ? i >= bitWidth - amt : i < amt;
+    return isFill ? 'fill' : (v ? 'r1' : 'r0');
+  }));
+
+  // Decimal summary
+  const n = bitsN.reduce((acc, b) => (acc << 1) | b, 0) & msk();
+  const dr = document.createElement('div'); dr.className = 'dec-row';
+  dr.innerHTML = `${s.beforeLbl}: <span class="dv">${n}</span>  →  ${s.resultLbl}: <span class="dv">${result}</span>`;
+  grid.appendChild(dr);
+}
+
+// ─── Grid helpers ────────────────────────────────────────────────────────────
+function cell(cls) {
+  const d = document.createElement('div');
+  d.className = 'bc ' + cls;
+  return d;
+}
+
+function lbl(text) {
+  const d = document.createElement('div');
+  d.className = 'bit-row-lbl';
+  d.textContent = text;
+  return d;
+}
+
+// buildBitRow: classFn(value, index) → css class string
+// When bitsA/bitsB/bitsR/op passed, adds column hover events
+function buildBitRow(label, bits, classFn, bitsA, bitsB, bitsR, op, hoverable) {
+  const row = document.createElement('div'); row.className = 'bit-row';
+  row.appendChild(lbl(label));
+  bits.forEach((v, i) => {
+    const c = cell(classFn(v, i));
+    c.textContent = v;
+    if (hoverable) {
+      const col = bitWidth - 1 - i;
+      c.dataset.col = col;
+      c.addEventListener('mouseenter', () => highlightCol(col, bitsA, bitsB, bitsR, op));
+      c.addEventListener('mouseleave', clearHl);
+    }
+    row.appendChild(c);
+  });
+  return row;
+}
+
+// ─── Column highlight ────────────────────────────────────────────────────────
+function highlightCol(col, bitsA, bitsB, bitsR, op) {
+  document.querySelectorAll(`.bc[data-col="${col}"]`).forEach(el => el.classList.add('col-hl'));
+  const i = bitWidth - 1 - col;
+  const a = bitsA[i], r = bitsR[i];
+  const ab = bitsB !== null;
+  const b = ab ? bitsB[i] : null;
+  updateColTT(S().colFmt(col, op, ab, a, b, r));
+}
+
+function clearHl() {
+  document.querySelectorAll('.bc.col-hl').forEach(el => el.classList.remove('col-hl'));
+  updateColTT(S().hoverHint);
+}
+
+function updateColTT(text) {
+  const el = document.getElementById('colTT');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle('empty', !text || text === S().hoverHint);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+document.body.classList.toggle('theme-light', pageTheme === 'light');
+document.getElementById('themeSelect').value = pageTheme;
+
+const _sl = localStorage.getItem('lang');
+if (_sl === 'de') { lang = 'de'; document.getElementById('langSelect').value = 'de'; }
+applyStaticLang();
+
+onDirChange();
+document.getElementById('inputA').value = '53';
+document.getElementById('inputB').value = '179';
+document.getElementById('inputShift').value = '53';
+compute();
+</script>
+</body>
+</html>
